@@ -9,7 +9,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { regrasSenhaStatus, validaSenha } from "@/lib/validaSenha"
+import { regrasSenhaStatus, validaSenha } from "@/components/login/validaSenha"
 
 // schema zod usando mesma regra da API
 const schema = z.object({
@@ -86,6 +86,7 @@ export function FormCadastro() {
   }
 
   return (
+    <div>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" aria-live="polite">
       <div className="space-y-2">
         <Label htmlFor="nome">Nome</Label>
@@ -138,5 +139,15 @@ export function FormCadastro() {
         {loading ? "Cadastrando..." : "Cadastrar"}
       </Button>
     </form>
+
+        <div className="mt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                Já tem uma conta?{" "}
+                <a href="/login" className="text-primary hover:underline">
+                    Entre aqui
+                </a>
+                </p>
+            </div>
+     </div>       
   )
 }
