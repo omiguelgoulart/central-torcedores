@@ -63,7 +63,6 @@ export function FormCadastro() {
   ];
 
 async function onSubmit(data: RegisterData) {
-  console.log("Dados do formulário:", data);
   setLoading(true);
 
   try {
