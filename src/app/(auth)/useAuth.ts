@@ -1,116 +1,87 @@
-// app/hooks/useAuth.ts
+// stores/useAuth.ts
 "use client";
 
-import Cookies from "js-cookie";
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { toast } from "sonner";
+import Cookies from "js-cookie";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL; // 👈 pega do .env.local
+type Usuario = {
+  id: string;
+  nome: string;
+  email: string;
+  avatar?: string;
+  token?: string; // opcional, dependendo de como o backend funciona
+  status?: string;
+};
 
-interface AuthState {
-  token: string | null;
-  isLoading: boolean;
-  error: string | null;
-
-  // ações
-  setToken: (token: string | null) => void;
-  clearToken: () => void;
-  logout: () => void;
+type AuthState = {
+  usuario: Usuario | null;
+  loading: boolean;
   login: (email: string, senha: string) => Promise<void>;
-  cadastro: (nome: string,email: string, senha: string) => Promise<void>;
-}
+  fetchMe: () => Promise<void>;
+  logout: () => Promise<void>;
+  token?: string;
+  // Para acessar o token: useAuth.getState().usuario?.token
+};
 
-export const useAuth = create<AuthState>((set) => ({
-  token: Cookies.get("token") || null,
-  isLoading: false,
-  error: null,
+export const useAuth = create<AuthState>()(
+  persist(
+    (set) => ({
+      usuario: null,
+      loading: false,
 
-  // salva ou remove o token
-  setToken: (token) => {
-    if (token) {
-      Cookies.set("token", token, { expires: 7, secure: true, sameSite: "lax" });
-    } else {
-      Cookies.remove("token");
+      login: async (email, senha) => {
+        set({ loading: true });
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, senha }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            toast.error(errorData.message || "Erro ao fazer login");
+            throw new Error(errorData.message || "Erro ao fazer login");
+          } else {
+            const data = await response.json();
+            Cookies.set("auth", JSON.stringify(data), { secure: true, sameSite: "strict" });
+            set({ usuario: data });
+            toast.success("Login realizado com sucesso!");
+          }
+        } catch (e: unknown) {
+          const errorMessage = e instanceof Error ? e.message : "Erro ao fazer login";
+          toast.error(errorMessage);
+          throw e;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      fetchMe: async () => {
+        try {
+          const authCookie = Cookies.get("auth");
+          if (authCookie) {
+            set({ usuario: JSON.parse(authCookie) });
+            return;
+          }
+          set({ usuario: null });
+        } catch {
+          set({ usuario: null });
+        }
+      },
+
+      logout: async () => {
+        set({ usuario: null });
+        Cookies.remove("auth");
+        toast("Você saiu da sua conta.");
+      },
+    }),
+    {
+      name: "auth-storage",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (s) => ({ usuario: s.usuario }),
     }
-    set({ token });
-  },
-
-  // remove token do cookie
-  clearToken: () => {
-    Cookies.remove("token");
-    set({ token: null });
-  },
-
-  // logout e redireciona
-  logout: () => {
-    Cookies.remove("token");
-    set({ token: null });
-    window.location.href = "/login";
-  },
-
-  // login real com chamada à API
-  login: async (email: string, senha: string) => {
-    set({ isLoading: true, error: null });
-
-    try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || "Erro ao fazer login");
-      }
-
-      const data = await response.json();
-      const token = data?.token;
-
-      if (!token) throw new Error("Token não recebido da API");
-
-      Cookies.set("token", token, { expires: 7, secure: true, sameSite: "lax" });
-      set({ token });
-      window.location.href = "/dashboard";
-    } catch (error: unknown) {
-      let errorMessage = "Falha no login";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      set({ error: errorMessage });
-      console.error("Erro no login:", error);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-    cadastro: async (nome: string, email: string, senha: string) => {
-    set({ isLoading: true, error: null });
-
-    try {
-      const response = await fetch(`${API_URL}/auth/cadastro`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, email, senha }),
-      });
-        if (!response.ok) { 
-        const err = await response.json();
-        throw new Error(err.message || "Erro ao cadastrar");
-      }
-        const data = await response.json(); 
-        const token = data?.token;
-        if (!token) throw new Error("Token não recebido da API");
-
-        Cookies.set("token", token, { expires: 7, secure: true, sameSite: "lax" });
-        set({ token });
-        window.location.href = "/dashboard";
-    }
-    catch (error: unknown) {
-      let errorMessage = "Falha no cadastro";
-        if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-        set({ error: errorMessage });
-        console.error("Erro no cadastro:", error);
-    } finally {
-      set({ isLoading: false });
-    }},
-}));
+  )
+);

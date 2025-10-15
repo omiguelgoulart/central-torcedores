@@ -1,98 +1,215 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowRight, Trophy, Users } from "lucide-react"
+import { FeedComunicados } from "@/components/home/FeedComunicado";
+import { BeneficiosDestaque } from "@/components/home/BeneficiosDestaque";
+import { ClubeFooter } from "@/components/home/ClubeFooter";
+import { CounterBar } from "@/components/home/CounterBar";
+import { Perguntas } from "@/components/home/Perguntas";
+import { FaixaDeJogos } from "@/components/home/FaixaDeJogo";
+import { Anuncio } from "@/components/home/Anuncio";
+import { ListaNoticias } from "@/components/home/ListaNoticias";
+import { PlanosCampanha } from "@/components/home/PlanosCampanha";
+import { CarrosselPatrocinadores } from "@/components/home/CarrosselPatrocinadores";
+import { Depoimentos } from "@/components/home/Depoimentos";
+import { IngressoDisponivel } from "@/components/home/IngressoDisponivel";
+
+// Mock data
+const mockData = {
+  hero: {
+    titulo: "Ingresso liberado: Clássico na Baixada",
+    subtitulo: "Garanta já o seu",
+    midia: { tipo: "image", url: "/football-stadium-crowd.jpg" },
+    acoes: [
+      { rotulo: "Comprar ingresso", acao: "buy" },
+      { rotulo: "Ver detalhes", acao: "details" },
+    ],
+  },
+  comunicados: [
+    {
+      id: "a1",
+      titulo: "Nota Oficial — Abertura dos Portões",
+      resumo: "Portões abrem às 17h. Evite filas.",
+      capaUrl: "/stadium-gates.png",
+      tags: ["Nota Oficial"],
+      fixado: true,
+      publicadoEm: "2025-10-08T10:00:00Z",
+    },
+    {
+      id: "a2",
+      titulo: "Campanha Sócio Ouro",
+      resumo: "Assine o plano Ouro e ganhe prioridade nos ingressos.",
+      capaUrl: "/gold-membership-card.jpg",
+      tags: ["Campanha"],
+      fixado: false,
+      publicadoEm: "2025-10-07T14:32:00Z",
+    },
+  ],
+  jogos: [
+    {
+      id: "j1",
+      nome: "Brasil x Grêmio",
+      data: "2025-10-15T19:30:00Z",
+      local: "Estádio Bento Freitas",
+      descricao: "Rodada 10 - Campeonato Gaúcho",
+      hasLotes: true,
+    },
+    {
+      id: "j2",
+      nome: "Brasil x Internacional",
+      data: "2025-10-28T16:00:00Z",
+      local: "Estádio Bento Freitas",
+      descricao: "Rodada 11 - Campeonato Gaúcho",
+      hasLotes: true,
+    },
+    {
+      id: "j3",
+      nome: "Brasil x Juventude",
+      data: "2025-11-05T20:00:00Z",
+      local: "Estádio Bento Freitas",
+      descricao: "Rodada 12 - Campeonato Gaúcho",
+      hasLotes: false,
+    },
+  ],
+  planos: [
+    {
+      id: "p1",
+      nome: "Arquibancada",
+      descricao: "Entrada em jogos selecionados",
+      valor: 49.9,
+      periodicidade: "MENSAL",
+      destaque: false,
+      beneficios: [
+        "Descontos parceiros",
+        "Fila preferencial",
+        "Prioridade compra",
+      ],
+    },
+    {
+      id: "p2",
+      nome: "Ouro",
+      descricao: "Vantagens máximas",
+      valor: 99.9,
+      periodicidade: "MENSAL",
+      destaque: true,
+      rotuloBadge: "Recomendado",
+      beneficios: [
+        "Prioridade máxima",
+        "Cadeira coberta",
+        "Meet & greet (limitado)",
+      ],
+    },
+    {
+      id: "p3",
+      nome: "Torcedor",
+      descricao: "Benefícios básicos",
+      valor: 29.9,
+      periodicidade: "MENSAL",
+      destaque: false,
+      beneficios: ["Desconto em produtos", "Newsletter exclusiva"],
+    },
+  ],
+  beneficiosSpotlight: [
+    { titulo: "Prioridade de compra", icone: "Timer" },
+    { titulo: "Desconto em lojas", icone: "Percent" },
+    { titulo: "Área exclusiva", icone: "Shield" },
+    { titulo: "Ingresso digital", icone: "QrCode" },
+    { titulo: "Eventos VIP", icone: "Trophy" },
+    { titulo: "Cashback", icone: "DollarSign" },
+  ],
+  sponsors: [
+    "/generic-sponsor-logo-1.png",
+    "/generic-sponsor-logo-2.png",
+    "/generic-sponsor-logo-3.png",
+    "/sponsor-logo-4.jpg",
+  ],
+  depoimentos: [
+    {
+      nome: "Carlos Silva",
+      texto: "Virei sócio e comprar ingresso ficou fácil. Recomendo!",
+    },
+    {
+      nome: "Ana Paula",
+      texto: "Atendimento rápido e benefícios reais. Vale muito a pena.",
+    },
+    {
+      nome: "Roberto Lima",
+      texto: "Os descontos em produtos oficiais compensam a mensalidade.",
+    },
+  ],
+  counters: {
+    sociosAtivos: 12450,
+    jogosTemporada: 38,
+    ingressosVendidos: 185000,
+  },
+  faqs: [
+    {
+      pergunta: "Como compro meia-entrada?",
+      resposta: "Selecione a opção e apresente documento na entrada.",
+    },
+    {
+      pergunta: "Posso transferir ingresso?",
+      resposta: "Em breve. No momento, ingresso é pessoal.",
+    },
+    {
+      pergunta: "Como troco de plano?",
+      resposta: "Acesse sua conta e vá em Assinatura > Trocar Plano.",
+    },
+    {
+      pergunta: "Quais formas de pagamento?",
+      resposta: "Aceitamos cartão, boleto e PIX.",
+    },
+    {
+      pergunta: "Como falo com o suporte?",
+      resposta: "Use o chat no canto inferior direito ou envie email.",
+    },
+  ],
+  noticias: [
+    {
+      id: "n1",
+      titulo: "Pelotas anuncia reforços para a temporada",
+      data: "2025-10-05",
+      thumb: "/football-players.jpg",
+    },
+    {
+      id: "n2",
+      titulo: "Inauguração da nova loja oficial",
+      data: "2025-10-03",
+      thumb: "/sports-store-interior.png",
+    },
+    {
+      id: "n3",
+      titulo: "Campanha de doação de alimentos",
+      data: "2025-10-01",
+      thumb: "/charity-donation.png",
+    },
+    {
+      id: "n4",
+      titulo: "Escolinha de futebol abre inscrições",
+      data: "2025-09-28",
+      thumb: "/kids-football-training.png",
+    },
+  ],
+};
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto px-4 py-16 md:py-24">
-        {/* Hero Section */}
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-            <Trophy className="h-4 w-4" />
-            Central de Torcedores
-          </div>
+    <div className="min-h-screen">
+      <main>
+        <Anuncio {...mockData.hero} />
 
-          <h1 className="mb-6 text-balance text-4xl font-bold tracking-tight md:text-6xl">
-            Faça parte do nosso clube de torcedores
-          </h1>
-
-          <p className="mb-8 text-pretty text-lg text-muted-foreground md:text-xl">
-            Tenha acesso a benefícios exclusivos, descontos em produtos oficiais e experiências únicas com o seu time do
-            coração.
-          </p>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button asChild size="lg" className="gap-2">
-              <Link href="/planos">
-                Ver Planos
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/assinatura">Assinar Agora</Link>
-            </Button>
-          </div>
+        <div className="container mx-auto px-4 space-y-16 py-12">
+          <FeedComunicados items={mockData.comunicados} />
+          <FaixaDeJogos jogos={mockData.jogos} />
+          <IngressoDisponivel jogo={mockData.jogos[0]} />
+          <BeneficiosDestaque beneficios={mockData.beneficiosSpotlight} />
+          <PlanosCampanha planos={mockData.planos} />
+          <ListaNoticias posts={mockData.noticias} />
+          <CarrosselPatrocinadores logos={mockData.sponsors} />
+          <Depoimentos depoimentos={mockData.depoimentos} />
+          <CounterBar {...mockData.counters} />
+          <Perguntas perguntas={mockData.faqs} />
         </div>
+      </main>
 
-        {/* Features Section */}
-        <div className="mx-auto mt-20 grid max-w-5xl gap-6 md:grid-cols-3">
-          <Card className="border-primary/20 transition-all hover:border-primary/40 hover:shadow-lg">
-            <CardHeader>
-              <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Trophy className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Benefícios Exclusivos</CardTitle>
-              <CardDescription>
-                Acesso antecipado a ingressos, descontos em produtos oficiais e conteúdo exclusivo dos bastidores.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-primary/20 transition-all hover:border-primary/40 hover:shadow-lg">
-            <CardHeader>
-              <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Comunidade Ativa</CardTitle>
-              <CardDescription>
-                Conecte-se com outros torcedores, participe de eventos VIP e tenha experiências inesquecíveis.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-primary/20 transition-all hover:border-primary/40 hover:shadow-lg">
-            <CardHeader>
-              <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <ArrowRight className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Planos Flexíveis</CardTitle>
-              <CardDescription>
-                Escolha o plano ideal para você, desde Bronze até Diamante, com benefícios crescentes.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* CTA Section */}
-        <div className="mx-auto mt-20 max-w-3xl text-center">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-            <CardContent className="pt-8">
-              <h2 className="mb-4 text-balance text-2xl font-bold md:text-3xl">Pronto para fazer parte do clube?</h2>
-              <p className="mb-6 text-muted-foreground">
-                Escolha seu plano e comece a aproveitar todos os benefícios hoje mesmo.
-              </p>
-              <Button asChild size="lg" className="gap-2">
-                <Link href="/planos">
-                  Conhecer os Planos
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <ClubeFooter />
     </div>
-  )
+  );
 }

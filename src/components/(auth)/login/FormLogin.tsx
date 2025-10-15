@@ -9,6 +9,7 @@ import { Label } from "@radix-ui/react-label"
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/app/(auth)/useAuth"
 
 interface LoginForm {
   email: string
@@ -26,24 +27,21 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginForm>()
 
+  const { login } = useAuth()
+
   async function onSubmit(data: LoginForm) {
     setIsLoading(true)
     setError("")
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      })
-      if (!response.ok) {
-        const errorData = await response.json()
-        setError(errorData.message || "Erro ao fazer login")
+      await login(data.email, data.senha)
+      toast.success("Login realizado com sucesso!")
+      router.push("/")
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
       } else {
-        toast.success("Login realizado com sucesso!")
-        router.push("/")
+        setError("Erro ao fazer login")
       }
-    } catch {
-      setError("Erro ao fazer login")
     }
     setIsLoading(false)
   }

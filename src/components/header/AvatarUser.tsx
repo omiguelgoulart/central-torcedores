@@ -1,116 +1,144 @@
 "use client";
 
 import Link from "next/link";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, User, IdCard, Ticket, Bell, Settings, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  LogOut,
+  User as IconUsuario,
+  IdCard,
+  Ticket,
+  Bell,
+  Settings,
+  HelpCircle,
+} from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { useAuth } from "@/app/(auth)/useAuth";
 
-// tipo auxiliar
-type MenuItem = {
+type ItemMenu = {
   href: string;
-  label: string;
-  icon: React.ElementType;
+  rotulo: string;
+  icone: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 };
 
-// 🔹 dados mocados (usuário e itens)
-const mockUser = {
-  name: "João Silva",
-  email: "joao@email.com",
-  status: "Sócio Ativo",
-  imageUrl: "/diverse-user-avatars.png",
-};
-
-const mockItems: MenuItem[] = [
-  { href: "/perfil", label: "Meu Perfil", icon: User },
-  { href: "/plano", label: "Minha Associação", icon: IdCard },
-  { href: "/meus-ingressos", label: "Meus Ingressos", icon: Ticket },
-  { href: "/notificacoes", label: "Notificações", icon: Bell },
-  { href: "/configuracoes", label: "Configurações", icon: Settings },
-  { href: "/ajuda", label: "Ajuda / Suporte", icon: HelpCircle },
+const itensMenu: ItemMenu[] = [
+  { href: "/perfil", rotulo: "Meu Perfil", icone: IconUsuario },
+  { href: "/plano", rotulo: "Minha Associação", icone: IdCard },
+  { href: "/meus-ingressos", rotulo: "Meus Ingressos", icone: Ticket },
+  { href: "/notificacoes", rotulo: "Notificações", icone: Bell },
+  { href: "/configuracoes", rotulo: "Configurações", icone: Settings },
+  { href: "/ajuda", rotulo: "Ajuda / Suporte", icone: HelpCircle },
 ];
 
 export function UserAvatar() {
-  const user = mockUser;
-  const items = mockItems;
+  // store deve expor { usuario, fetchMe, logout } (token opcional)
+  const { usuario, fetchMe, logout } = useAuth() as {
+    usuario: { nome: string; email?: string; avatar?: string; status?: string } | null;
+    fetchMe?: () => Promise<void>;
+    logout: () => void;
+  };
 
-  const initials =
-    user.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "US";
+  const [booting, setBooting] = useState(true);
+
+  useEffect(() => {
+    // Se tiver cookie HttpOnly, deixe a store cuidar do /me
+    const run = async () => {
+      if (!usuario && typeof fetchMe === "function") {
+        try { await fetchMe(); } catch {}
+      }
+      setBooting(false);
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (booting && !usuario) {
+    return <div className="h-8 w-[160px] animate-pulse rounded-md bg-muted/50" />;
+  }
+
+  if (!usuario) {
+    return (
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" asChild>
+          <Link href="/login">Entrar</Link>
+        </Button>
+        <Button asChild>
+          <Link href="/cadastro">Criar conta</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const iniciais =
+    usuario.nome?.trim().split(/\s+/).map((n) => n[0] ?? "").filter(Boolean).slice(0, 2).join("").toUpperCase() ||
+    "US";
 
   return (
-    <DropdownMenu>
-      {/* Avatar do topo */}
-      <DropdownMenuTrigger asChild>
+
+    <Sheet>
+      <SheetTrigger asChild>
         <button
-          aria-label="Abrir menu do usuário"
-          className="rounded-full outline-none ring-offset-2 transition-all hover:ring-2 hover:ring-gray-300 focus:ring-2 focus:ring-gray-300"
+          aria-label="Abrir menu"
+          className="flex items-center gap-2 rounded-full hover:opacity-80 transition"
         >
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.imageUrl} alt={user.name} />
-            <AvatarFallback className="bg-gray-600 text-white">
-              {initials}
+            <AvatarImage src={usuario?.avatar || "/placeholder.svg"} alt="avatar" />
+            <AvatarFallback className="bg-zinc-700 text-white">
+              {iniciais}
             </AvatarFallback>
           </Avatar>
         </button>
-      </DropdownMenuTrigger>
+      </SheetTrigger>
 
-      {/* Conteúdo do menu */}
-      <DropdownMenuContent align="end" className="w-64">
-        {/* Cabeçalho */}
-        <div className="flex items-center space-x-3 border-b p-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user.imageUrl} alt={user.name} />
-            <AvatarFallback className="bg-gray-600 text-white">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-gray-900">{user.name}</p>
-            <p className="truncate text-sm text-gray-500">{user.email}</p>
-            {user.status && (
-              <p className="text-xs font-medium text-green-600">
-                {user.status}
-              </p>
-            )}
+      <SheetContent
+        side="right"
+        className="flex h-full w-[280px] sm:w-[300px] flex-col justify-between border-none bg-zinc-950 p-0 text-white"
+      >
+        {/* Parte superior: menu */}
+        <div className="flex flex-col">
+          <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={usuario?.avatar || "/placeholder.svg"} alt="avatar" />
+              <AvatarFallback className="bg-zinc-700 text-white">
+                {iniciais}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-white">{usuario?.nome}</p>
+              {usuario?.email && (
+                <p className="truncate text-sm text-zinc-400">{usuario.email}</p>
+              )}
+            </div>
           </div>
+
+          <nav className="flex flex-col mt-1">
+            {itensMenu.map(({ href, rotulo, icone: Icone }) => (
+              <SheetClose asChild key={href}>
+                <Link
+                  href={href}
+                  className="flex items-center gap-3 px-4 py-3 text-zinc-100 hover:bg-zinc-900 transition-colors"
+                >
+                  <Icone className="h-5 w-5" />
+                  <span className="text-[15px] font-medium">{rotulo}</span>
+                </Link>
+              </SheetClose>
+            ))}
+          </nav>
         </div>
 
-        {/* Itens */}
-        {items.map(({ href, label, icon: Icon }) => (
-          <DropdownMenuItem key={href} asChild>
-            <Link
-              href={href}
-              className="flex cursor-pointer items-center space-x-2 px-3 py-2"
-            >
-              <Icon className="h-4 w-4" />
-              <span>{label}</span>
-            </Link>
-          </DropdownMenuItem>
-        ))}
-
-        <DropdownMenuSeparator />
-
-        {/* Logout */}
-        <DropdownMenuItem asChild>
-          <Link
-            href="/"
-            className="flex cursor-pointer items-center space-x-2 px-3 py-2 text-red-600 hover:text-red-700"
+        {/* Parte inferior: botão de logout */}
+        <div className="p-4 border-t border-zinc-800">
+          <Button
+            variant="destructive"
+            className="w-full bg-red-600 hover:bg-red-700 text-white"
+            onClick={() => logout()}
           >
-            <LogOut className="h-4 w-4" />
-            <span>Sair</span>
-          </Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
