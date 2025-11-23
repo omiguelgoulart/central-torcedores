@@ -13,8 +13,13 @@ import {
   Settings,
   HelpCircle,
 } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { useAuth } from "@/app/(auth)/useAuth";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 
 type ItemMenu = {
   href: string;
@@ -34,7 +39,12 @@ const itensMenu: ItemMenu[] = [
 export function UserAvatar() {
   // store deve expor { usuario, fetchMe, logout } (token opcional)
   const { usuario, fetchMe, logout } = useAuth() as {
-    usuario: { nome: string; email?: string; avatar?: string; status?: string } | null;
+    usuario: {
+      nome: string;
+      email?: string;
+      avatar?: string;
+      status?: string;
+    } | null;
     fetchMe?: () => Promise<void>;
     logout: () => void;
   };
@@ -45,7 +55,9 @@ export function UserAvatar() {
     // Se tiver cookie HttpOnly, deixe a store cuidar do /me
     const run = async () => {
       if (!usuario && typeof fetchMe === "function") {
-        try { await fetchMe(); } catch {}
+        try {
+          await fetchMe();
+        } catch {}
       }
       setBooting(false);
     };
@@ -54,7 +66,9 @@ export function UserAvatar() {
   }, []);
 
   if (booting && !usuario) {
-    return <div className="h-8 w-[160px] animate-pulse rounded-md bg-muted/50" />;
+    return (
+      <div className="h-8 w-[160px] animate-pulse rounded-md bg-muted/50" />
+    );
   }
 
   if (!usuario) {
@@ -71,11 +85,16 @@ export function UserAvatar() {
   }
 
   const iniciais =
-    usuario.nome?.trim().split(/\s+/).map((n) => n[0] ?? "").filter(Boolean).slice(0, 2).join("").toUpperCase() ||
-    "US";
+    usuario.nome
+      ?.trim()
+      .split(/\s+/)
+      .map((n) => n[0] ?? "")
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "US";
 
   return (
-
     <Sheet>
       <SheetTrigger asChild>
         <button
@@ -83,7 +102,10 @@ export function UserAvatar() {
           className="flex items-center gap-2 rounded-full hover:opacity-80 transition"
         >
           <Avatar className="h-8 w-8">
-            <AvatarImage src={usuario?.avatar || "/placeholder.svg"} alt="avatar" />
+            <AvatarImage
+              src={usuario?.avatar || "/placeholder.svg"}
+              alt="avatar"
+            />
             <AvatarFallback className="bg-zinc-700 text-white">
               {iniciais}
             </AvatarFallback>
@@ -99,15 +121,22 @@ export function UserAvatar() {
         <div className="flex flex-col">
           <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={usuario?.avatar || "/placeholder.svg"} alt="avatar" />
+              <AvatarImage
+                src={usuario?.avatar || "/placeholder.svg"}
+                alt="avatar"
+              />
               <AvatarFallback className="bg-zinc-700 text-white">
                 {iniciais}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="truncate font-semibold text-white">{usuario?.nome}</p>
+              <p className="truncate font-semibold text-white">
+                {usuario?.nome}
+              </p>
               {usuario?.email && (
-                <p className="truncate text-sm text-zinc-400">{usuario.email}</p>
+                <p className="truncate text-sm text-zinc-400">
+                  {usuario.email}
+                </p>
               )}
             </div>
           </div>

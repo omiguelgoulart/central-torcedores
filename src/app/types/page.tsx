@@ -1,26 +1,24 @@
-// app/page.tsx (exemplo)
-
-import { Anuncio } from "@/components/home/Anuncio"
-import { BeneficiosDestaque } from "@/components/home/BeneficiosDestaque"
-import { CarrosselPatrocinadores } from "@/components/home/CarrosselPatrocinadores"
-import { ClubeFooter } from "@/components/home/ClubeFooter"
-import { CounterBar } from "@/components/home/CounterBar"
-import { Depoimentos } from "@/components/home/Depoimentos"
-import { FaixaDeJogos } from "@/components/home/FaixaDeJogo"
-import { FeedComunicados } from "@/components/home/FeedComunicado"
-import { IngressoDisponivel } from "@/components/home/IngressoDisponivel"
-import { ListaNoticias } from "@/components/home/ListaNoticias"
-import { Perguntas } from "@/components/home/Perguntas"
-import { PlanosCampanha } from "@/components/home/PlanosCampanha"
+import { FeedComunicados } from "@/components/home/FeedComunicado";
+import { BeneficiosDestaque } from "@/components/home/BeneficiosDestaque";
+import { ClubeFooter } from "@/components/home/ClubeFooter";
+import { CounterBar } from "@/components/home/CounterBar";
+import { Perguntas } from "@/components/home/Perguntas";
+import { FaixaDeJogos } from "@/components/home/FaixaDeJogo";
+import { Anuncio } from "@/components/home/Anuncio";
+import { ListaNoticias } from "@/components/home/ListaNoticias";
+import { PlanosCampanha } from "@/components/home/PlanosCampanha";
+import { CarrosselPatrocinadores } from "@/components/home/CarrosselPatrocinadores";
+import { Depoimentos } from "@/components/home/Depoimentos";
+import { IngressoDisponivel } from "@/components/home/IngressoDisponivel";
 
 // Mock data
 const mockData = {
   hero: {
-    titulo: "Ingresso liberado: Clássico no Bento Freitas",
-    subtitulo: "Garanta já o seu, Vem para a Baixada!",
+    titulo: "Ingresso liberado: Clássico na Baixada",
+    subtitulo: "Garanta já o seu",
     midia: { tipo: "image", url: "/football-stadium-crowd.jpg" },
     acoes: [
-      { rotulo: "Comprar ingresso", acao: "/partidas" },
+      { rotulo: "Comprar ingresso", acao: "buy" },
       { rotulo: "Ver detalhes", acao: "details" },
     ],
   },
@@ -29,7 +27,7 @@ const mockData = {
       id: "a1",
       titulo: "Nota Oficial — Abertura dos Portões",
       resumo: "Portões abrem às 17h. Evite filas.",
-      capaUrl: "/stadium-gates.jpg",
+      capaUrl: "/stadium-gates.png",
       tags: ["Nota Oficial"],
       fixado: true,
       publicadoEm: "2025-10-08T10:00:00Z",
@@ -66,7 +64,7 @@ const mockData = {
       nome: "Brasil x Juventude",
       data: "2025-11-05T20:00:00Z",
       local: "Estádio Bento Freitas",
-      descricao: "Jogo da Temporada",
+      descricao: "Rodada 12 - Campeonato Gaúcho",
       hasLotes: false,
     },
   ],
@@ -78,7 +76,11 @@ const mockData = {
       valor: 49.9,
       periodicidade: "MENSAL",
       destaque: false,
-      beneficios: ["Descontos parceiros", "Fila preferencial", "Prioridade compra"],
+      beneficios: [
+        "Descontos parceiros",
+        "Fila preferencial",
+        "Prioridade compra",
+      ],
     },
     {
       id: "p2",
@@ -88,7 +90,11 @@ const mockData = {
       periodicidade: "MENSAL",
       destaque: true,
       rotuloBadge: "Recomendado",
-      beneficios: ["Prioridade máxima", "Cadeira coberta", "Meet & greet (limitado)"],
+      beneficios: [
+        "Prioridade máxima",
+        "Cadeira coberta",
+        "Meet & greet (limitado)",
+      ],
     },
     {
       id: "p3",
@@ -115,25 +121,73 @@ const mockData = {
     "/sponsor-logo-4.jpg",
   ],
   depoimentos: [
-    { nome: "Carlos Silva", texto: "Virei sócio e comprar ingresso ficou fácil. Recomendo!" },
-    { nome: "Ana Paula", texto: "Atendimento rápido e benefícios reais. Vale muito a pena." },
-    { nome: "Roberto Lima", texto: "Os descontos em produtos oficiais compensam a mensalidade." },
+    {
+      nome: "Carlos Silva",
+      texto: "Virei sócio e comprar ingresso ficou fácil. Recomendo!",
+    },
+    {
+      nome: "Ana Paula",
+      texto: "Atendimento rápido e benefícios reais. Vale muito a pena.",
+    },
+    {
+      nome: "Roberto Lima",
+      texto: "Os descontos em produtos oficiais compensam a mensalidade.",
+    },
   ],
-  counters: { sociosAtivos: 12450, jogosTemporada: 38, ingressosVendidos: 185000 },
+  counters: {
+    sociosAtivos: 12450,
+    jogosTemporada: 38,
+    ingressosVendidos: 185000,
+  },
   faqs: [
-    { pergunta: "Como compro meia-entrada?", resposta: "Selecione a opção e apresente documento na entrada." },
-    { pergunta: "Posso transferir ingresso?", resposta: "Em breve. No momento, ingresso é pessoal." },
-    { pergunta: "Como troco de plano?", resposta: "Acesse sua conta e vá em Assinatura > Trocar Plano." },
-    { pergunta: "Quais formas de pagamento?", resposta: "Aceitamos cartão, boleto e PIX." },
-    { pergunta: "Como falo com o suporte?", resposta: "Use o chat no canto inferior direito ou envie email." },
+    {
+      pergunta: "Como compro meia-entrada?",
+      resposta: "Selecione a opção e apresente documento na entrada.",
+    },
+    {
+      pergunta: "Posso transferir ingresso?",
+      resposta: "Em breve. No momento, ingresso é pessoal.",
+    },
+    {
+      pergunta: "Como troco de plano?",
+      resposta: "Acesse sua conta e vá em Assinatura > Trocar Plano.",
+    },
+    {
+      pergunta: "Quais formas de pagamento?",
+      resposta: "Aceitamos cartão, boleto e PIX.",
+    },
+    {
+      pergunta: "Como falo com o suporte?",
+      resposta: "Use o chat no canto inferior direito ou envie email.",
+    },
   ],
   noticias: [
-    { id: "n1", titulo: "Brasil anuncia reforços para a temporada", data: "2025-10-05", thumb: "/football-players.jpg" },
-    { id: "n2", titulo: "Inauguração da nova loja oficial", data: "2025-10-03", thumb: "/sports-store-interior.png" },
-    { id: "n3", titulo: "Campanha de doação de alimentos", data: "2025-10-01", thumb: "/charity-donation.png" },
-    { id: "n4", titulo: "Escolinha de futebol abre inscrições", data: "2025-09-28", thumb: "/kids-football-training.png" },
+    {
+      id: "n1",
+      titulo: "Pelotas anuncia reforços para a temporada",
+      data: "2025-10-05",
+      thumb: "/football-players.jpg",
+    },
+    {
+      id: "n2",
+      titulo: "Inauguração da nova loja oficial",
+      data: "2025-10-03",
+      thumb: "/sports-store-interior.png",
+    },
+    {
+      id: "n3",
+      titulo: "Campanha de doação de alimentos",
+      data: "2025-10-01",
+      thumb: "/charity-donation.png",
+    },
+    {
+      id: "n4",
+      titulo: "Escolinha de futebol abre inscrições",
+      data: "2025-09-28",
+      thumb: "/kids-football-training.png",
+    },
   ],
-}
+};
 
 export default function HomePage() {
   return (
@@ -145,8 +199,8 @@ export default function HomePage() {
           <FeedComunicados items={mockData.comunicados} />
           <FaixaDeJogos jogos={mockData.jogos} />
           <IngressoDisponivel jogo={mockData.jogos[0]} />
-          <PlanosCampanha planos={mockData.planos} />
           <BeneficiosDestaque beneficios={mockData.beneficiosSpotlight} />
+          <PlanosCampanha planos={mockData.planos} />
           <ListaNoticias posts={mockData.noticias} />
           <CarrosselPatrocinadores logos={mockData.sponsors} />
           <Depoimentos depoimentos={mockData.depoimentos} />
@@ -157,5 +211,5 @@ export default function HomePage() {
 
       <ClubeFooter />
     </div>
-  )
+  );
 }

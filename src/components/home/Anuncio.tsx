@@ -1,3 +1,6 @@
+"use client"
+
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
@@ -11,6 +14,8 @@ interface AnuncioHeroProps {
 }
 
 export function Anuncio({ titulo, subtitulo, midia, acoes, fixado }: AnuncioHeroProps) {
+  const router = useRouter()
+
   return (
     <section className="relative h-[500px] md:h-[600px] overflow-hidden">
       <div className="absolute inset-0">
@@ -34,7 +39,7 @@ export function Anuncio({ titulo, subtitulo, midia, acoes, fixado }: AnuncioHero
 
           <div className="flex flex-wrap gap-3">
             {acoes.map((acao, indice) => (
-              <Button key={indice} size="lg">
+              <Button key={indice} size="lg" onClick={() => router.push(acao.acao)}>
                 {acao.rotulo}
               </Button>
             ))}

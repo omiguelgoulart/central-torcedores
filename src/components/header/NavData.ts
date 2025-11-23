@@ -9,8 +9,8 @@ export type NavItem = {
 
 export const navItems: NavItem[] = [
   { label: "Início", href: "/", icon: Home },
-  { label: "Jogos", href: "/jogos", icon: Calendar },
-  { label: "Ingressos", href: "/ingressos", icon: Ticket },
+  { label: "Jogos", href: "/partidas", icon: Calendar },
+  // { label: "Ingressos", href: "/ingressos", icon: Ticket },
   { label: "Planos", href: "/planos", icon: CreditCard },
   { label: "Benefícios", href: "/beneficios", icon: Gift },
   { label: "Notícias", href: "/noticias", icon: Newspaper },
