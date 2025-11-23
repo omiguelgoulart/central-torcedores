@@ -20,7 +20,6 @@ import { CardPreview } from "./CardPreview";
 import { detectCardBrand } from "@/lib/card-utils";
 import {
   formatCardNumber,
-  formatExpiry,
   formatCVV,
   formatCPFCNPJ,
   formatPostalCode,
@@ -168,15 +167,6 @@ export function CardPanel({ customerId, valor, descricao, onPaymentCreated }: Ca
     [setValue]
   );
 
-  const aoMudarValidade = useCallback((valorDigitado: string) => {
-      const formatado = formatExpiry(valorDigitado);
-      const [mes, ano] = formatado.split("/");
-      setValue("expiryMonth", mes || "", { shouldValidate: true });
-      setValue("expiryYear", ano || "", { shouldValidate: true });
-      setPreviewCartao((prev) => ({ ...prev, expiry: formatado }));
-    },
-    [setValue]
-  );
 
   const aoMudarHolder = useCallback((valorDigitado: string) => {
       const upper = valorDigitado.toUpperCase();
