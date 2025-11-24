@@ -5,27 +5,26 @@ export interface ingressoItf {
   torcedorId: string | null;
   jogoId: string;
   loteId: string | null;
-  qrCode: string;          // dataURL, url da imagem ou base64
-  valor: string;           // Decimal serializado
+  qrCode: string;
+  valor: string;
   status: StatusIngresso;
-  criadoEm: string;
+  criadoEm: string; 
   usadoEm: string | null;
   atualizadoEm: string;
   pagamentoId: string | null;
 
-  // Campos relacionais opcionais (quando tua API devolver expandido)
-  jogo?: {
+  jogo: {
     id: string;
-    mandante?: string;
-    visitante?: string;
-    dataHora?: string;
-    estadio?: string;
-  } | null;
+    mandante: string;
+    visitante: string;
+    dataHora: string;     
+    estadio: string;
+  };
 
-  lote?: {
+  lote: {
     id: string;
-    nome?: string;
-    setor?: string;
+    nome: string;
+    setor: string;
     descricao?: string | null;
   } | null;
 }

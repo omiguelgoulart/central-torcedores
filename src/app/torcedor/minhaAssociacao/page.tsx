@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { CarteirinhaSocio } from "@/components/torcedor/minha-associacao/CarteirinhaSocio";
+import { CarteirinhaSocio } from "@/components/torcedor/minhaAssociacao/CarteirinhaSocio";
 import {
   ParcelaRegistro,
   TabelaPagamentosSocio,
-} from "@/components/torcedor/minha-associacao/TablePagamento";
-import { CardResumo } from "@/components/torcedor/minha-associacao/CardResumo";
+} from "@/components/torcedor/minhaAssociacao/TablePagamento";
+import { CardResumo } from "@/components/torcedor/minhaAssociacao/CardResumo";
 
 interface AssociacaoData {
   planoId: string | null;

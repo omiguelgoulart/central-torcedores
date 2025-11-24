@@ -10,7 +10,6 @@ import {
   IdCard,
   Ticket,
   Bell,
-  Settings,
   HelpCircle,
 } from "lucide-react";
 import {
@@ -29,10 +28,9 @@ type ItemMenu = {
 
 const itensMenu: ItemMenu[] = [
   { href: "/torcedor/perfil", rotulo: "Meu Perfil", icone: IconUsuario },
-  { href: "/torcedor/minha-associacao", rotulo: "Minha Associação", icone: IdCard },
-  { href: "/torcedor/meus-ingressos", rotulo: "Meus Ingressos", icone: Ticket },
+  { href: "/torcedor/minhaAssociacao", rotulo: "Minha Associação", icone: IdCard },
+  { href: "/torcedor/meusIngressos", rotulo: "Meus Ingressos", icone: Ticket },
   { href: "/torcedor/notificacao", rotulo: "Notificações", icone: Bell },
-  { href: "/torcedor/configuracoes", rotulo: "Configurações", icone: Settings },
   { href: "/torcedor/ajuda", rotulo: "Ajuda", icone: HelpCircle },
 ];
 
@@ -51,7 +49,6 @@ export function UserAvatar() {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
-    // Se tiver cookie HttpOnly, deixe a store cuidar do /me
     const run = async () => {
       if (!usuario && typeof fetchMe === "function") {
         try {
