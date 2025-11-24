@@ -11,7 +11,6 @@ type Usuario = {
   cpf?: string;
   avatar?: string;
   token?: string;
-  // se seu backend devolve um JWT por exemplo
   status?: string;
 };
 

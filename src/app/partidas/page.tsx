@@ -1,8 +1,6 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Breadcrumbs } from "@/components/partidas/BreadCrumbs"
 import { ListaJogos } from "@/components/partidas/ListaJogos"
 
 export default function PartidasPage() {
@@ -18,16 +16,9 @@ export default function PartidasPage() {
       </section>
 
       {/* CONTEÚDO */}
-      <section className="container mx-auto px-4 py-6 flex-1">
-        <Breadcrumbs
-          items={[
-            { label: "Início", href: "/" },
-            { label: "Partidas" },
-          ]}
-        />
-
+      <section className="p-4">
         <div className="mt-6">
-          <Card className="mx-auto border-none shadow-sm">
+          <Card className="mx-auto border-none bg-transparent shadow-none">
             {/* Título do card com subtítulo */}
             <CardHeader>
               <CardTitle className="text-2xl font-bold">
@@ -36,8 +27,6 @@ export default function PartidasPage() {
             </CardHeader>
 
             <CardContent>
-              <Separator className="mb-6" />
-              {/* Lista de jogos */}
               <ListaJogos />
             </CardContent>
           </Card>

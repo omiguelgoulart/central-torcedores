@@ -4,7 +4,6 @@ import { Jogo, JogoCard } from "./CardJogo"
 
 
 export function ListaJogos() {
-  // Mock com base na estrutura real da API
   const jogos: Jogo[] = [
     {
       id: "1",
@@ -31,16 +30,14 @@ export function ListaJogos() {
       status: "Esgotado"
     }
   ]
-  // filtra apenas jogos com data futura (strictamente depois de agora) e ordena por data asc
   const agora = new Date();
   const jogosFuturos = jogos
     .filter(j => new Date(j.data) > agora)
     .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
-  // substitui o conteúdo do array original para que o return existente continue a usar `jogos`
   jogos.splice(0, jogos.length, ...jogosFuturos);
   return (
-    <div className="p-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-col gap-6">
       {jogos.map((jogo) => (
         <JogoCard key={jogo.id} jogo={jogo} />
       ))}

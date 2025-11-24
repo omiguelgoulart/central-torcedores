@@ -1,37 +1,85 @@
-import { FormAssinatura } from "@/components/assinatura/FormAssinatura"
-import { GridAssinatura } from "@/components/assinatura/GridAssinatura"
-import { HeaderAssinatura } from "@/components/assinatura/HeaderAssinatura"
-import type { Metadata } from "next"
-import { Suspense } from "react"
+"use client";
 
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Assinatura - Central de Torcedores",
-  description: "Complete sua assinatura e faça parte do clube.",
-}
+import type { IPlano, Periodicidade } from "@/app/types/planoItf";
+import { ResumoPlano } from "@/components/assinatura/ResumoPlano";
+import { FormAssinatura } from "@/components/assinatura/FormAssinatura";
 
 export default function AssinaturaPage() {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-12 md:py-16">
-        <HeaderAssinatura />
+  const search = useSearchParams();
+  const planoId = search.get("planoId");
+  const defaultRecorrenciaParam = search.get(
+    "defaultRecorrencia"
+  ) as Periodicidade | null;
 
-        <div className="mx-auto max-w-4xl">
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <Suspense fallback={<div>Carregando...</div>}>
-                <FormAssinatura />
-              </Suspense>
-            </div>
+  const [plano, setPlano] = useState<IPlano | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-            <div className="lg:col-span-1">
-              <Suspense fallback={<div>Carregando...</div>}>
-                <GridAssinatura />
-              </Suspense>
-            </div>
-          </div>
-        </div>
+  useEffect(() => {
+    if (!planoId) return;
+
+    async function fetchPlano() {
+      try {
+        setLoading(true);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/planos/${planoId}`);
+        if (!res.ok) {
+          throw new Error("Erro ao buscar plano");
+        }
+        const data = (await res.json()) as IPlano;
+        setPlano(data);
+      } catch (error) {
+        console.error(error);
+        setErrorMsg("Não foi possível carregar os dados do plano.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void fetchPlano();
+  }, [planoId]);
+
+  if (!planoId) {
+    return (
+      <div className="container mx-auto max-w-lg py-16 px-4 text-center">
+        <p className="text-muted-foreground">
+          Não foi possível carregar os dados do plano. Volte e selecione um
+          plano novamente.
+        </p>
       </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto max-w-lg py-16 px-4 text-center">
+        <p className="text-muted-foreground">Carregando plano...</p>
+      </div>
+    );
+  }
+
+  if (!plano || errorMsg) {
+    return (
+      <div className="container mx-auto max-w-lg py-16 px-4 text-center">
+        <p className="text-muted-foreground">
+          {errorMsg ?? "Não foi possível carregar os dados do plano."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4">
+      <ResumoPlano plano={plano} />
+
+      <FormAssinatura
+        planoId={plano.id}
+        planoNome={plano.nome}
+        valor={plano.valor}
+        defaultRecorrencia={defaultRecorrenciaParam ?? plano.periodicidade}
+      />
     </div>
-  )
+  );
 }

@@ -1,143 +1,139 @@
-"use client"
+"use client";
 
-import type React from "react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2, Loader2 } from "lucide-react"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
-export function FormAssinatura() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    cpf: "",
-    paymentMethod: "",
-  })
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { Periodicidade } from "@/app/types/planoItf";
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+interface FormAssinaturaProps {
+  planoId: string;
+  planoNome: string;
+  valor: number;
+  defaultRecorrencia: Periodicidade;
+}
 
-    setIsSubmitting(false)
-    setIsSuccess(true)
-  }
+const recorrenciaLabel: Record<Periodicidade, string> = {
+  MENSAL: "Mensal",
+  TRIMESTRAL: "Trimestral",
+  SEMESTRAL: "Semestral",
+  ANUAL: "Anual",
+};
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+export function FormAssinatura({
+  planoId,
+  planoNome,
+  valor,
+  defaultRecorrencia,
+}: FormAssinaturaProps) {
+  const router = useRouter();
 
-  if (isSuccess) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <Alert className="border-green-600/20 bg-green-600/10">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <AlertDescription className="ml-2 text-green-600">
-              <strong>Assinatura confirmada com sucesso!</strong>
-              <br />
-              Você receberá um e-mail de confirmação em breve.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    )
+  const [recorrencia, setRecorrencia] =
+    useState<Periodicidade>(defaultRecorrencia);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const precoBRL = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 2,
+  }).format(valor);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    if (!recorrencia) {
+      setErrorMsg("Escolha uma recorrência para continuar.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const description = `Plano Sócio - ${planoNome} (${recorrenciaLabel[recorrencia]})`;
+
+    const params = new URLSearchParams({
+      tipo: "plano",
+      planoId,
+      recorrencia,
+      description,
+      subtotal: String(valor),
+      fees: "0",
+      total: String(valor),
+    });
+
+    router.push(`/pagamento?${params.toString()}`);
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Dados pessoais</CardTitle>
-        <CardDescription>Preencha suas informações para continuar</CardDescription>
+        <CardTitle>Escolha a recorrência</CardTitle>
+        <CardDescription>
+          Defina como deseja ser cobrado pelo plano <strong>{planoNome}</strong>.
+        </CardDescription>
       </CardHeader>
+
       <CardContent>
+        {errorMsg && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome completo</Label>
-            <Input
-              id="name"
-              placeholder="João da Silva"
-              value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-              required
-            />
+          {/* Valor */}
+          <div>
+            <p className="text-sm text-muted-foreground">Valor por ciclo:</p>
+            <p className="text-2xl font-semibold">{precoBRL}</p>
           </div>
 
+          {/* Seletor de recorrência */}
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="joao@exemplo.com"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              required
-            />
-          </div>
+            <Label>Recorrência do pagamento</Label>
 
-          <div className="space-y-2">
-            <Label htmlFor="cpf">CPF</Label>
-            <Input
-              id="cpf"
-              placeholder="000.000.000-00"
-              value={formData.cpf}
-              onChange={(e) => handleInputChange("cpf", e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="payment">Forma de pagamento</Label>
             <Select
-              value={formData.paymentMethod}
-              onValueChange={(value) => handleInputChange("paymentMethod", value)}
-              required
+              value={recorrencia}
+              onValueChange={(value: Periodicidade) => setRecorrencia(value)}
             >
-              <SelectTrigger id="payment">
-                <SelectValue placeholder="Selecione uma opção" />
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a recorrência" />
               </SelectTrigger>
+
               <SelectContent>
-                <SelectItem value="credit">Cartão de Crédito</SelectItem>
-                <SelectItem value="debit">Cartão de Débito</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="boleto">Boleto Bancário</SelectItem>
+                <SelectItem value="MENSAL">Mensal</SelectItem>
+                <SelectItem value="TRIMESTRAL">Trimestral</SelectItem>
+                <SelectItem value="SEMESTRAL">Semestral</SelectItem>
+                <SelectItem value="ANUAL">Anual</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              "Confirmar Assinatura"
-            )}
+          {/* Botão */}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Redirecionando..." : "Ir para pagamento"}
           </Button>
-
-          <p className="text-center text-xs text-muted-foreground">
-            Ao confirmar, você concorda com nossos{" "}
-            <a href="#" className="underline hover:text-foreground">
-              Termos de Uso
-            </a>{" "}
-            e{" "}
-            <a href="#" className="underline hover:text-foreground">
-              Política de Privacidade
-            </a>
-            .
-          </p>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

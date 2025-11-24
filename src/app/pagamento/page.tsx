@@ -80,7 +80,6 @@ export default function PagamentoPage() {
     );
   }
 
-  // 👉 Enquanto não tiver customerId, mostra apenas o formulário
   if (!customerId) {
     return (
       <CadastroCustomerIdForm
@@ -101,8 +100,8 @@ export default function PagamentoPage() {
       : "Pagamento de Mensalidade";
 
   return (
-    <div className="container mx-auto max-w-5xl py-8 px-4">
-      <div className="mb-8">
+    <div className="p-4">
+      <div className="mb-8 flex items-center flex-col text-center">
         <h1 className="text-3xl font-bold mb-2">{tituloPagina}</h1>
         <p className="text-muted-foreground">
           Escolha a forma de pagamento e finalize sua compra
