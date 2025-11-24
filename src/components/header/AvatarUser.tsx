@@ -28,16 +28,15 @@ type ItemMenu = {
 };
 
 const itensMenu: ItemMenu[] = [
-  { href: "/perfil", rotulo: "Meu Perfil", icone: IconUsuario },
-  { href: "/plano", rotulo: "Minha Associação", icone: IdCard },
-  { href: "/meus-ingressos", rotulo: "Meus Ingressos", icone: Ticket },
-  { href: "/notificacoes", rotulo: "Notificações", icone: Bell },
-  { href: "/configuracoes", rotulo: "Configurações", icone: Settings },
-  { href: "/ajuda", rotulo: "Ajuda / Suporte", icone: HelpCircle },
+  { href: "/torcedor/perfil", rotulo: "Meu Perfil", icone: IconUsuario },
+  { href: "/torcedor/minha-associacao", rotulo: "Minha Associação", icone: IdCard },
+  { href: "/torcedor/meus-ingressos", rotulo: "Meus Ingressos", icone: Ticket },
+  { href: "/torcedor/notificacao", rotulo: "Notificações", icone: Bell },
+  { href: "/torcedor/configuracoes", rotulo: "Configurações", icone: Settings },
+  { href: "/torcedor/ajuda", rotulo: "Ajuda", icone: HelpCircle },
 ];
 
 export function UserAvatar() {
-  // store deve expor { usuario, fetchMe, logout } (token opcional)
   const { usuario, fetchMe, logout } = useAuth() as {
     usuario: {
       nome: string;

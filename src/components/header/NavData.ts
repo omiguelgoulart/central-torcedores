@@ -1,5 +1,5 @@
 // components/layout/nav-data.ts
-import { Home, Calendar, Ticket, CreditCard, Gift, Newspaper, HelpCircle } from "lucide-react";
+import { Home, Calendar, CreditCard, Gift, Newspaper, HelpCircle } from "lucide-react";
 
 export type NavItem = {
   label: string;
