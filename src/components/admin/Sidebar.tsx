@@ -20,7 +20,7 @@ const navigationItems = [
     items: [
       { title: "Listar Jogos", href: "/admin/jogos" },
       { title: "Setores por Jogo", href: "/admin/jogos/setores" },
-      { title: "Lotes", href: "/admin/games/lots" },
+      { title: "Lotes", href: "/admin/jogos/lots" },
     ],
   },
   {
@@ -35,8 +35,8 @@ const navigationItems = [
     icon: Users,
     items: [
       { title: "Torcedores", href: "/admin/torcedores" },
-      { title: "Assinaturas", href: "/admin/members/assinaturas" },
-      { title: "Faturas", href: "/admin/members/faturas" },
+      { title: "Assinaturas", href: "/admin/torcedores/assinaturas" },
+      { title: "Faturas", href: "/admin/torcedores/faturas" },
     ],
   },
   {
@@ -45,7 +45,7 @@ const navigationItems = [
     icon: Trophy,
     items: [
       { title: "Planos", href: "/admin/planos" },
-      { title: "Benefícios", href: "/admin/plans/benefits" },
+      { title: "Benefícios", href: "/admin/planos/benefits" },
     ],
   },
   {
@@ -53,8 +53,8 @@ const navigationItems = [
     href: "/admin/ingressos",
     icon: Ticket,
     items: [
-      { title: "Pedidos", href: "/admin/tickets/pedidos" },
-      { title: "Check-ins", href: "/admin/tickets/checkins" },
+      { title: "Pedidos", href: "/admin/ingressos/pedidos" },
+      { title: "Check-ins", href: "/admin/ingressos/checkins" },
     ],
   },
   {
@@ -68,8 +68,8 @@ const navigationItems = [
     href: "/admin/configuracoes",
     icon: Settings,
     items: [
-      { title: "Admins", href: "/admin/settings/admins" },
-      { title: "ASAAS", href: "/admin/settings/asaas" },
+      { title: "Admins", href: "/admin/configuracoes/admins" },
+      { title: "ASAAS", href: "/admin/configuracoes/asaas" },
     ],
   },
 ]
