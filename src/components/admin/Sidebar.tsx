@@ -3,78 +3,69 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import {
-  LayoutGrid,
-  Trophy,
-  Users,
-  DollarSign,
-  Ticket,
-  Settings,
-  LogOut,
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react"
+import { LayoutGrid, Trophy, Users, DollarSign, Ticket, Settings, LogOut, ChevronRight, ChevronDown } from "lucide-react"
 import { useState } from "react"
+import Image from "next/image"
 
 const navigationItems = [
   {
     title: "Dashboard",
-    href: "/admin/dashboard",
+    href: "/admin/",
     icon: LayoutGrid,
   },
   {
     title: "Jogos",
-    href: "/admin/games",
+    href: "/admin/jogos",
     icon: Trophy,
     items: [
-      { title: "Listar Jogos", href: "/admin/games" },
-      { title: "Setores por Jogo", href: "/admin/games/sectors" },
+      { title: "Listar Jogos", href: "/admin/jogos" },
+      { title: "Setores por Jogo", href: "/admin/jogos/setores" },
       { title: "Lotes", href: "/admin/games/lots" },
     ],
   },
   {
     title: "Estádio",
-    href: "/admin/stadium",
+    href: "/admin/estadio",
     icon: Ticket,
-    items: [{ title: "Setores", href: "/admin/stadium/sectors" }],
+    items: [{ title: "Setores", href: "/admin/estadio/setores" }],
   },
   {
-    title: "Sócios",
-    href: "/admin/members",
+    title: "Torcedores",
+    href: "/admin/torcedores",
     icon: Users,
     items: [
-      { title: "Torcedores", href: "/admin/members" },
-      { title: "Assinaturas", href: "/admin/members/subscriptions" },
-      { title: "Faturas", href: "/admin/members/invoices" },
+      { title: "Torcedores", href: "/admin/torcedores" },
+      { title: "Assinaturas", href: "/admin/members/assinaturas" },
+      { title: "Faturas", href: "/admin/members/faturas" },
     ],
   },
   {
     title: "Planos",
-    href: "/admin/plans",
+    href: "/admin/planos",
     icon: Trophy,
     items: [
-      { title: "Planos", href: "/admin/plans" },
+      { title: "Planos", href: "/admin/planos" },
       { title: "Benefícios", href: "/admin/plans/benefits" },
     ],
   },
   {
     title: "Ingressos",
-    href: "/admin/tickets",
+    href: "/admin/ingressos",
     icon: Ticket,
     items: [
-      { title: "Pedidos", href: "/admin/tickets/orders" },
+      { title: "Pedidos", href: "/admin/tickets/pedidos" },
       { title: "Check-ins", href: "/admin/tickets/checkins" },
     ],
   },
   {
     title: "Financeiro",
-    href: "/admin/payments",
+    href: "/admin/pagamentos",
     icon: DollarSign,
-    items: [{ title: "Pagamentos", href: "/admin/payments" }],
+    items: [{ title: "Pagamentos", href: "/admin/pagamentos" }],
   },
   {
     title: "Configurações",
-    href: "/admin/settings",
+    href: "/admin/configuracoes",
     icon: Settings,
     items: [
       { title: "Admins", href: "/admin/settings/admins" },
@@ -105,11 +96,14 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b border-sidebar-border">
-          <Link href="/admin/dashboard" className="flex items-center gap-3 px-4">
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center text-sidebar-primary-foreground font-bold">
-              ⚽
-            </div>
-            {open && <span className="font-bold text-sidebar-foreground text-sm">Club Admin</span>}
+          <Link href="/admin/" className="flex items-center gap-3 px-4">
+          <Image
+            src="/brasil-logo.png"
+            alt="Central Torcedores"
+            width={35}
+            height={35}
+          />
+            {open && <span className="font-bold text-sidebar-foreground text-sm">Central Torcedores</span>}
           </Link>
         </div>
 
