@@ -2,20 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Download, Eye } from "lucide-react"
+import { Fatura, StatusFatura, TabelaFaturas } from "@/components/admin/torcedores/TabelaFaturas"
+import { ResumoCard } from "@/components/admin/torcedores/ResumoCard"
+import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect"
+import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca"
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
-
-type StatusFatura = "ABERTA" | "PAGA" | "ATRASADA"
 
 type FaturaApi = {
   id: string
   competencia?: string | null
-  valor?: number | null
+  valor?: number | string | null
   status?: string | null
   vencimento?: string | null
   torcedorNome?: string | null
@@ -24,55 +21,6 @@ type FaturaApi = {
   } | null
 }
 
-type Fatura = {
-  id: string
-  competencia: string
-  valorNumero: number
-  valorFormatado: string
-  status: StatusFatura | "OUTRO"
-  vencimento: string | null
-  torcedor: string
-}
-
-const faturasIniciais: Fatura[] = [
-  {
-    id: "1",
-    competencia: "2024-12",
-    valorNumero: 199,
-    valorFormatado: "R$ 199,00",
-    status: "PAGA",
-    vencimento: "2024-12-20",
-    torcedor: "João Silva",
-  },
-  {
-    id: "2",
-    competencia: "2024-11",
-    valorNumero: 199,
-    valorFormatado: "R$ 199,00",
-    status: "PAGA",
-    vencimento: "2024-11-20",
-    torcedor: "Maria Santos",
-  },
-  {
-    id: "3",
-    competencia: "2024-12",
-    valorNumero: 299,
-    valorFormatado: "R$ 299,00",
-    status: "ABERTA",
-    vencimento: "2025-01-10",
-    torcedor: "Pedro Costa",
-  },
-  {
-    id: "4",
-    competencia: "2024-12",
-    valorNumero: 199,
-    valorFormatado: "R$ 199,00",
-    status: "ATRASADA",
-    vencimento: "2024-12-10",
-    torcedor: "Ana Oliveira",
-  },
-]
-
 function formatarDataBr(valor: string | null): string {
   if (!valor) return "-"
   const data = new Date(valor)
@@ -80,17 +28,10 @@ function formatarDataBr(valor: string | null): string {
   return data.toLocaleDateString("pt-BR")
 }
 
-function formatarValorBRL(valor: number): string {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  })
-}
-
-export default function InvoicesPage() {
+export default function PsgeFatura() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFiltro, setStatusFiltro] = useState<"TODOS" | StatusFatura>("TODOS")
-  const [faturas, setFaturas] = useState<Fatura[]>(faturasIniciais)
+  const [faturas, setFaturas] = useState<Fatura[]>([])
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -108,19 +49,32 @@ export default function InvoicesPage() {
 
         if (!resposta.ok) {
           console.error("Falha ao buscar faturas em /fatura")
+          setFaturas([])
           return
         }
 
-        const dados = (await resposta.json()) as FaturaApi[]
+        const dadosRaw = await resposta.json()
 
-        if (!Array.isArray(dados) || dados.length === 0) {
+        if (!Array.isArray(dadosRaw) || dadosRaw.length === 0) {
+          setFaturas([])
           return
         }
+
+        const dados = dadosRaw as FaturaApi[]
 
         const mapeadas: Fatura[] = dados.map((f) => {
-          const valor = f.valor ?? 0
-          const statusRaw = (f.status ?? "ABERTA").toUpperCase()
-          const status: StatusFatura | "OUTRO" =
+          // normaliza o valor vindo da API (string, número, centavos)
+          const raw = f.valor ?? 0
+          const valorNumeroBruto =
+            typeof raw === "string" ? Number.parseFloat(raw) : Number(raw)
+
+          const valorNumero =
+            Number.isFinite(valorNumeroBruto) && valorNumeroBruto > 1000
+              ? valorNumeroBruto / 100 // se vier em centavos (ex: 6990)
+              : valorNumeroBruto
+
+          const statusRaw = (f.status ?? "ABERTA").toString().toUpperCase()
+          const status: StatusFatura =
             statusRaw === "ABERTA" || statusRaw === "PAGA" || statusRaw === "ATRASADA"
               ? (statusRaw as StatusFatura)
               : "OUTRO"
@@ -130,8 +84,11 @@ export default function InvoicesPage() {
           return {
             id: f.id,
             competencia: f.competencia ?? "-",
-            valorNumero: valor,
-            valorFormatado: formatarValorBRL(valor),
+            valorNumero,
+            valorFormatado: valorNumero.toLocaleString("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }),
             status,
             vencimento: f.vencimento ?? null,
             torcedor,
@@ -142,6 +99,7 @@ export default function InvoicesPage() {
       } catch (erroFetch) {
         console.error(erroFetch)
         setErro("Erro ao carregar faturas.")
+        setFaturas([])
       } finally {
         setCarregando(false)
       }
@@ -154,14 +112,15 @@ export default function InvoicesPage() {
     () => faturas.filter((i) => i.status === "PAGA").length,
     [faturas],
   )
+
   const openCount = useMemo(
     () => faturas.filter((i) => i.status === "ABERTA" || i.status === "ATRASADA").length,
     [faturas],
   )
 
+  // soma em número mesmo; formatação fica por conta do ResumoCard
   const totalFaturado = useMemo(
-    () =>
-      faturas.reduce((acc, f) => acc + f.valorNumero, 0),
+    () => faturas.reduce((acc, f) => acc + f.valorNumero, 0),
     [faturas],
   )
 
@@ -181,13 +140,6 @@ export default function InvoicesPage() {
     })
   }, [faturas, searchTerm, statusFiltro])
 
-  function badgeVariant(status: Fatura["status"]) {
-    if (status === "PAGA") return "default" as const
-    if (status === "ATRASADA") return "destructive" as const
-    if (status === "ABERTA") return "secondary" as const
-    return "outline" as const
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -197,72 +149,49 @@ export default function InvoicesPage() {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Total</p>
-              <p className="text-2xl font-bold">{faturas.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Pagas</p>
-              <p className="text-2xl font-bold text-green-600">{paidCount}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Pendentes/Atrasadas</p>
-              <p className="text-2xl font-bold text-amber-600">{openCount}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Total Faturado</p>
-              <p className="text-2xl font-bold text-primary">
-                {formatarValorBRL(totalFaturado)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <ResumoCard label="Total" value={faturas.length} />
+        <ResumoCard
+          label="Pagas"
+          value={paidCount}
+          valueClassName="text-green-600"
+        />
+        <ResumoCard
+          label="Pendentes/Atrasadas"
+          value={openCount}
+          valueClassName="text-amber-600"
+        />
+        {/* Aqui vai o número cru; o ResumoCard formata em R$ */}
+        <ResumoCard
+          label="Total Faturado"
+          value={totalFaturado}
+          valueClassName="text-primary"
+        />
       </div>
 
       {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <Label htmlFor="search" className="text-xs mb-1 block">
-                Buscar
-              </Label>
-              <Input
-                id="search"
-                placeholder="Torcedor, competência..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="w-full md:w-40">
-              <Label className="text-xs mb-1 block">Status</Label>
-              <select
-                className="w-full px-3 py-2 border border-input rounded-lg text-sm bg-background"
-                value={statusFiltro}
-                onChange={(e) =>
-                  setStatusFiltro(e.target.value as "TODOS" | StatusFatura)
-                }
-              >
-                <option value="TODOS">Todos</option>
-                <option value="ABERTA">ABERTA</option>
-                <option value="PAGA">PAGA</option>
-                <option value="ATRASADA">ATRASADA</option>
-              </select>
-            </div>
+            <FiltroBusca
+              id="search-faturas"
+              label="Buscar"
+              placeholder="Torcedor, competência..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
+            <FiltroStatusSelect
+              label="Status"
+              value={statusFiltro}
+              onChange={(value) =>
+                setStatusFiltro(value as "TODOS" | StatusFatura)
+              }
+              options={[
+                { value: "TODOS", label: "Todos" },
+                { value: "ABERTA", label: "ABERTA" },
+                { value: "PAGA", label: "PAGA" },
+                { value: "ATRASADA", label: "ATRASADA" },
+              ]}
+            />
           </div>
           {carregando && (
             <p className="mt-3 text-xs text-muted-foreground">
@@ -277,7 +206,7 @@ export default function InvoicesPage() {
         </CardContent>
       </Card>
 
-      {/* Tabela de Faturas */}
+      {/* Tabela */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
@@ -285,60 +214,10 @@ export default function InvoicesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b">
-                <tr className="text-muted-foreground text-xs">
-                  <th className="text-left py-3 font-medium">Competência</th>
-                  <th className="text-left py-3 font-medium">Torcedor</th>
-                  <th className="text-left py-3 font-medium">Valor</th>
-                  <th className="text-left py-3 font-medium">Vencimento</th>
-                  <th className="text-left py-3 font-medium">Status</th>
-                  <th className="text-left py-3 font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {faturasFiltradas.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-muted/50">
-                    <td className="py-3 font-medium">{invoice.competencia}</td>
-                    <td className="py-3">{invoice.torcedor}</td>
-                    <td className="py-3 font-semibold text-primary">
-                      {invoice.valorFormatado}
-                    </td>
-                    <td className="py-3 text-muted-foreground">
-                      {formatarDataBr(invoice.vencimento)}
-                    </td>
-                    <td className="py-3">
-                      <Badge variant={badgeVariant(invoice.status)}>
-                        {invoice.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {faturasFiltradas.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-6 text-center text-sm text-muted-foreground"
-                    >
-                      Nenhuma fatura encontrada com os filtros atuais.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <TabelaFaturas
+            faturas={faturasFiltradas}
+            formatarData={formatarDataBr}
+          />
         </CardContent>
       </Card>
     </div>

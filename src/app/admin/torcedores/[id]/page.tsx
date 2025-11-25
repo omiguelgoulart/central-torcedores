@@ -38,11 +38,11 @@ type TorcedorPerfilResponse = {
   pedidos: unknown[]
 }
 
-// Tipos para a UI
 type TorcedorUI = {
   id: string
   nome: string
   email: string
+  matricula: string
   cpf: string
   telefone: string
   status: StatusTorcedor
@@ -130,7 +130,7 @@ function badgeStatusVariant(status: StatusTorcedor) {
   return "outline" as const
 }
 
-export default function TorcedorDetalhePage({ params }: { params: { id: string } }) {
+export default function PageTorcedorDetalhe ({ params }: { params: { id: string } }) {
   const [abaAtiva, setAbaAtiva] = useState("personal")
   const [torcedor, setTorcedor] = useState<TorcedorUI | null>(null)
   const [assinaturas, setAssinaturas] = useState<AssinaturaUI[]>([])
@@ -145,7 +145,6 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
         setCarregando(true)
         setErro(null)
 
-        // 👇 URL real do backend que você mostrou no print
         const resposta = await fetch(`${API}/usuario/id/${params.id}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -173,10 +172,8 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
         const endereco =
           partesEndereco.length > 0 ? partesEndereco.join(" - ") : "Endereço não informado"
 
-        // status / plano
         const status: StatusTorcedor = dados.statusSocio ?? "ATIVO"
 
-        // se quiser exibir o plano atual, pega da primeira assinatura
         const assinaturasApi = (dados.assinaturas ?? []) as AssinaturaApi[]
         const planoAtual =
           assinaturasApi[0]?.plano?.nome ??
@@ -187,6 +184,7 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
           id: dados.id,
           nome: dados.nome,
           email: dados.email,
+          matricula: dados.matricula ?? "Não informado",
           cpf: dados.cpf ?? "Não informado",
           telefone: dados.telefone ?? "Não informado",
           status,
@@ -198,7 +196,6 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
 
         setTorcedor(torcedorUI)
 
-        // ---- Assinaturas ----
         const assinaturasUI: AssinaturaUI[] = assinaturasApi.map((a) => ({
           id: a.id,
           plano: a.plano?.nome ?? a.planoNome ?? "Plano sem nome",
@@ -208,7 +205,6 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
         }))
         setAssinaturas(assinaturasUI)
 
-        // ---- Pagamentos ----
         const pagamentosApi = (dados.pagamentos ?? []) as PagamentoApi[]
         const pagamentosUI: PagamentoUI[] = pagamentosApi.map((p) => {
           const valorNumero = p.valor ?? p.valorBruto ?? 0
@@ -225,7 +221,6 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
         })
         setPagamentos(pagamentosUI)
 
-        // ---- Ingressos ----
         const ingressosApi = (dados.ingressos ?? []) as IngressoApi[]
         const ingressosUI: IngressoUI[] = ingressosApi.map((ing) => ({
           id: ing.id,
@@ -277,7 +272,6 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">{torcedor.nome}</h1>
@@ -300,7 +294,6 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
           <TabsTrigger value="invoices">Faturas</TabsTrigger>
         </TabsList>
 
-        {/* DADOS PESSOAIS */}
         <TabsContent value="personal">
           <Card>
             <CardHeader>
@@ -314,7 +307,7 @@ export default function TorcedorDetalhePage({ params }: { params: { id: string }
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Matrícula</p>
-                  <p className="font-medium">{/* se quiser exibir a matrícula, pega de dados depois */}</p>
+                  <p className="font-medium">{torcedor.matricula}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">CPF</p>

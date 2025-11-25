@@ -3,23 +3,25 @@
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2, Eye } from "lucide-react"
-import Link from "next/link"
+import { Plus } from "lucide-react"
+
+import {
+  Socio,
+  StatusSocio,
+  TabelaTorcedores,
+} from "@/components/admin/torcedores/TabelaTorcedores"
+import { ResumoCard } from "@/components/admin/torcedores/ResumoCard"
+import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca"
+import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect"
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
-
-type StatusSocio = "ATIVO" | "INADIMPLENTE" | "CANCELADO"
 
 type TorcedorListaApi = {
   id: string
   nome: string
   email: string
-  cpf: string | null
-  statusSocio: StatusSocio | null
-  // relacionamentos opcionais, caso venham na lista
+  cpf?: string | null
+  statusSocio?: string | null
   assinaturas?: {
     plano?: {
       nome?: string | null
@@ -27,54 +29,10 @@ type TorcedorListaApi = {
   }[]
 }
 
-type Socio = {
-  id: string
-  nome: string
-  email: string
-  cpf: string
-  status: StatusSocio
-  plano: string
-}
-
-const sociosIniciais: Socio[] = [
-  {
-    id: "1",
-    nome: "João Silva",
-    email: "joao@example.com",
-    cpf: "123.456.789-00",
-    status: "ATIVO",
-    plano: "Ouro",
-  },
-  {
-    id: "2",
-    nome: "Maria Santos",
-    email: "maria@example.com",
-    cpf: "987.654.321-11",
-    status: "ATIVO",
-    plano: "Platina",
-  },
-  {
-    id: "3",
-    nome: "Pedro Costa",
-    email: "pedro@example.com",
-    cpf: "456.789.123-22",
-    status: "INADIMPLENTE",
-    plano: "Bronze",
-  },
-  {
-    id: "4",
-    nome: "Ana Oliveira",
-    email: "ana@example.com",
-    cpf: "789.123.456-33",
-    status: "ATIVO",
-    plano: "Ouro",
-  },
-]
-
-export default function PaginaTorcedores() {
+export default function PageTorcedores() {
   const [termoBusca, setTermoBusca] = useState("")
   const [statusFiltro, setStatusFiltro] = useState<"TODOS" | StatusSocio>("TODOS")
-  const [socios, setSocios] = useState<Socio[]>(sociosIniciais)
+  const [socios, setSocios] = useState<Socio[]>([])
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -86,31 +44,36 @@ export default function PaginaTorcedores() {
 
         const resposta = await fetch(`${API}/usuario`, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           cache: "no-store",
         })
 
         if (!resposta.ok) {
-          console.error("Falha ao buscar lista de torcedores em /usuario")
+          console.error("Falha no GET /usuario")
+          setSocios([])
           return
         }
 
         const dados: TorcedorListaApi[] = await resposta.json()
 
-        if (!Array.isArray(dados) || dados.length === 0) {
-          // mantém mock se vier vazio
+        if (!Array.isArray(dados)) {
+          setSocios([])
           return
         }
 
         const sociosMapeados: Socio[] = dados.map((item) => {
-          const status: StatusSocio = item.statusSocio ?? "ATIVO"
+          const statusRaw = (item.statusSocio ?? "ATIVO").toUpperCase()
+
+          const status: StatusSocio =
+            statusRaw === "ATIVO" ||
+            statusRaw === "INADIMPLENTE" ||
+            statusRaw === "CANCELADO"
+              ? (statusRaw as StatusSocio)
+              : "ATIVO"
 
           const planoNome =
-            item.assinaturas && item.assinaturas.length > 0
-              ? item.assinaturas[0]?.plano?.nome ?? "Sem plano"
-              : "Sem plano"
+            item.assinaturas?.[0]?.plano?.nome ??
+            "Sem plano"
 
           return {
             id: item.id,
@@ -135,8 +98,9 @@ export default function PaginaTorcedores() {
   }, [])
 
   const sociosFiltrados = useMemo(() => {
+    const termo = termoBusca.toLowerCase().trim()
+
     return socios.filter((socio) => {
-      const termo = termoBusca.toLowerCase().trim()
       const bateBusca =
         !termo ||
         socio.nome.toLowerCase().includes(termo) ||
@@ -153,12 +117,6 @@ export default function PaginaTorcedores() {
   const sociosAtivos = socios.filter((m) => m.status === "ATIVO").length
   const sociosInadimplentes = socios.filter((m) => m.status === "INADIMPLENTE").length
 
-  function variantStatus(status: StatusSocio) {
-    if (status === "ATIVO") return "default" as const
-    if (status === "INADIMPLENTE") return "destructive" as const
-    return "outline" as const
-  }
-
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -173,75 +131,48 @@ export default function PaginaTorcedores() {
         </Button>
       </div>
 
-      {/* Cards de resumo */}
+      {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total de Torcedores</p>
-                <p className="text-2xl font-bold">{socios.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Ativos</p>
-                <p className="text-2xl font-bold text-green-600">{sociosAtivos}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Inadimplentes</p>
-                <p className="text-2xl font-bold text-destructive">
-                  {sociosInadimplentes}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ResumoCard label="Total de Torcedores" value={socios.length} />
+        <ResumoCard
+          label="Ativos"
+          value={sociosAtivos}
+          valueClassName="text-green-600"
+        />
+        <ResumoCard
+          label="Inadimplentes"
+          value={sociosInadimplentes}
+          valueClassName="text-destructive"
+        />
       </div>
 
       {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <Label htmlFor="busca" className="text-xs mb-1 block">
-                Buscar
-              </Label>
-              <Input
-                id="busca"
-                placeholder="Nome, email, CPF..."
-                value={termoBusca}
-                onChange={(e) => setTermoBusca(e.target.value)}
-              />
-            </div>
-            <div className="w-full md:w-40">
-              <Label className="text-xs mb-1 block">Status</Label>
-              <select
-                className="w-full px-3 py-2 border border-input rounded-lg text-sm bg-background"
-                value={statusFiltro}
-                onChange={(e) =>
-                  setStatusFiltro(
-                    e.target.value as "TODOS" | StatusSocio,
-                  )
-                }
-              >
-                <option value="TODOS">Todos</option>
-                <option value="ATIVO">ATIVO</option>
-                <option value="INADIMPLENTE">INADIMPLENTE</option>
-                <option value="CANCELADO">CANCELADO</option>
-              </select>
-            </div>
+            <FiltroBusca
+              id="busca-torcedores"
+              label="Buscar"
+              placeholder="Nome, email, CPF..."
+              value={termoBusca}
+              onChange={setTermoBusca}
+            />
+
+            <FiltroStatusSelect
+              label="Status"
+              value={statusFiltro}
+              onChange={(value) =>
+                setStatusFiltro(value as "TODOS" | StatusSocio)
+              }
+              options={[
+                { value: "TODOS", label: "Todos" },
+                { value: "ATIVO", label: "ATIVO" },
+                { value: "INADIMPLENTE", label: "INADIMPLENTE" },
+                { value: "CANCELADO", label: "CANCELADO" },
+              ]}
+            />
           </div>
+
           {carregando && (
             <p className="mt-3 text-xs text-muted-foreground">
               Carregando torcedores da API...
@@ -263,65 +194,7 @@ export default function PaginaTorcedores() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b">
-                <tr className="text-muted-foreground text-xs">
-                  <th className="text-left py-3 font-medium">Nome</th>
-                  <th className="text-left py-3 font-medium">Email</th>
-                  <th className="text-left py-3 font-medium">CPF</th>
-                  <th className="text-left py-3 font-medium">Status</th>
-                  <th className="text-left py-3 font-medium">Plano</th>
-                  <th className="text-left py-3 font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {sociosFiltrados.map((socio) => (
-                  <tr key={socio.id} className="hover:bg-muted/50">
-                    <td className="py-3 font-medium">{socio.nome}</td>
-                    <td className="py-3 text-muted-foreground">{socio.email}</td>
-                    <td className="py-3 font-mono text-xs">{socio.cpf}</td>
-                    <td className="py-3">
-                      <Badge variant={variantStatus(socio.status)}>
-                        {socio.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3">{socio.plano}</td>
-                    <td className="py-3">
-                      <div className="flex gap-2">
-                        <Link href={`/admin/torcedores/${socio.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <Button variant="ghost" size="sm">
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {sociosFiltrados.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-6 text-center text-sm text-muted-foreground"
-                    >
-                      Nenhum torcedor encontrado com os filtros atuais.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <TabelaTorcedores socios={sociosFiltrados} />
         </CardContent>
       </Card>
     </div>
