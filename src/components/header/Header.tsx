@@ -2,10 +2,17 @@
 
 import { UserAvatar } from "./AvatarUser";
 import { LogoBrand } from "./Logo";
-// components/layout/Header.tsx
 import { NavSheet } from "./NavSheet";
+import { usePathname } from "next/navigation";
 
 export function Header() {
+  const pathname = usePathname();
+
+  // Se estiver em /admin ou qualquer subrota de /admin/** → não renderiza
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">

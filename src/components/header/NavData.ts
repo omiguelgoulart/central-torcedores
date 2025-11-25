@@ -1,5 +1,5 @@
 // components/layout/nav-data.ts
-import { Home, Calendar, CreditCard, Gift, Newspaper, HelpCircle } from "lucide-react";
+import { Home, Calendar, CreditCard } from "lucide-react";
 
 export type NavItem = {
   label: string;
@@ -10,9 +10,5 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { label: "Início", href: "/", icon: Home },
   { label: "Jogos", href: "/partidas", icon: Calendar },
-  // { label: "Ingressos", href: "/ingressos", icon: Ticket },
   { label: "Planos", href: "/planos", icon: CreditCard },
-  { label: "Benefícios", href: "/beneficios", icon: Gift },
-  { label: "Notícias", href: "/noticias", icon: Newspaper },
-  { label: "Suporte", href: "/suporte", icon: HelpCircle },
 ];
