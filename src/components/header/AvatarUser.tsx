@@ -9,7 +9,6 @@ import {
   User as IconUsuario,
   IdCard,
   Ticket,
-  Bell,
   HelpCircle,
 } from "lucide-react";
 import {
@@ -30,7 +29,6 @@ const itensMenu: ItemMenu[] = [
   { href: "/torcedor/perfil", rotulo: "Meu Perfil", icone: IconUsuario },
   { href: "/torcedor/minhaAssociacao", rotulo: "Minha Associação", icone: IdCard },
   { href: "/torcedor/meusIngressos", rotulo: "Meus Ingressos", icone: Ticket },
-  { href: "/torcedor/notificacao", rotulo: "Notificações", icone: Bell },
   { href: "/torcedor/ajuda", rotulo: "Ajuda", icone: HelpCircle },
 ];
 
