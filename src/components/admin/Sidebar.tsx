@@ -52,8 +52,7 @@ const navigationItems = [
     href: "/admin/ingressos",
     icon: Ticket,
     items: [
-      { title: "Pedidos", href: "/admin/ingressos/pedidos" },
-      { title: "Check-ins", href: "/admin/ingressos/checkins" },
+      { title: "Ingressos", href: "/admin/ingressos" },
     ],
   },
   {

@@ -58,3 +58,10 @@ export function formatPhone(value: string): string {
     return cleaned.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d{1,4})$/, "$1-$2")
   }
 }
+
+
+export const formatBRL = (valor: number): string =>
+  valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })
