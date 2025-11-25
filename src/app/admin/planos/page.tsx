@@ -1,117 +1,325 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2, Star } from "lucide-react"
+import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 
-const planos = [
-  { id: 1, nome: "Bronze", valor: "R$ 99,00", periodicidade: "MENSAL", destaque: false, ativo: true },
-  { id: 2, nome: "Ouro", valor: "R$ 199,00", periodicidade: "MENSAL", destaque: true, ativo: true },
-  { id: 3, nome: "Platina", valor: "R$ 299,00", periodicidade: "MENSAL", destaque: true, ativo: true },
-  { id: 4, nome: "Premium Anual", valor: "R$ 1.999,00", periodicidade: "ANUAL", destaque: false, ativo: true },
-]
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FiltroSelect } from "@/components/admin/plano/FiltroSelectPlano";
+import { FiltroBusca } from "@/components/admin/plano/FiltroBuscaPlano";
+import {
+  peridiocidadePlano,
+  Plano,
+  TabelaPlanos,
+} from "@/components/admin/plano/TabelaPlanos";
+import {
+  PlanoDialog,
+  PlanoFormMode,
+  PlanoFormValues,
+} from "@/components/admin/plano/PlanoDialog";
+import { useRouter } from "next/navigation";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+
+type BeneficioListaApi = {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+};
+
+type PlanosListaApi = {
+  id: string;
+  nome: string;
+  valor: number | string;
+  periodicidade: string;
+  beneficios?: BeneficioListaApi[];
+};
+
+type PeriodicidadeFiltro = "TODOS" | peridiocidadePlano;
 
 export default function PaginaPlanos() {
-  const [termoBusca, setTermoBusca] = useState("")
+
+  const router = useRouter();
+  
+  const [termoBusca, setTermoBusca] = useState<string>("");
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [periodicidadeFiltro, setPeriodicidadeFiltro] =
+    useState<PeriodicidadeFiltro>("TODOS");
+  const [carregando, setCarregando] = useState<boolean>(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  // dialog de plano
+  const [planoDialogOpen, setPlanoDialogOpen] = useState<boolean>(false);
+  const [planoDialogMode, setPlanoDialogMode] =
+    useState<PlanoFormMode>("create");
+  const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null);
+  const [salvandoPlano, setSalvandoPlano] = useState<boolean>(false);
+
+  async function carregarPlanos() {
+    try {
+      setCarregando(true);
+      setErro(null);
+
+      const response = await fetch(`${API}/planos`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        console.error("Falha no GET /planos");
+        setPlanos([]);
+        return;
+      }
+
+      const dados = (await response.json()) as PlanosListaApi[];
+
+      if (!Array.isArray(dados)) {
+        setPlanos([]);
+        return;
+      }
+
+      const planosMapeados: Plano[] = dados.map((planoApi) => {
+        const periodicidadeRaw = (
+          planoApi.periodicidade ?? "MENSAL"
+        ).toUpperCase();
+
+        const periodicidade: peridiocidadePlano =
+          periodicidadeRaw === "MENSAL" ||
+          periodicidadeRaw === "TRIMESTRAL" ||
+          periodicidadeRaw === "SEMESTRAL" ||
+          periodicidadeRaw === "ANUAL"
+            ? periodicidadeRaw
+            : "MENSAL";
+
+        const valorNumero =
+          typeof planoApi.valor === "number"
+            ? planoApi.valor
+            : Number(planoApi.valor);
+
+        return {
+          id: planoApi.id,
+          nome: planoApi.nome,
+          valor: Number.isNaN(valorNumero) ? 0 : valorNumero,
+          periodicidade,
+          destaque: false,
+          ativo: true,
+        };
+      });
+
+      setPlanos(planosMapeados);
+    } catch (error) {
+      console.error(error);
+      setErro("Erro ao carregar planos da API.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  useEffect(() => {
+    void carregarPlanos();
+  }, []);
+
+  const planosFiltrados = useMemo(() => {
+    return planos.filter((plano) => {
+      const correspondeBusca = plano.nome
+        .toLowerCase()
+        .includes(termoBusca.toLowerCase());
+      const correspondePeriodicidade =
+        periodicidadeFiltro === "TODOS" ||
+        plano.periodicidade === periodicidadeFiltro;
+
+      return correspondeBusca && correspondePeriodicidade;
+    });
+  }, [planos, termoBusca, periodicidadeFiltro]);
+
+  async function handleSubmitPlano(values: PlanoFormValues) {
+    try {
+      setSalvandoPlano(true);
+      setErro(null);
+
+      const valorNumero = Number(values.valor.replace(",", "."));
+      if (Number.isNaN(valorNumero)) {
+        throw new Error("Informe um valor válido para o plano.");
+      }
+
+      const payload = {
+        nome: values.nome.trim(),
+        valor: valorNumero,
+        Periodicidade: values.periodicidade,
+        descricao: values.descricao.trim(),
+      };
+
+      if (planoDialogMode === "create") {
+        const res = await fetch(`${API}/planos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const data = (await res.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(data?.error ?? "Erro ao criar plano");
+        }
+      } else if (planoDialogMode === "edit" && planoSelecionado) {
+        const res = await fetch(`${API}/planos/${planoSelecionado.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const data = (await res.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(data?.error ?? "Erro ao atualizar plano");
+        }
+      }
+
+      await carregarPlanos();
+      setPlanoDialogOpen(false);
+      setPlanoSelecionado(null);
+    } catch (error) {
+      console.error(error);
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar o plano. Tente novamente."
+      );
+    } finally {
+      setSalvandoPlano(false);
+    }
+  }
+
+  async function handleDeletePlano(plano: Plano) {
+    const confirmou = window.confirm(
+      `Tem certeza que deseja excluir o plano "${plano.nome}"?`
+    );
+    if (!confirmou) return;
+
+    try {
+      setCarregando(true);
+      setErro(null);
+
+      const res = await fetch(`${API}/planos/${plano.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(data?.error ?? "Erro ao excluir plano");
+      }
+
+      await carregarPlanos();
+    } catch (error) {
+      console.error(error);
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível excluir o plano. Tente novamente."
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-balance">Planos</h1>
-          <p className="text-muted-foreground">Gerenciar planos de assinatura</p>
+          <p className="text-muted-foreground">
+            Gerenciar planos de assinatura
+          </p>
         </div>
-        <Button className="gap-2">
+        <Button
+          className="gap-2"
+          onClick={() => {
+            setPlanoDialogMode("create");
+            setPlanoSelecionado(null);
+            setPlanoDialogOpen(true);
+          }}
+        >
           <Plus className="w-4 h-4" />
           Novo Plano
         </Button>
       </div>
 
+      {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Label htmlFor="busca" className="text-xs mb-1 block">
-                Buscar
-              </Label>
-              <Input
-                id="busca"
-                placeholder="Nome do plano..."
-                value={termoBusca}
-                onChange={(e) => setTermoBusca(e.target.value)}
-              />
-            </div>
-            <div className="w-40">
-              <Label className="text-xs mb-1 block">Periodicidade</Label>
-              <select className="w-full px-3 py-2 border border-input rounded-lg text-sm">
-                <option>Todos</option>
-                <option>MENSAL</option>
-                <option>TRIMESTRAL</option>
-                <option>SEMESTRAL</option>
-                <option>ANUAL</option>
-              </select>
-            </div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <FiltroBusca
+              id="busca-planos"
+              label="Buscar"
+              placeholder="Nome do plano..."
+              value={termoBusca}
+              onChange={setTermoBusca}
+            />
+
+            <FiltroSelect
+              label="Periodicidade"
+              value={periodicidadeFiltro}
+              onChange={(value) =>
+                setPeriodicidadeFiltro(value as PeriodicidadeFiltro)
+              }
+              options={[
+                { label: "Todos", value: "TODOS" },
+                { label: "Mensal", value: "MENSAL" },
+                { label: "Trimestral", value: "TRIMESTRAL" },
+                { label: "Semestral", value: "SEMESTRAL" },
+                { label: "Anual", value: "ANUAL" },
+              ]}
+            />
           </div>
+
+          {carregando && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Carregando planos da API...
+            </p>
+          )}
+
+          {erro && <p className="mt-3 text-xs text-destructive">{erro}</p>}
         </CardContent>
       </Card>
 
+      {/* Tabela */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Lista de Planos</CardTitle>
+          <CardTitle className="text-lg">
+            Lista de Planos ({planosFiltrados.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b">
-                <tr className="text-muted-foreground text-xs">
-                  <th className="text-left py-3 font-medium">Nome</th>
-                  <th className="text-left py-3 font-medium">Valor</th>
-                  <th className="text-left py-3 font-medium">Periodicidade</th>
-                  <th className="text-left py-3 font-medium">Destaque</th>
-                  <th className="text-left py-3 font-medium">Status</th>
-                  <th className="text-left py-3 font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {planos.map((plano) => (
-                  <tr key={plano.id} className="hover:bg-muted/50">
-                    <td className="py-3 font-medium">{plano.nome}</td>
-                    <td className="py-3 font-semibold text-primary">{plano.valor}</td>
-                    <td className="py-3">
-                      <Badge variant="outline">{plano.periodicidade}</Badge>
-                    </td>
-                    <td className="py-3">
-                      {plano.destaque && (
-                        <div className="flex items-center gap-1 text-amber-600">
-                          <Star className="w-4 h-4 fill-current" />
-                          <span className="text-xs">Destaque</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3">
-                      <Badge variant={plano.ativo ? "default" : "secondary"}>{plano.ativo ? "Ativo" : "Inativo"}</Badge>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <TabelaPlanos
+            planos={planosFiltrados}
+            onEditPlano={(plano) => {
+              setPlanoSelecionado(plano);
+              setPlanoDialogMode("edit");
+              setPlanoDialogOpen(true);
+            }}
+            onDeletePlano={handleDeletePlano}
+            onEditarBeneficios={(plano) => {
+              router.push(`/admin/planos/${plano.id}`);
+            }}
+          />
         </CardContent>
       </Card>
+
+      {/* Dialog de Plano */}
+      <PlanoDialog
+        open={planoDialogOpen}
+        onOpenChange={setPlanoDialogOpen}
+        mode={planoDialogMode}
+        initialData={planoSelecionado}
+        onSubmit={handleSubmitPlano}
+        submitting={salvandoPlano}
+      />
     </div>
-  )
+  );
 }

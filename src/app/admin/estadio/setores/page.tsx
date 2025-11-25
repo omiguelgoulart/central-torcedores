@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Edit2, Trash2 } from "lucide-react"
+import { Edit2, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -187,7 +187,6 @@ export default function PaginaSetoresEstadio() {
         <Dialog open={dialogAberto} onOpenChange={setDialogAberto}>
           <DialogTrigger asChild>
             <Button className="gap-2" onClick={abrirCriacao}>
-              <Plus className="w-4 h-4" />
               Novo Setor
             </Button>
           </DialogTrigger>

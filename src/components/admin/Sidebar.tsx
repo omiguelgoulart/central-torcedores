@@ -45,7 +45,6 @@ const navigationItems = [
     icon: Trophy,
     items: [
       { title: "Planos", href: "/admin/planos" },
-      { title: "Benefícios", href: "/admin/planos/benefits" },
     ],
   },
   {

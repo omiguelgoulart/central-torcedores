@@ -2,14 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
-
-import {
-  Socio,
-  StatusSocio,
-  TabelaTorcedores,
-} from "@/components/admin/torcedores/TabelaTorcedores"
+import { Socio, StatusSocio, TabelaTorcedores } from "@/components/admin/torcedores/TabelaTorcedores"
 import { ResumoCard } from "@/components/admin/torcedores/ResumoCard"
 import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca"
 import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect"
@@ -125,10 +118,6 @@ export default function PageTorcedores() {
           <h1 className="text-3xl font-bold text-balance">Torcedores</h1>
           <p className="text-muted-foreground">Gerenciar sócios e membros</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Novo Torcedor
-        </Button>
       </div>
 
       {/* Resumo */}
