@@ -1,119 +1,226 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2, Mail } from "lucide-react"
+import { Plus } from "lucide-react"
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb"
+import {
+  AdminRole,
+  AdminRow,
+} from "@/components/admin/configuracoes/types"
+import {
+  AdminDialog,
+  AdminFormValues,
+} from "@/components/admin/configuracoes/AdminDialog"
+import { AdminResumoCard } from "@/components/admin/configuracoes/AdminResumoCard"
+import { AdminFiltroBusca } from "@/components/admin/configuracoes/AdminFiltroBusca"
+import { AdminTabela } from "@/components/admin/configuracoes/AdminTabela"
+import { useRouter } from "next/navigation"
 
-const admins = [
-  { id: 1, nome: "Admin Principal", email: "admin@example.com", criadoEm: "2024-01-01", ativo: true },
-  { id: 2, nome: "Admin Operacional", email: "operacional@example.com", criadoEm: "2024-03-15", ativo: true },
-  { id: 3, nome: "Admin Financeiro", email: "financeiro@example.com", criadoEm: "2024-06-20", ativo: true },
-]
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
+
+type AdminApi = {
+  id: string
+  nome: string
+  email: string
+  criadoEm: string
+  ativo?: boolean | null
+  role?: string | null
+}
+
+function mapRole(role: string | null | undefined): AdminRole {
+  if (role === "PORTARIA") return "PORTARIA"
+  return "ADMIN"
+}
+
+function mapFromApi(admin: AdminApi): AdminRow {
+  return {
+    id: admin.id,
+    nome: admin.nome,
+    email: admin.email,
+    criadoEm: admin.criadoEm,
+    ativo: admin.ativo ?? true,
+    role: mapRole(admin.role),
+  }
+}
 
 export default function AdminsPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [admins, setAdmins] = useState<AdminRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const router = useRouter()
+
+  useEffect(() => {
+    async function carregarAdmins() {
+      try {
+        setLoading(true)
+        setErrorMessage(null)
+
+        const res = await fetch(`${API}/admin/user`)
+        if (!res.ok) {
+          throw new Error("Erro ao buscar admins")
+        }
+
+        const data: AdminApi[] = await res.json()
+        setAdmins(data.map(mapFromApi))
+      } catch (error) {
+        console.error(error)
+        setErrorMessage(
+          "Não foi possível carregar os administradores. Tente novamente mais tarde.",
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void carregarAdmins()
+  }, [])
+
+  const filteredAdmins = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim()
+    if (!term) return admins
+
+    return admins.filter((admin) =>
+      `${admin.nome} ${admin.email}`.toLowerCase().includes(term),
+    )
+  }, [admins, searchTerm])
+
+  async function handleCreate(values: AdminFormValues) {
+    try {
+      setLoading(true)
+      setErrorMessage(null)
+
+      const res = await fetch(`${API}/admin/user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: values.nome,
+          email: values.email,
+          senha: values.senha,
+          role: values.role,
+          ativo: values.ativo,
+        }),
+      })
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as
+          | { error?: string }
+          | null
+        throw new Error(body?.error ?? "Erro ao criar admin")
+      }
+
+      // Recarrega dados da página (chama useEffect de novo)
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      setErrorMessage("Erro ao criar administrador.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleEdit(id: string, values: AdminFormValues) {
+    try {
+      setLoading(true)
+      setErrorMessage(null)
+
+      const res = await fetch(`${API}/admin/user/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: values.nome,
+          email: values.email,
+          role: values.role,
+          ativo: values.ativo,
+          senha:
+            values.senha && values.senha.trim() !== ""
+              ? values.senha
+              : undefined,
+        }),
+      })
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as
+          | { error?: string }
+          | null
+        throw new Error(body?.error ?? "Erro ao atualizar admin")
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      setErrorMessage("Erro ao atualizar administrador.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      setLoading(true)
+      setErrorMessage(null)
+
+      const res = await fetch(`${API}/admin/user/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as
+          | { error?: string }
+          | null
+        throw new Error(body?.error ?? "Erro ao deletar admin")
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      setErrorMessage("Erro ao deletar administrador.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
       <AdminBreadcrumb
-              items={[
-                { label: "Dashboard", href: "/admin" },
-                { label: "Admins", href: "/admin/configuracoes/admins" },
-              ]}
-            />
-      <div className="flex items-center justify-between">
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Admins", href: "/admin/configuracoes/admins" },
+        ]}
+      />
+
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-balance">Admins</h1>
-          <p className="text-muted-foreground">Gerenciar usuários administradores</p>
+          <p className="text-muted-foreground">
+            Gerencie usuários administradores e colaboradores de portaria.
+          </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Novo Admin
-        </Button>
+
+        <AdminDialog mode="create" onSubmit={handleCreate}>
+          <Button className="gap-2">
+            <Plus className="w-4 h-4" />
+            Novo Admin
+          </Button>
+        </AdminDialog>
       </div>
 
-      {/* Summary */}
-      <Card>
-        <CardContent className="pt-6">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Total de Administradores</p>
-            <p className="text-2xl font-bold">{admins.length}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <AdminResumoCard total={admins.length} loading={loading} />
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Label htmlFor="search" className="text-xs mb-1 block">
-                Buscar
-              </Label>
-              <Input
-                id="search"
-                placeholder="Nome, email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <AdminFiltroBusca
+        value={searchTerm}
+        onChange={setSearchTerm}
+        errorMessage={errorMessage}
+      />
 
-      {/* Admins Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Lista de Administradores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b">
-                <tr className="text-muted-foreground text-xs">
-                  <th className="text-left py-3 font-medium">Nome</th>
-                  <th className="text-left py-3 font-medium">Email</th>
-                  <th className="text-left py-3 font-medium">Criado em</th>
-                  <th className="text-left py-3 font-medium">Status</th>
-                  <th className="text-left py-3 font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {admins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-muted/50">
-                    <td className="py-3 font-medium">{admin.nome}</td>
-                    <td className="py-3 text-muted-foreground flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      {admin.email}
-                    </td>
-                    <td className="py-3 text-muted-foreground">
-                      {new Date(admin.criadoEm).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="py-3">
-                      <Badge variant={admin.ativo ? "default" : "secondary"}>{admin.ativo ? "Ativo" : "Inativo"}</Badge>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <AdminTabela
+        admins={filteredAdmins}
+        loading={loading}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }

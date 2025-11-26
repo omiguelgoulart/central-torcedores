@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   PedidoJogo,
@@ -205,11 +203,6 @@ export default function JogoIngressosDetalhePage() {
           </p>
         </div>
 
-        <Link href="/admin/ingressos/jogos">
-          <Button variant="outline" size="sm">
-            Voltar para jogos
-          </Button>
-        </Link>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

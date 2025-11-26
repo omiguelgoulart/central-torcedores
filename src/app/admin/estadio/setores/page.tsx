@@ -46,7 +46,7 @@ export default function PaginaSetoresEstadio() {
         }
 
         const dados: Setor[] = await resposta.json();
-        if (Array.isArray(dados) && dados.length > 0) {
+        if (Array.isArray(dados)) {
           setSetores(dados);
         }
       } catch (erro) {
@@ -56,12 +56,12 @@ export default function PaginaSetoresEstadio() {
       }
     }
 
-    carregarSetores();
+    void carregarSetores();
   }, []);
 
   const capacidadeTotal = useMemo(
     () => setores.reduce((acc, s) => acc + s.capacidade, 0),
-    [setores]
+    [setores],
   );
 
   const capacidadeMedia = useMemo(() => {
@@ -94,38 +94,95 @@ export default function PaginaSetoresEstadio() {
   }
 
   function handleExcluirSetor(id: number) {
-    setSetores((prev) => prev.filter((s) => s.id !== id));
+    void (async () => {
+      try {
+        setCarregando(true);
+
+        const res = await fetch(`${API}/admin/setor/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as
+            | { error?: string }
+            | null;
+          throw new Error(body?.error ?? "Erro ao excluir setor");
+        }
+
+        setSetores((prev) => prev.filter((s) => s.id !== id));
+      } catch (erro) {
+        console.error("Erro ao excluir setor:", erro);
+      } finally {
+        setCarregando(false);
+      }
+    })();
   }
 
   function handleSalvarSetor(values: SetorFormValues) {
-    if (modoDialog === "edit" && setorSelecionado) {
-      setSetores((prev) =>
-        prev.map((s) =>
-          s.id === setorSelecionado.id
-            ? {
-                ...s,
+    void (async () => {
+      try {
+        setCarregando(true);
+
+        if (modoDialog === "edit" && setorSelecionado) {
+          const res = await fetch(
+            `${API}/admin/setor/${setorSelecionado.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
                 nome: values.nome,
                 capacidade: values.capacidade,
                 tipo: values.tipo,
-              }
-            : s
-        )
-      );
-    } else {
-      const proximoId =
-        setores.length > 0 ? Math.max(...setores.map((s) => s.id)) + 1 : 1;
+              }),
+            },
+          );
 
-      const novoSetor: Setor = {
-        id: proximoId,
-        nome: values.nome,
-        capacidade: values.capacidade,
-        tipo: values.tipo,
-      };
+          if (!res.ok) {
+            const body = (await res.json().catch(() => null)) as
+              | { error?: string }
+              | null;
+            throw new Error(body?.error ?? "Erro ao atualizar setor");
+          }
 
-      setSetores((prev) => [...prev, novoSetor]);
-    }
+          const atualizado: Setor = await res.json();
 
-    setSetorSelecionado(null);
+          setSetores((prev) =>
+            prev.map((s) => (s.id === atualizado.id ? atualizado : s)),
+          );
+        } else {
+          const res = await fetch(`${API}/admin/setor`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              nome: values.nome,
+              capacidade: values.capacidade,
+              tipo: values.tipo,
+            }),
+          });
+
+          if (!res.ok) {
+            const body = (await res.json().catch(() => null)) as
+              | { error?: string }
+              | null;
+            throw new Error(body?.error ?? "Erro ao criar setor");
+          }
+
+          const criado: Setor = await res.json();
+          setSetores((prev) => [...prev, criado]);
+        }
+
+        setSetorSelecionado(null);
+        setDialogAberto(false);
+      } catch (erro) {
+        console.error("Erro ao salvar setor:", erro);
+      } finally {
+        setCarregando(false);
+      }
+    })();
   }
 
   function handleDialogOpenChange(open: boolean) {
@@ -143,7 +200,7 @@ export default function PaginaSetoresEstadio() {
           { label: "Setores do Estádio", href: "/admin/estadio/setores" },
         ]}
       />
-      
+
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-balance">

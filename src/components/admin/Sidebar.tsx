@@ -67,7 +67,6 @@ const navigationItems = [
     icon: Settings,
     items: [
       { title: "Admins", href: "/admin/configuracoes/admins" },
-      { title: "ASAAS", href: "/admin/configuracoes/asaas" },
     ],
   },
 ]
