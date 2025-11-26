@@ -10,7 +10,7 @@ type JogosFiltroBuscaProps = {
 
 export function JogosFiltroBusca({ value, onChange }: JogosFiltroBuscaProps) {
   return (
-    <div className="max-w-md">
+    <div className="flex-1">
       <Label htmlFor="busca-jogos" className="text-xs mb-1 block">
         Buscar jogo
       </Label>

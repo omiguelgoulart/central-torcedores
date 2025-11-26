@@ -1,59 +1,70 @@
-// app/admin/ingressos/[id]/page.tsx
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  PedidoJogo,
-  ResumoCheckinJogo,
-  StatusPedido,
-} from "@/components/admin/ingresso/types"
+import { PedidoJogo, ResumoCheckinJogo, StatusPedido } from "@/components/admin/ingresso/types"
 import { JogoDetalheResumoVendas } from "@/components/admin/ingresso/JogoDetalheResumoVendas"
 import { JogoDetalheResumoCheckin } from "@/components/admin/ingresso/JogoDetalheResumoCheckin"
 import { JogoDetalheFiltros } from "@/components/admin/ingresso/JogoDetalheFiltros"
 import { JogoDetalheTabelaPedidos } from "@/components/admin/ingresso/JogoDetalheTabelaPedidos"
-import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb"
 
-const setoresMock = ["Todos", "Arquibancada Sul", "Arquibancada Norte", "Cadeiras", "Camarote"]
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
 
-// Mock de pedidos de UM jogo
-const pedidosMock: PedidoJogo[] = [
-  {
-    id: "1",
-    torcedor: "João Silva",
-    setor: "Arquibancada Sul",
-    status: "RESERVA_ATIVA",
-    quantidade: 2,
-    total: 360,
-    expiraEm: "2025-12-10",
-  },
-  {
-    id: "2",
-    torcedor: "Maria Santos",
-    setor: "Arquibancada Sul",
-    status: "PAGO",
-    quantidade: 1,
-    total: 180,
-    expiraEm: null,
-  },
-  {
-    id: "3",
-    torcedor: "Pedro Costa",
-    setor: "Arquibancada Norte",
-    status: "PENDENTE_PAGAMENTO",
-    quantidade: 3,
-    total: 540,
-    expiraEm: "2025-12-11",
-  },
+const setoresMock = [
+  "Todos",
+  "Arquibancada Sul",
+  "Arquibancada Norte",
+  "Cadeiras",
+  "Camarote",
 ]
 
-const resumoCheckinMock: ResumoCheckinJogo = {
-  totalCheckins: 2745,
-  taxaCheckin: 95,
-  portoesAtivos: 3,
+type SocioApi = {
+  nome: string | null
+}
+
+type CheckinApi = {
+  id: string
+}
+
+type IngressoFullApi = {
+  id: string
+  valor: string | number
+  status: string
+  socio: SocioApi | null
+  checkins?: CheckinApi[]
+}
+
+type JogoFullApi = {
+  id: string
+  nome: string
+  data: string
+  local: string | null
+  descricao: string | null
+  ingressos: IngressoFullApi[]
+}
+
+function formatDateTime(dateStr: string): { data: string; hora: string } {
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) {
+    return { data: dateStr, hora: "" }
+  }
+  return {
+    data: d.toLocaleDateString("pt-BR"),
+    hora: d.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  }
+}
+
+function parseValor(valor: string | number): number {
+  if (typeof valor === "number") return valor
+  const normalized = valor.replace(".", "").replace(",", ".")
+  const num = Number(normalized)
+  return Number.isNaN(num) ? 0 : num
 }
 
 export default function JogoIngressosDetalhePage() {
@@ -66,39 +77,112 @@ export default function JogoIngressosDetalhePage() {
   )
   const [setorFiltro, setSetorFiltro] = useState<string>("Todos")
 
+  const [jogoNome, setJogoNome] = useState<string | null>(null)
+  const [jogoDataBr, setJogoDataBr] = useState<string>("")
+  const [jogoHoraBr, setJogoHoraBr] = useState<string>("")
+  const [jogoLocal, setJogoLocal] = useState<string>("")
+
+  const [pedidos, setPedidos] = useState<PedidoJogo[]>([])
+  const [resumoCheckin, setResumoCheckin] =
+    useState<ResumoCheckinJogo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function carregarJogo() {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const res = await fetch(`${API}/admin/jogo/${jogoId}/full`)
+        if (!res.ok) {
+          throw new Error("Erro ao buscar dados do jogo")
+        }
+
+        const data: JogoFullApi = await res.json()
+
+        const { data: dataBr, hora } = formatDateTime(data.data)
+        setJogoNome(data.nome)
+        setJogoDataBr(dataBr)
+        setJogoHoraBr(hora)
+        setJogoLocal(data.local ?? "")
+
+        const ingressos = data.ingressos ?? []
+
+        const pedidosMapeados: PedidoJogo[] = ingressos.map((ing) => ({
+          id: ing.id,
+          torcedor: ing.socio?.nome ?? "Não informado",
+          setor: "Não informado",
+          status: "PAGO" as StatusPedido,
+          quantidade: 1,
+          total: parseValor(ing.valor),
+          expiraEm: null,
+        }))
+
+        setPedidos(pedidosMapeados)
+
+        const totalIngressos = ingressos.length
+        const totalCheckins = ingressos.reduce(
+          (acc, ing) => acc + (ing.checkins?.length ?? 0),
+          0,
+        )
+
+        const taxaCheckin =
+          totalIngressos > 0
+            ? Math.round((totalCheckins / totalIngressos) * 100)
+            : 0
+
+        const resumo: ResumoCheckinJogo = {
+          totalCheckins,
+          taxaCheckin,
+          portoesAtivos: 0,
+        }
+
+        setResumoCheckin(resumo)
+      } catch (err) {
+        console.error(err)
+        setError("Não foi possível carregar os dados do jogo.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (jogoId) {
+      void carregarJogo()
+    }
+  }, [jogoId])
+
   const pedidosFiltrados = useMemo(() => {
-    return pedidosMock.filter((p) => {
+    return pedidos.filter((p) => {
       const texto = `${p.torcedor} ${p.id}`.toLowerCase()
       const bateBusca = texto.includes(busca.toLowerCase())
 
       const bateStatus =
         statusFiltro === "TODOS" ? true : p.status === statusFiltro
 
-      const bateSetor =
-        setorFiltro === "Todos" ? true : p.setor === setorFiltro
+      const bateSetor = setorFiltro === "Todos" ? true : p.setor === setorFiltro
 
       return bateBusca && bateStatus && bateSetor
     })
-  }, [busca, statusFiltro, setorFiltro])
+  }, [pedidos, busca, statusFiltro, setorFiltro])
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumb
-        items={[
-          { label: "Dashboard", href: "/admin" },
-          { label: "Ingressos por Jogo", href: "/admin/ingressos/jogos" },
-          { label: `Jogo #${jogoId}` },
-        ]}
-      />
 
       {/* Cabeçalho do jogo */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">
-            Ingressos – Jogo #{jogoId}
+            {jogoNome
+              ? `Ingressos – ${jogoNome}`
+              : `Ingressos – Jogo #${jogoId}`}
           </h1>
-          <p className="text-muted-foreground">
-            Brasil de Pelotas vs Time A • 10/12/2025 • 19:00
+          <p className="text-muted-foreground text-sm">
+            {jogoNome
+              ? `${jogoDataBr} • ${jogoHoraBr}${
+                  jogoLocal ? ` • ${jogoLocal}` : ""
+                }`
+              : "Carregando informações do jogo..."}
           </p>
         </div>
 
@@ -109,11 +193,21 @@ export default function JogoIngressosDetalhePage() {
         </Link>
       </div>
 
-      {/* Resumo vendas + check-in */}
-      <JogoDetalheResumoVendas pedidos={pedidosMock} />
-      <JogoDetalheResumoCheckin resumo={resumoCheckinMock} />
+      {error && (
+        <p className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
-      {/* Filtros – busca + status + setor */}
+      {!loading && pedidos.length > 0 && (
+        <>
+          <JogoDetalheResumoVendas pedidos={pedidos} />
+          {resumoCheckin && (
+            <JogoDetalheResumoCheckin resumo={resumoCheckin} />
+          )}
+        </>
+      )}
+
       <Card>
         <CardContent className="pt-6">
           <JogoDetalheFiltros
@@ -128,8 +222,13 @@ export default function JogoIngressosDetalhePage() {
         </CardContent>
       </Card>
 
-      {/* Tabela de pedidos desse jogo */}
-      <JogoDetalheTabelaPedidos pedidos={pedidosFiltrados} />
+      {loading ? (
+        <p className="text-sm text-muted-foreground">
+          Carregando ingressos...
+        </p>
+      ) : (
+        <JogoDetalheTabelaPedidos pedidos={pedidosFiltrados} />
+      )}
     </div>
   )
 }
