@@ -7,6 +7,7 @@ import { AbaIngressosJogo } from "@/components/admin/jogos/detalhe/AbaIngresso";
 import { AbaSetoresJogo } from "@/components/admin/jogos/detalhe/AbaSetoresJogo";
 import type { JogoLote } from "@/components/admin/jogos/detalhe/DialogCriarLoteJogo";
 import { AbaLotesJogo } from "@/components/admin/jogos/detalhe/AbaLotes";
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -113,6 +114,17 @@ export default function PageDetalheJogo() {
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Jogos", href: "/admin/jogos" },
+          {
+            label: jogo?.nome ?? "Carregando...",
+            href: `/admin/jogos/${jogo.id}`,
+          },
+        ]}
+      />
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">{jogo.nome}</h1>
         <p className="text-muted-foreground">

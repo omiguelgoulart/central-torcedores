@@ -6,6 +6,7 @@ import { Jogo } from "@/components/partidas/CardJogo";
 import { FiltroJogos } from "@/components/admin/jogos/FiltroJogos";
 import { TabelaJogos } from "@/components/admin/jogos/TabelaJogo";
 import { DialogNovoJogo } from "@/components/admin/jogos/DialogNovoJogo";
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -51,6 +52,13 @@ export default function PageJogos() {
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Jogos", href: "/admin/jogos" },
+        ]}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Jogos</h1>
@@ -62,10 +70,7 @@ export default function PageJogos() {
 
       <Card>
         <CardContent className="pt-6">
-          <FiltroJogos
-            termoBusca={termoBusca}
-            onChangeBusca={setTermoBusca}
-          />
+          <FiltroJogos termoBusca={termoBusca} onChangeBusca={setTermoBusca} />
         </CardContent>
       </Card>
 

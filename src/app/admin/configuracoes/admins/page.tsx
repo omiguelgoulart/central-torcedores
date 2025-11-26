@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit2, Trash2, Mail } from "lucide-react"
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb"
 
 const admins = [
   { id: 1, nome: "Admin Principal", email: "admin@example.com", criadoEm: "2024-01-01", ativo: true },
@@ -19,6 +20,12 @@ export default function AdminsPage() {
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+              items={[
+                { label: "Dashboard", href: "/admin" },
+                { label: "Admins", href: "/admin/configuracoes/admins" },
+              ]}
+            />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-balance">Admins</h1>

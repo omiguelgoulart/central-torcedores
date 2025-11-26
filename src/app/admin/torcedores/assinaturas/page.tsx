@@ -1,91 +1,97 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
   Assinatura,
   StatusAssinatura,
   TabelaAssinaturas,
-} from "@/components/admin/torcedores/TabelaAssinaturas"
-import { ResumoCard } from "@/components/admin/torcedores/ResumoCard"
-import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect"
-import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca"
+} from "@/components/admin/torcedores/TabelaAssinaturas";
+import { ResumoCard } from "@/components/admin/torcedores/ResumoCard";
+import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect";
+import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca";
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
 type AssinaturaApi = {
-  id: string
-  status?: string | null
-  statusAssinatura?: string | null
-  inicioEm?: string | null
-  proximaCobrancaEm?: string | null
-  planoNome?: string | null
+  id: string;
+  status?: string | null;
+  statusAssinatura?: string | null;
+  inicioEm?: string | null;
+  proximaCobrancaEm?: string | null;
+  planoNome?: string | null;
   plano?: {
-    nome?: string | null
-    valor?: number | null
-  } | null
-  torcedorNome?: string | null
+    nome?: string | null;
+    valor?: number | null;
+  } | null;
+  torcedorNome?: string | null;
   torcedor?: {
-    nome?: string | null
-  } | null
-}
+    nome?: string | null;
+  } | null;
+};
 
 function formatarDataBr(valor: string | null): string {
-  if (!valor) return "-"
-  const data = new Date(valor)
-  if (Number.isNaN(data.getTime())) return "-"
-  return data.toLocaleDateString("pt-BR")
+  if (!valor) return "-";
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return "-";
+  return data.toLocaleDateString("pt-BR");
 }
 
 export default function PageAssinatura() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFiltro, setStatusFiltro] = useState<"TODOS" | StatusAssinatura>("TODOS")
-  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([])
-  const [carregando, setCarregando] = useState(false)
-  const [erro, setErro] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState<"TODOS" | StatusAssinatura>(
+    "TODOS"
+  );
+  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregarAssinaturas() {
       try {
-        setCarregando(true)
-        setErro(null)
+        setCarregando(true);
+        setErro(null);
 
         const resposta = await fetch(`${API}/assinatura`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-        })
+        });
 
         if (!resposta.ok) {
-          console.error("Falha ao buscar assinaturas em /assinatura")
-          setAssinaturas([])
-          return
+          console.error("Falha ao buscar assinaturas em /assinatura");
+          setAssinaturas([]);
+          return;
         }
 
-        const dadosRaw = await resposta.json()
+        const dadosRaw = await resposta.json();
 
         if (!Array.isArray(dadosRaw)) {
-          setAssinaturas([])
-          return
+          setAssinaturas([]);
+          return;
         }
 
-        const dados = dadosRaw as AssinaturaApi[]
+        const dados = dadosRaw as AssinaturaApi[];
 
         const mapeadas: Assinatura[] = dados.map((a) => {
           const rawStatus = (a.statusAssinatura ?? a.status ?? "ATIVA")
             .toString()
-            .toUpperCase()
+            .toUpperCase();
 
           const status: StatusAssinatura =
-            rawStatus === "ATIVA" || rawStatus === "SUSPENSA" || rawStatus === "CANCELADA"
+            rawStatus === "ATIVA" ||
+            rawStatus === "SUSPENSA" ||
+            rawStatus === "CANCELADA"
               ? (rawStatus as StatusAssinatura)
-              : "OUTRO"
+              : "OUTRO";
 
-          const plano = a.plano?.nome ?? a.planoNome ?? "Plano sem nome"
-          const torcedor = a.torcedor?.nome ?? a.torcedorNome ?? "Torcedor não identificado"
+          const plano = a.plano?.nome ?? a.planoNome ?? "Plano sem nome";
+          const torcedor =
+            a.torcedor?.nome ?? a.torcedorNome ?? "Torcedor não identificado";
 
-          const preco = a.plano?.valor ?? 0
+          const preco = a.plano?.valor ?? 0;
 
           return {
             id: a.id,
@@ -95,69 +101,86 @@ export default function PageAssinatura() {
             inicio: a.inicioEm ?? null,
             proxima: a.proximaCobrancaEm ?? null,
             preco,
-          }
-        })
+          };
+        });
 
-        setAssinaturas(mapeadas)
+        setAssinaturas(mapeadas);
       } catch (erroFetch) {
-        console.error(erroFetch)
-        setErro("Erro ao carregar assinaturas.")
-        setAssinaturas([])
+        console.error(erroFetch);
+        setErro("Erro ao carregar assinaturas.");
+        setAssinaturas([]);
       } finally {
-        setCarregando(false)
+        setCarregando(false);
       }
     }
 
-    carregarAssinaturas()
-  }, [])
+    carregarAssinaturas();
+  }, []);
 
   const activeCount = useMemo(
     () => assinaturas.filter((s) => s.status === "ATIVA").length,
-    [assinaturas],
-  )
+    [assinaturas]
+  );
 
   const suspendedCount = useMemo(
     () => assinaturas.filter((s) => s.status === "SUSPENSA").length,
-    [assinaturas],
-  )
+    [assinaturas]
+  );
 
   // 🔥 Receita mensal com base nas assinaturas ATIVAS
   const receitaMensal = useMemo(() => {
     return assinaturas
       .filter((a) => a.status === "ATIVA")
-      .reduce((total, item) => total + (item.preco ?? 0), 0)
-  }, [assinaturas])
+      .reduce((total, item) => total + (item.preco ?? 0), 0);
+  }, [assinaturas]);
 
   const assinaturasFiltradas = useMemo(() => {
-    const termo = searchTerm.toLowerCase().trim()
+    const termo = searchTerm.toLowerCase().trim();
 
     return assinaturas.filter((sub) => {
       const bateBusca =
         !termo ||
         sub.torcedor.toLowerCase().includes(termo) ||
-        sub.plano.toLowerCase().includes(termo)
+        sub.plano.toLowerCase().includes(termo);
 
       const bateStatus =
-        statusFiltro === "TODOS" ? true : sub.status === statusFiltro
+        statusFiltro === "TODOS" ? true : sub.status === statusFiltro;
 
-      return bateBusca && bateStatus
-    })
-  }, [assinaturas, searchTerm, statusFiltro])
+      return bateBusca && bateStatus;
+    });
+  }, [assinaturas, searchTerm, statusFiltro]);
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Assinaturas", href: "/admin/torcedores/assinaturas" },
+        ]}
+      />
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-balance">Assinaturas</h1>
-          <p className="text-muted-foreground">Gerenciar assinaturas de planos</p>
+          <p className="text-muted-foreground">
+            Gerenciar assinaturas de planos
+          </p>
         </div>
       </div>
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <ResumoCard label="Total" value={assinaturas.length} />
-        <ResumoCard label="Ativas" value={activeCount} valueClassName="text-green-600" />
-        <ResumoCard label="Suspensas" value={suspendedCount} valueClassName="text-amber-600" />
+        <ResumoCard
+          label="Ativas"
+          value={activeCount}
+          valueClassName="text-green-600"
+        />
+        <ResumoCard
+          label="Suspensas"
+          value={suspendedCount}
+          valueClassName="text-amber-600"
+        />
         <ResumoCard
           label="Receita Mensal"
           value={receitaMensal}
@@ -195,11 +218,7 @@ export default function PageAssinatura() {
               Carregando assinaturas da API...
             </p>
           )}
-          {erro && (
-            <p className="mt-3 text-xs text-destructive">
-              {erro}
-            </p>
-          )}
+          {erro && <p className="mt-3 text-xs text-destructive">{erro}</p>}
         </CardContent>
       </Card>
 
@@ -218,5 +237,5 @@ export default function PageAssinatura() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

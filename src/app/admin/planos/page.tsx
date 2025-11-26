@@ -18,6 +18,7 @@ import {
   PlanoFormValues,
 } from "@/components/admin/plano/PlanoDialog";
 import { useRouter } from "next/navigation";
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -38,9 +39,8 @@ type PlanosListaApi = {
 type PeriodicidadeFiltro = "TODOS" | peridiocidadePlano;
 
 export default function PaginaPlanos() {
-
   const router = useRouter();
-  
+
   const [termoBusca, setTermoBusca] = useState<string>("");
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [periodicidadeFiltro, setPeriodicidadeFiltro] =
@@ -229,6 +229,12 @@ export default function PaginaPlanos() {
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Planos", href: "/admin/planos" },
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

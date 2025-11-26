@@ -1,72 +1,77 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Socio, StatusSocio, TabelaTorcedores } from "@/components/admin/torcedores/TabelaTorcedores"
-import { ResumoCard } from "@/components/admin/torcedores/ResumoCard"
-import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca"
-import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect"
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Socio,
+  StatusSocio,
+  TabelaTorcedores,
+} from "@/components/admin/torcedores/TabelaTorcedores";
+import { ResumoCard } from "@/components/admin/torcedores/ResumoCard";
+import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca";
+import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect";
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
 type TorcedorListaApi = {
-  id: string
-  nome: string
-  email: string
-  cpf?: string | null
-  statusSocio?: string | null
+  id: string;
+  nome: string;
+  email: string;
+  cpf?: string | null;
+  statusSocio?: string | null;
   assinaturas?: {
     plano?: {
-      nome?: string | null
-    } | null
-  }[]
-}
+      nome?: string | null;
+    } | null;
+  }[];
+};
 
 export default function PageTorcedores() {
-  const [termoBusca, setTermoBusca] = useState("")
-  const [statusFiltro, setStatusFiltro] = useState<"TODOS" | StatusSocio>("TODOS")
-  const [socios, setSocios] = useState<Socio[]>([])
-  const [carregando, setCarregando] = useState(false)
-  const [erro, setErro] = useState<string | null>(null)
+  const [termoBusca, setTermoBusca] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState<"TODOS" | StatusSocio>(
+    "TODOS"
+  );
+  const [socios, setSocios] = useState<Socio[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregarSocios() {
       try {
-        setCarregando(true)
-        setErro(null)
+        setCarregando(true);
+        setErro(null);
 
         const resposta = await fetch(`${API}/usuario`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-        })
+        });
 
         if (!resposta.ok) {
-          console.error("Falha no GET /usuario")
-          setSocios([])
-          return
+          console.error("Falha no GET /usuario");
+          setSocios([]);
+          return;
         }
 
-        const dados: TorcedorListaApi[] = await resposta.json()
+        const dados: TorcedorListaApi[] = await resposta.json();
 
         if (!Array.isArray(dados)) {
-          setSocios([])
-          return
+          setSocios([]);
+          return;
         }
 
         const sociosMapeados: Socio[] = dados.map((item) => {
-          const statusRaw = (item.statusSocio ?? "ATIVO").toUpperCase()
+          const statusRaw = (item.statusSocio ?? "ATIVO").toUpperCase();
 
           const status: StatusSocio =
             statusRaw === "ATIVO" ||
             statusRaw === "INADIMPLENTE" ||
             statusRaw === "CANCELADO"
               ? (statusRaw as StatusSocio)
-              : "ATIVO"
+              : "ATIVO";
 
-          const planoNome =
-            item.assinaturas?.[0]?.plano?.nome ??
-            "Sem plano"
+          const planoNome = item.assinaturas?.[0]?.plano?.nome ?? "Sem plano";
 
           return {
             id: item.id,
@@ -75,43 +80,51 @@ export default function PageTorcedores() {
             cpf: item.cpf ?? "Não informado",
             status,
             plano: planoNome,
-          }
-        })
+          };
+        });
 
-        setSocios(sociosMapeados)
+        setSocios(sociosMapeados);
       } catch (e) {
-        console.error(e)
-        setErro("Erro ao carregar lista de torcedores.")
+        console.error(e);
+        setErro("Erro ao carregar lista de torcedores.");
       } finally {
-        setCarregando(false)
+        setCarregando(false);
       }
     }
 
-    carregarSocios()
-  }, [])
+    carregarSocios();
+  }, []);
 
   const sociosFiltrados = useMemo(() => {
-    const termo = termoBusca.toLowerCase().trim()
+    const termo = termoBusca.toLowerCase().trim();
 
     return socios.filter((socio) => {
       const bateBusca =
         !termo ||
         socio.nome.toLowerCase().includes(termo) ||
         socio.email.toLowerCase().includes(termo) ||
-        socio.cpf.toLowerCase().includes(termo)
+        socio.cpf.toLowerCase().includes(termo);
 
       const bateStatus =
-        statusFiltro === "TODOS" ? true : socio.status === statusFiltro
+        statusFiltro === "TODOS" ? true : socio.status === statusFiltro;
 
-      return bateBusca && bateStatus
-    })
-  }, [socios, termoBusca, statusFiltro])
+      return bateBusca && bateStatus;
+    });
+  }, [socios, termoBusca, statusFiltro]);
 
-  const sociosAtivos = socios.filter((m) => m.status === "ATIVO").length
-  const sociosInadimplentes = socios.filter((m) => m.status === "INADIMPLENTE").length
+  const sociosAtivos = socios.filter((m) => m.status === "ATIVO").length;
+  const sociosInadimplentes = socios.filter(
+    (m) => m.status === "INADIMPLENTE"
+  ).length;
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Torcedores", href: "/admin/torcedores" },
+        ]}
+      />
       {/* Cabeçalho */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
@@ -167,11 +180,7 @@ export default function PageTorcedores() {
               Carregando torcedores da API...
             </p>
           )}
-          {erro && (
-            <p className="mt-3 text-xs text-destructive">
-              {erro}
-            </p>
-          )}
+          {erro && <p className="mt-3 text-xs text-destructive">{erro}</p>}
         </CardContent>
       </Card>
 
@@ -187,5 +196,5 @@ export default function PageTorcedores() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

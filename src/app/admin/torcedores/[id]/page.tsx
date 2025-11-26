@@ -1,163 +1,168 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
-type StatusTorcedor = "ATIVO" | "INADIMPLENTE" | "CANCELADO" | "INATIVO"
+type StatusTorcedor = "ATIVO" | "INADIMPLENTE" | "CANCELADO" | "INATIVO";
 
 type TorcedorPerfilResponse = {
-  id: string
-  matricula: string
-  nome: string
-  email: string
-  telefone: string | null
-  cpf: string | null
-  dataNascimento: string | null
-  genero: string | null
-  fotoUrl: string | null
-  enderecoLogradouro: string | null
-  enderecoNumero: string | null
-  enderecoBairro: string | null
-  enderecoCidade: string | null
-  enderecoUF: string | null
-  enderecoCEP: string | null
-  statusSocio: StatusTorcedor | null
-  inadimplenteDesde: string | null
-  criadoEm: string | null
-  atualizadoEm: string | null
+  id: string;
+  matricula: string;
+  nome: string;
+  email: string;
+  telefone: string | null;
+  cpf: string | null;
+  dataNascimento: string | null;
+  genero: string | null;
+  fotoUrl: string | null;
+  enderecoLogradouro: string | null;
+  enderecoNumero: string | null;
+  enderecoBairro: string | null;
+  enderecoCidade: string | null;
+  enderecoUF: string | null;
+  enderecoCEP: string | null;
+  statusSocio: StatusTorcedor | null;
+  inadimplenteDesde: string | null;
+  criadoEm: string | null;
+  atualizadoEm: string | null;
 
   // relacionamentos
-  assinaturas: unknown[]
-  pagamentos: unknown[]
-  ingressos: unknown[]
-  pedidos: unknown[]
-}
+  assinaturas: unknown[];
+  pagamentos: unknown[];
+  ingressos: unknown[];
+  pedidos: unknown[];
+};
 
 type TorcedorUI = {
-  id: string
-  nome: string
-  email: string
-  matricula: string
-  cpf: string
-  telefone: string
-  status: StatusTorcedor
-  plano: string
-  dataCadastro: string | null
-  dataNascimento: string | null
-  endereco: string
-}
+  id: string;
+  nome: string;
+  email: string;
+  matricula: string;
+  cpf: string;
+  telefone: string;
+  status: StatusTorcedor;
+  plano: string;
+  dataCadastro: string | null;
+  dataNascimento: string | null;
+  endereco: string;
+};
 
 type AssinaturaApi = {
-  id: string
-  status?: string | null
-  inicioEm?: string | null
-  proximaCobrancaEm?: string | null
-  planoNome?: string | null
+  id: string;
+  status?: string | null;
+  inicioEm?: string | null;
+  proximaCobrancaEm?: string | null;
+  planoNome?: string | null;
   plano?: {
-    nome?: string | null
-  } | null
-}
+    nome?: string | null;
+  } | null;
+};
 
 type AssinaturaUI = {
-  id: string
-  plano: string
-  status: string
-  inicio: string | null
-  proxima: string | null
-}
+  id: string;
+  plano: string;
+  status: string;
+  inicio: string | null;
+  proxima: string | null;
+};
 
 type PagamentoApi = {
-  id: string
-  valor?: number | null
-  valorBruto?: number | null
-  status?: string | null
-  metodo?: string | null
-  billingType?: string | null
-  pagoEm?: string | null
-  criadoEm?: string | null
-}
+  id: string;
+  valor?: number | null;
+  valorBruto?: number | null;
+  status?: string | null;
+  metodo?: string | null;
+  billingType?: string | null;
+  pagoEm?: string | null;
+  criadoEm?: string | null;
+};
 
 type PagamentoUI = {
-  id: string
-  valor: string
-  status: string
-  data: string | null
-  metodo: string
-}
+  id: string;
+  valor: string;
+  status: string;
+  data: string | null;
+  metodo: string;
+};
 
 type IngressoApi = {
-  id: string
-  status?: string | null
-  dataJogo?: string | null
-  jogoNome?: string | null
-  setorNome?: string | null
+  id: string;
+  status?: string | null;
+  dataJogo?: string | null;
+  jogoNome?: string | null;
+  setorNome?: string | null;
   jogo?: {
-    nome?: string | null
-    dataJogo?: string | null
-  } | null
-}
+    nome?: string | null;
+    dataJogo?: string | null;
+  } | null;
+};
 
 type IngressoUI = {
-  id: string
-  jogo: string
-  data: string | null
-  setor: string
-  status: string
-}
+  id: string;
+  jogo: string;
+  data: string | null;
+  setor: string;
+  status: string;
+};
 
 function formatarDataBr(valor: string | null): string {
-  if (!valor) return "Não informado"
-  const data = new Date(valor)
-  if (Number.isNaN(data.getTime())) return "Não informado"
-  return data.toLocaleDateString("pt-BR")
+  if (!valor) return "Não informado";
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return "Não informado";
+  return data.toLocaleDateString("pt-BR");
 }
 
 function formatarValorBRL(valor: number): string {
   return valor.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
-  })
+  });
 }
 
 function badgeStatusVariant(status: StatusTorcedor) {
-  if (status === "ATIVO") return "default" as const
-  if (status === "INADIMPLENTE") return "destructive" as const
-  return "outline" as const
+  if (status === "ATIVO") return "default" as const;
+  if (status === "INADIMPLENTE") return "destructive" as const;
+  return "outline" as const;
 }
 
-export default function PageTorcedorDetalhe ({ params }: { params: { id: string } }) {
-  const [abaAtiva, setAbaAtiva] = useState("personal")
-  const [torcedor, setTorcedor] = useState<TorcedorUI | null>(null)
-  const [assinaturas, setAssinaturas] = useState<AssinaturaUI[]>([])
-  const [pagamentos, setPagamentos] = useState<PagamentoUI[]>([])
-  const [ingressos, setIngressos] = useState<IngressoUI[]>([])
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState<string | null>(null)
+export default function PageTorcedorDetalhe({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const [abaAtiva, setAbaAtiva] = useState("personal");
+  const [torcedor, setTorcedor] = useState<TorcedorUI | null>(null);
+  const [assinaturas, setAssinaturas] = useState<AssinaturaUI[]>([]);
+  const [pagamentos, setPagamentos] = useState<PagamentoUI[]>([]);
+  const [ingressos, setIngressos] = useState<IngressoUI[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregarTorcedor() {
       try {
-        setCarregando(true)
-        setErro(null)
+        setCarregando(true);
+        setErro(null);
 
         const resposta = await fetch(`${API}/usuario/id/${params.id}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-        })
+        });
 
         if (!resposta.ok) {
-          setErro("Não foi possível carregar os dados do torcedor.")
-          setCarregando(false)
-          return
+          setErro("Não foi possível carregar os dados do torcedor.");
+          setCarregando(false);
+          return;
         }
 
-        const dados = (await resposta.json()) as TorcedorPerfilResponse
+        const dados = (await resposta.json()) as TorcedorPerfilResponse;
 
         // endereço
         const partesEndereco = [
@@ -167,18 +172,20 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
           dados.enderecoCidade,
           dados.enderecoUF,
           dados.enderecoCEP ? `CEP ${dados.enderecoCEP}` : null,
-        ].filter(Boolean)
+        ].filter(Boolean);
 
         const endereco =
-          partesEndereco.length > 0 ? partesEndereco.join(" - ") : "Endereço não informado"
+          partesEndereco.length > 0
+            ? partesEndereco.join(" - ")
+            : "Endereço não informado";
 
-        const status: StatusTorcedor = dados.statusSocio ?? "ATIVO"
+        const status: StatusTorcedor = dados.statusSocio ?? "ATIVO";
 
-        const assinaturasApi = (dados.assinaturas ?? []) as AssinaturaApi[]
+        const assinaturasApi = (dados.assinaturas ?? []) as AssinaturaApi[];
         const planoAtual =
           assinaturasApi[0]?.plano?.nome ??
           assinaturasApi[0]?.planoNome ??
-          "Sem plano vinculado"
+          "Sem plano vinculado";
 
         const torcedorUI: TorcedorUI = {
           id: dados.id,
@@ -192,9 +199,9 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
           dataCadastro: dados.criadoEm,
           dataNascimento: dados.dataNascimento,
           endereco,
-        }
+        };
 
-        setTorcedor(torcedorUI)
+        setTorcedor(torcedorUI);
 
         const assinaturasUI: AssinaturaUI[] = assinaturasApi.map((a) => ({
           id: a.id,
@@ -202,14 +209,14 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
           status: a.status ?? "SEM STATUS",
           inicio: a.inicioEm ?? null,
           proxima: a.proximaCobrancaEm ?? null,
-        }))
-        setAssinaturas(assinaturasUI)
+        }));
+        setAssinaturas(assinaturasUI);
 
-        const pagamentosApi = (dados.pagamentos ?? []) as PagamentoApi[]
+        const pagamentosApi = (dados.pagamentos ?? []) as PagamentoApi[];
         const pagamentosUI: PagamentoUI[] = pagamentosApi.map((p) => {
-          const valorNumero = p.valor ?? p.valorBruto ?? 0
-          const data = p.pagoEm ?? p.criadoEm ?? null
-          const metodo = p.metodo ?? p.billingType ?? "Não informado"
+          const valorNumero = p.valor ?? p.valorBruto ?? 0;
+          const data = p.pagoEm ?? p.criadoEm ?? null;
+          const metodo = p.metodo ?? p.billingType ?? "Não informado";
 
           return {
             id: p.id,
@@ -217,29 +224,29 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
             status: p.status ?? "SEM STATUS",
             data,
             metodo,
-          }
-        })
-        setPagamentos(pagamentosUI)
+          };
+        });
+        setPagamentos(pagamentosUI);
 
-        const ingressosApi = (dados.ingressos ?? []) as IngressoApi[]
+        const ingressosApi = (dados.ingressos ?? []) as IngressoApi[];
         const ingressosUI: IngressoUI[] = ingressosApi.map((ing) => ({
           id: ing.id,
           jogo: ing.jogo?.nome ?? ing.jogoNome ?? "Jogo não informado",
           data: ing.jogo?.dataJogo ?? ing.dataJogo ?? null,
           setor: ing.setorNome ?? "Setor não informado",
           status: ing.status ?? "SEM STATUS",
-        }))
-        setIngressos(ingressosUI)
+        }));
+        setIngressos(ingressosUI);
       } catch (error) {
-        console.error(error)
-        setErro("Erro ao carregar dados do torcedor.")
+        console.error(error);
+        setErro("Erro ao carregar dados do torcedor.");
       } finally {
-        setCarregando(false)
+        setCarregando(false);
       }
     }
 
-    carregarTorcedor()
-  }, [params.id])
+    carregarTorcedor();
+  }, [params.id]);
 
   if (carregando) {
     return (
@@ -255,7 +262,7 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!torcedor) {
@@ -267,11 +274,21 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
           Nenhuma informação encontrada para este torcedor.
         </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Torcedores", href: "/admin/torcedores" },
+          {
+            label: torcedor.nome,
+            href: `/admin/torcedores/${torcedor.id}`,
+          },
+        ]}
+      />
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">{torcedor.nome}</h1>
@@ -279,7 +296,9 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
             <Badge variant={badgeStatusVariant(torcedor.status)}>
               {torcedor.status}
             </Badge>
-            <span className="text-sm text-muted-foreground">{torcedor.plano}</span>
+            <span className="text-sm text-muted-foreground">
+              {torcedor.plano}
+            </span>
           </div>
         </div>
         <Button variant="outline">Editar</Button>
@@ -322,13 +341,17 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
                   <p className="font-medium">{torcedor.telefone}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Data de Nascimento</p>
+                  <p className="text-sm text-muted-foreground">
+                    Data de Nascimento
+                  </p>
                   <p className="font-medium">
                     {formatarDataBr(torcedor.dataNascimento)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Data de Cadastro</p>
+                  <p className="text-sm text-muted-foreground">
+                    Data de Cadastro
+                  </p>
                   <p className="font-medium">
                     {formatarDataBr(torcedor.dataCadastro)}
                   </p>
@@ -400,7 +423,9 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
                     <tbody className="divide-y">
                       {pagamentos.map((payment) => (
                         <tr key={payment.id}>
-                          <td className="py-3 font-semibold">{payment.valor}</td>
+                          <td className="py-3 font-semibold">
+                            {payment.valor}
+                          </td>
                           <td className="py-3">
                             {formatarDataBr(payment.data)}
                           </td>
@@ -468,5 +493,5 @@ export default function PageTorcedorDetalhe ({ params }: { params: { id: string 
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

@@ -1,79 +1,87 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react"
-import { useParams } from "next/navigation"
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-import { TabelaBeneficios, Beneficio } from "@/components/admin/plano/TabelaBeneficios"
-import { BeneficioDialog, BeneficioFormMode, BeneficioFormValues } from "@/components/admin/plano/BeneficioDialog"
+import {
+  TabelaBeneficios,
+  Beneficio,
+} from "@/components/admin/plano/TabelaBeneficios";
+import {
+  BeneficioDialog,
+  BeneficioFormMode,
+  BeneficioFormValues,
+} from "@/components/admin/plano/BeneficioDialog";
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
 type PlanoDetalheApi = {
-  id: string
-  nome: string
-  descricao?: string | null
-}
+  id: string;
+  nome: string;
+  descricao?: string | null;
+};
 
 type BeneficioApi = {
-  id: string
-  slug: string
-  titulo: string
-  descricao?: string | null
-  icone?: string | null
-  ativo: boolean
-  planoId: string
-  destaque: boolean
-  observacao?: string | null
-}
+  id: string;
+  slug: string;
+  titulo: string;
+  descricao?: string | null;
+  icone?: string | null;
+  ativo: boolean;
+  planoId: string;
+  destaque: boolean;
+  observacao?: string | null;
+};
 
 export default function BeneficiosDoPlanoPage() {
-  const params = useParams<{ id: string }>()
-  const planoId = params.id
+  const params = useParams<{ id: string }>();
+  const planoId = params.id;
 
-  const [plano, setPlano] = useState<PlanoDetalheApi | null>(null)
-  const [beneficios, setBeneficios] = useState<Beneficio[]>([])
-  const [busca, setBusca] = useState<string>("")
-  const [carregando, setCarregando] = useState<boolean>(false)
-  const [erro, setErro] = useState<string | null>(null)
+  const [plano, setPlano] = useState<PlanoDetalheApi | null>(null);
+  const [beneficios, setBeneficios] = useState<Beneficio[]>([]);
+  const [busca, setBusca] = useState<string>("");
+  const [carregando, setCarregando] = useState<boolean>(false);
+  const [erro, setErro] = useState<string | null>(null);
 
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false)
-  const [dialogMode, setDialogMode] = useState<BeneficioFormMode>("create")
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [dialogMode, setDialogMode] = useState<BeneficioFormMode>("create");
   const [beneficioSelecionado, setBeneficioSelecionado] =
-    useState<Beneficio | null>(null)
-  const [salvando, setSalvando] = useState<boolean>(false)
+    useState<Beneficio | null>(null);
+  const [salvando, setSalvando] = useState<boolean>(false);
 
   const carregarPlano = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/planos/${planoId}`)
-      if (!res.ok) return
-      const data = (await res.json()) as PlanoDetalheApi
-      setPlano(data)
+      const res = await fetch(`${API}/planos/${planoId}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as PlanoDetalheApi;
+      setPlano(data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }, [planoId])
+  }, [planoId]);
 
   const carregarBeneficios = useCallback(async () => {
     try {
-      setCarregando(true)
-      setErro(null)
+      setCarregando(true);
+      setErro(null);
 
-      const res = await fetch(`${API}/beneficio?planoId=${planoId}`)
+      const res = await fetch(`${API}/beneficio?planoId=${planoId}`);
       if (!res.ok) {
-        console.error("Falha no GET /beneficio")
-        setBeneficios([])
-        return
+        console.error("Falha no GET /beneficio");
+        setBeneficios([]);
+        return;
       }
 
-      const data = (await res.json()) as BeneficioApi[]
+      const data = (await res.json()) as BeneficioApi[];
       if (!Array.isArray(data)) {
-        setBeneficios([])
-        return
+        setBeneficios([]);
+        return;
       }
 
       const mapeados: Beneficio[] = data.map((b) => ({
@@ -84,34 +92,32 @@ export default function BeneficiosDoPlanoPage() {
         destaque: b.destaque,
         ativo: b.ativo,
         observacao: b.observacao ?? null,
-      }))
+      }));
 
-      setBeneficios(mapeados)
+      setBeneficios(mapeados);
     } catch (error) {
-      console.error(error)
-      setErro("Erro ao carregar benefícios da API.")
+      console.error(error);
+      setErro("Erro ao carregar benefícios da API.");
     } finally {
-      setCarregando(false)
+      setCarregando(false);
     }
-  }, [planoId])
+  }, [planoId]);
 
   useEffect(() => {
-    if (!planoId) return
-    void carregarPlano()
-    void carregarBeneficios()
-  }, [planoId, carregarPlano, carregarBeneficios])
+    if (!planoId) return;
+    void carregarPlano();
+    void carregarBeneficios();
+  }, [planoId, carregarPlano, carregarBeneficios]);
 
   const beneficiosFiltrados = useMemo(() => {
-    const termo = busca.toLowerCase()
-    return beneficios.filter((b) =>
-      b.titulo.toLowerCase().includes(termo),
-    )
-  }, [beneficios, busca])
+    const termo = busca.toLowerCase();
+    return beneficios.filter((b) => b.titulo.toLowerCase().includes(termo));
+  }, [beneficios, busca]);
 
   async function handleSubmitBeneficio(values: BeneficioFormValues) {
     try {
-      setSalvando(true)
-      setErro(null)
+      setSalvando(true);
+      setErro(null);
 
       const payload = {
         slug: values.slug.trim(),
@@ -122,90 +128,97 @@ export default function BeneficiosDoPlanoPage() {
         planoId,
         destaque: values.destaque,
         observacao: values.observacao.trim() || undefined,
-      }
+      };
 
       if (dialogMode === "create") {
         const res = await fetch(`${API}/beneficio`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        })
+        });
 
         if (!res.ok) {
-          const data = (await res
-            .json()
-            .catch(() => null)) as { error?: string } | null
-          throw new Error(data?.error ?? "Erro ao criar benefício")
+          const data = (await res.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(data?.error ?? "Erro ao criar benefício");
         }
       } else if (dialogMode === "edit" && beneficioSelecionado) {
-        const res = await fetch(
-          `${API}/beneficio/${beneficioSelecionado.id}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        )
+        const res = await fetch(`${API}/beneficio/${beneficioSelecionado.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
         if (!res.ok) {
-          const data = (await res
-            .json()
-            .catch(() => null)) as { error?: string } | null
-          throw new Error(data?.error ?? "Erro ao atualizar benefício")
+          const data = (await res.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(data?.error ?? "Erro ao atualizar benefício");
         }
       }
 
-      await carregarBeneficios()
-      setDialogOpen(false)
-      setBeneficioSelecionado(null)
+      await carregarBeneficios();
+      setDialogOpen(false);
+      setBeneficioSelecionado(null);
     } catch (error) {
-      console.error(error)
+      console.error(error);
       setErro(
         error instanceof Error
           ? error.message
-          : "Não foi possível salvar o benefício.",
-      )
+          : "Não foi possível salvar o benefício."
+      );
     } finally {
-      setSalvando(false)
+      setSalvando(false);
     }
   }
 
   async function handleDeleteBeneficio(beneficio: Beneficio) {
     const confirmou = window.confirm(
-      `Tem certeza que deseja excluir o benefício "${beneficio.titulo}"?`,
-    )
-    if (!confirmou) return
+      `Tem certeza que deseja excluir o benefício "${beneficio.titulo}"?`
+    );
+    if (!confirmou) return;
 
     try {
-      setCarregando(true)
-      setErro(null)
+      setCarregando(true);
+      setErro(null);
 
       const res = await fetch(`${API}/beneficio/${beneficio.id}`, {
         method: "DELETE",
-      })
+      });
 
       if (!res.ok) {
-        const data = (await res
-          .json()
-          .catch(() => null)) as { error?: string } | null
-        throw new Error(data?.error ?? "Erro ao excluir benefício")
+        const data = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(data?.error ?? "Erro ao excluir benefício");
       }
 
-      await carregarBeneficios()
+      await carregarBeneficios();
     } catch (error) {
-      console.error(error)
+      console.error(error);
       setErro(
         error instanceof Error
           ? error.message
-          : "Não foi possível excluir o benefício.",
-      )
+          : "Não foi possível excluir o benefício."
+      );
     } finally {
-      setCarregando(false)
+      setCarregando(false);
     }
   }
 
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb
+        items={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Planos", href: "/admin/planos" },
+          {
+            label: plano?.nome ?? "Carregando...",
+            href: `/admin/planos/${planoId}`,
+          },
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -220,9 +233,9 @@ export default function BeneficiosDoPlanoPage() {
         <Button
           className="gap-2"
           onClick={() => {
-            setDialogMode("create")
-            setBeneficioSelecionado(null)
-            setDialogOpen(true)
+            setDialogMode("create");
+            setBeneficioSelecionado(null);
+            setDialogOpen(true);
           }}
         >
           Novo Benefício
@@ -249,11 +262,7 @@ export default function BeneficiosDoPlanoPage() {
             </p>
           )}
 
-          {erro && (
-            <p className="mt-3 text-xs text-destructive">
-              {erro}
-            </p>
-          )}
+          {erro && <p className="mt-3 text-xs text-destructive">{erro}</p>}
         </CardContent>
       </Card>
 
@@ -268,9 +277,9 @@ export default function BeneficiosDoPlanoPage() {
           <TabelaBeneficios
             beneficios={beneficiosFiltrados}
             onEditBeneficio={(beneficio) => {
-              setBeneficioSelecionado(beneficio)
-              setDialogMode("edit")
-              setDialogOpen(true)
+              setBeneficioSelecionado(beneficio);
+              setDialogMode("edit");
+              setDialogOpen(true);
             }}
             onDeleteBeneficio={handleDeleteBeneficio}
           />
@@ -287,5 +296,5 @@ export default function BeneficiosDoPlanoPage() {
         submitting={salvando}
       />
     </div>
-  )
+  );
 }

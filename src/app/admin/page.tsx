@@ -1,12 +1,20 @@
-"use client"
+"use client";
 
-
-import { CartaoKPI } from "@/components/admin/kpiCard"
-import { TrendingUp, Users, Ticket, DollarSign, ActivitySquare, CheckCircle2 } from "lucide-react"
+import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
+import { CartaoKPI } from "@/components/admin/kpiCard";
+import {
+  TrendingUp,
+  Users,
+  Ticket,
+  DollarSign,
+  ActivitySquare,
+  CheckCircle2,
+} from "lucide-react";
 
 export default function PageDashboard() {
   return (
     <div className="space-y-6">
+      <AdminBreadcrumb items={[{ label: "Dashboard", href: "/admin" }]} />
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-balance">Dashboard</h1>
@@ -22,7 +30,13 @@ export default function PageDashboard() {
           tendencia="alta"
           valorTendencia="+12%"
         />
-        <CartaoKPI titulo="Ingressos Emitidos" valor="3.245" icone={Ticket} tendencia="alta" valorTendencia="+8%" />
+        <CartaoKPI
+          titulo="Ingressos Emitidos"
+          valor="3.245"
+          icone={Ticket}
+          tendencia="alta"
+          valorTendencia="+8%"
+        />
         <CartaoKPI
           titulo="Check-ins Realizados"
           valor="2.890"
@@ -30,7 +44,13 @@ export default function PageDashboard() {
           tendencia="alta"
           valorTendencia="+15%"
         />
-        <CartaoKPI titulo="Sócios Ativos" valor="1.204" icone={Users} tendencia="alta" valorTendencia="+5%" />
+        <CartaoKPI
+          titulo="Sócios Ativos"
+          valor="1.204"
+          icone={Users}
+          tendencia="alta"
+          valorTendencia="+5%"
+        />
         <CartaoKPI
           titulo="Sócios Inadimplentes"
           valor="38"
@@ -47,5 +67,5 @@ export default function PageDashboard() {
         />
       </div>
     </div>
-  )
+  );
 }
