@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -251,7 +250,6 @@ export default function PaginaPlanos() {
             setPlanoDialogOpen(true);
           }}
         >
-          <Plus className="w-4 h-4" />
           Novo Plano
         </Button>
       </div>

@@ -1,25 +1,12 @@
 "use client"
 
 import { useEffect, useState, FormEvent } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { AdminRole, AdminRow } from "./types"
 
 export type AdminFormValues = {
@@ -47,7 +34,7 @@ export function AdminDialog({
   const [form, setForm] = useState<AdminFormValues>({
     nome: "",
     email: "",
-    role: "ADMIN",
+    role: "SUPER_ADMIN",
     ativo: true,
     senha: "",
   })
@@ -67,7 +54,7 @@ export function AdminDialog({
       setForm({
         nome: "",
         email: "",
-        role: "ADMIN",
+        role: "SUPER_ADMIN",
         ativo: true,
         senha: "",
       })
@@ -135,7 +122,8 @@ export function AdminDialog({
                 <SelectValue placeholder="Selecione a função" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ADMIN">Administrador</SelectItem>
+                <SelectItem value="SUPER_ADMIN">Administrador</SelectItem>
+                <SelectItem value="OPERACIONAL">Operacional</SelectItem>
                 <SelectItem value="PORTARIA">Colaborador portaria</SelectItem>
               </SelectContent>
             </Select>

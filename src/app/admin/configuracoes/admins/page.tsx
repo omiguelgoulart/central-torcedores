@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb"
 import {
   AdminRole,
@@ -30,7 +29,7 @@ type AdminApi = {
 
 function mapRole(role: string | null | undefined): AdminRole {
   if (role === "PORTARIA") return "PORTARIA"
-  return "ADMIN"
+  return "SUPER_ADMIN"
 }
 
 function mapFromApi(admin: AdminApi): AdminRow {
@@ -106,12 +105,24 @@ export default function AdminsPage() {
 
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as
-          | { error?: string }
+          | { error?: string; message?: string; errors?: Record<string, string[] | string> }
           | null
-        throw new Error(body?.error ?? "Erro ao criar admin")
+
+        // Monta mensagem mais detalhada a partir do corpo da resposta
+        let detalhe = body?.error ?? body?.message ?? `Erro ${res.status} ${res.statusText}`
+
+        if (body?.errors) {
+          const partes = Object.values(body.errors)
+        .flat()
+        .filter(Boolean)
+        .map(String)
+          if (partes.length) detalhe += `: ${partes.join("; ")}`
+        }
+
+        setErrorMessage(`Não foi possível criar o administrador. ${detalhe}`)
+        return
       }
 
-      // Recarrega dados da página (chama useEffect de novo)
       router.refresh()
     } catch (error) {
       console.error(error)
@@ -201,7 +212,6 @@ export default function AdminsPage() {
 
         <AdminDialog mode="create" onSubmit={handleCreate}>
           <Button className="gap-2">
-            <Plus className="w-4 h-4" />
             Novo Admin
           </Button>
         </AdminDialog>
