@@ -28,19 +28,15 @@ type AuthCookie = {
 function getTorcedorIdFromCookies(): string | null {
   const direto = Cookies.get("usuarioId");
   if (direto) {
-    console.log("usuarioId direto do cookie:", direto);
     return direto;
   }
 
   const auth = Cookies.get("auth");
-  console.log("cookie auth bruto:", auth);
   if (!auth) return null;
 
   try {
     const parsed = JSON.parse(auth) as AuthCookie;
-    console.log("auth parseado:", parsed);
     const id = parsed.user?.id ?? parsed.id ?? null;
-    console.log("id extraído do auth:", id);
     return id ?? null;
   } catch (err) {
     console.error("Erro ao parsear cookie auth:", err);
@@ -65,14 +61,15 @@ export default function IngressosPage() {
           return;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`
+        );
 
         if (!response.ok) {
           throw new Error("Erro ao buscar usuário");
         }
 
         const data = await response.json();
-        console.log("Resposta do backend /usuario/:id:", data);
 
         setIngressos(data.ingressos ?? []);
       } catch (error) {
@@ -90,13 +87,16 @@ export default function IngressosPage() {
 
   const proximos = ingressos.filter((ing) => {
     const dataJogo = ing.jogo?.dataHora ? new Date(ing.jogo.dataHora) : null;
-    return dataJogo && dataJogo >= agora && ing.status === "VALIDO";
+    const isValido = ing.status === "VALIDO";
+
+    if (!dataJogo) return isValido;
+
+    return isValido && dataJogo >= agora;
   });
 
-  const anteriores = ingressos.filter((ing) => {
-    const dataJogo = ing.jogo?.dataHora ? new Date(ing.jogo.dataHora) : null;
-    return !dataJogo || dataJogo < agora || ing.status !== "VALIDO";
-  });
+  const anteriores = ingressos.filter(
+    (ing) => !proximos.some((p) => p.id === ing.id)
+  );
 
   const listaVisivel = abaAtiva === "PROXIMOS" ? proximos : anteriores;
   const naoTemIngresso = ingressos.length === 0;

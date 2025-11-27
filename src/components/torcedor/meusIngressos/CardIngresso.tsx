@@ -39,7 +39,7 @@ const statusConfig: Record<
 
 export function CardIngresso({ ingresso }: CardIngressoProps) {
   const statusInfo = statusConfig[ingresso.status];
-  const tituloJogo = `${ingresso.jogo.mandante} x ${ingresso.jogo.visitante}`;
+  const tituloJogo = `${ingresso.jogo.nome}`;
 
   return (
     <Card >
