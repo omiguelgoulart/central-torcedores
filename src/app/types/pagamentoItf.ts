@@ -57,3 +57,22 @@ export interface PagamentoResponse {
   status: string;
   raw?: unknown;
 }
+
+
+export type PagamentoResumo = {
+  id: string;
+  jogoId: string;
+  loteId?: string | null;
+  valor: number;
+  jogo: {
+    id: string;
+    nome: string;
+    data: string;
+    local: string;
+  };
+  lote?: {
+    id: string;
+    nome: string;
+    setor: string;
+  };
+};

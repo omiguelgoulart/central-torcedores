@@ -98,6 +98,7 @@ export function PainelBoleto({
         metodo: "BOLETO",
         paymentId: data.id,
         statusInicial: mapStatusToUiStatus(data.status ?? ""),
+        valor: valor
       });
 
       toast.success("Boleto gerado com sucesso!");

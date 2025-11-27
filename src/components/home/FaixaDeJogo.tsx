@@ -37,7 +37,7 @@ export function FaixaDeJogos({ jogos }: FaixaDeJogosProps) {
         </div>
 
         <Button variant="link" asChild>
-          <Link href="/jogos">Ver todos</Link>
+          <Link href="/partidas">Ver todos</Link>
         </Button>
       </div>
 

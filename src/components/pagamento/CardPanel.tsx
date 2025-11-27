@@ -211,7 +211,7 @@ const onSubmit = useCallback(
         },
       };
 
-      console.log("Enviando pagamento cartão:", body);
+      // console.log("Enviando pagamento cartão:", body);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
@@ -229,6 +229,7 @@ const onSubmit = useCallback(
         onPaymentCreated({
           metodo: "CARTAO",
           statusInicial: "ERROR",
+          valor: 0
         });
         return;
       }
@@ -239,6 +240,7 @@ const onSubmit = useCallback(
         metodo: "CARTAO",
         paymentId: resposta.id,
         statusInicial: uiStatus,
+        valor: resposta.valor || 0
       });
 
       toast.success(
@@ -251,6 +253,7 @@ const onSubmit = useCallback(
       onPaymentCreated({
         metodo: "CARTAO",
         statusInicial: "ERROR",
+        valor: 0
       });
     } finally {
       setLoading(false);

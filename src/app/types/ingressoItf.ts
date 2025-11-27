@@ -15,8 +15,7 @@ export interface ingressoItf {
 
   jogo: {
     id: string;
-    mandante: string;
-    visitante: string;
+    nome: string;
     dataHora: string;     
     estadio: string;
   };

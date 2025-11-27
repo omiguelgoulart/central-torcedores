@@ -86,6 +86,7 @@ export function PainelPix({
         metodo: "PIX",
         paymentId: pagamento.id,
         statusInicial: pagamento.status,
+        valor: 0
       });
 
       const qrResponse = await fetch(

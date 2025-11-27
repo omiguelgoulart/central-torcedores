@@ -12,6 +12,7 @@ const setores = [
   { id: "social", nome: "Arquibancada Social", preco: 80, disponibilidade: 90, box: { left: 18, top: 72, width: 60, height: 10 } }, // baixo
   { id: "cativas", nome: "Cadeiras Cativas", preco: 120, disponibilidade: 30, box: { left: 60.5, top: 82, width: 18, height: 8 } }, // faixa abaixo
   { id: "norte", nome: "Arquibancada Norte", preco: 40, disponibilidade: 100, box: { left: 12,  top: 30, width: 10, height: 45 } }, // esquerda
+  { id: "norte-visitante", nome: "Arquibancada Norte", preco: 40, disponibilidade: 100, box: { left: 12,  top: 30, width: 10, height: 45 } }, // esquerda
   { id: "sul", nome: "Arquibancada Sul", preco: 40, disponibilidade: 100, box: { left: 75, top: 32, width: 10, height: 45 } }, // direita
 ];
 

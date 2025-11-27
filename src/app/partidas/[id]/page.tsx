@@ -6,6 +6,27 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
 
 export const revalidate = 0
 
+type IngressoApi = {
+  id: string
+}
+
+type JogoSetorLoteApi = {
+  id: string
+  precoUnitario: number | string
+  ingressos: IngressoApi[]
+}
+
+type JogoSetorApi = {
+  id: string
+  capacidade: number
+  setor: {
+    id: string
+    slug: string
+    nome: string
+  }
+  lotes: JogoSetorLoteApi[]
+}
+
 type PartidaApi = {
   id: string
   nome: string
@@ -13,12 +34,7 @@ type PartidaApi = {
   local: string
   mandante?: string | null
   visitante?: string | null
-}
-
-type SetorValorApi = {
-  id: string
-  preco: number
-  disponibilidade: number
+  setores: JogoSetorApi[]
 }
 
 type PartidaDetalhePageProps = {
@@ -36,7 +52,7 @@ export default async function PartidaDetalhePage({
 
   try {
     const partidaRes = await fetch(
-      `${API}/admin/jogo/${encodeURIComponent(id)}/full`,
+      `${API}/admin/jogo/${encodeURIComponent(id)}/jogo`,
       {
         cache: "no-store",
       },
@@ -63,38 +79,40 @@ export default async function PartidaDetalhePage({
     local: partidaApi.local,
   }
 
-  let setoresApi: SetorValorApi[] = []
+  const setoresApi = Array.isArray(partidaApi.setores)
+    ? partidaApi.setores
+    : []
 
-  try {
-    const setoresRes = await fetch(
-      `${API}/partidas/${encodeURIComponent(id)}/setores`,
-      {
-        cache: "no-store",
-      },
+  const valores = setoresApi.map((jogoSetor) => {
+    const primeiroLote = jogoSetor.lotes[0]
+
+    const precoRaw = primeiroLote?.precoUnitario ?? 0
+    const precoLote =
+      typeof precoRaw === "string" ? Number(precoRaw) : precoRaw
+
+    const vendidos = jogoSetor.lotes.reduce(
+      (total, lote) => total + lote.ingressos.length,
+      0,
     )
 
-    if (!setoresRes.ok) {
-      console.error("Erro ao buscar setores da partida:", setoresRes.status)
-    } else {
-      const json = (await setoresRes.json()) as SetorValorApi[] | null
-      if (Array.isArray(json)) {
-        setoresApi = json
-      }
-    }
-  } catch (error) {
-    console.error("Erro ao carregar setores:", error)
-  }
+    const disponibilidade = jogoSetor.capacidade - vendidos
 
-  const valores = setoresApi.map((setor) => ({
-    id: setor.id,
-    preco: setor.preco,
-    disponibilidade: setor.disponibilidade,
-  }))
+    return {
+      id: jogoSetor.setor.slug,
+      nome: jogoSetor.setor.nome,
+      preco: Number.isFinite(precoLote) ? precoLote : 0,
+      disponibilidade: disponibilidade > 0 ? disponibilidade : 0,
+
+      setorId: jogoSetor.setor.id,
+      jogoSetorId: jogoSetor.id,
+      loteId: primeiroLote?.id ?? "",
+    }
+  })
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="container mx-auto space-y-8 px-4 py-8">
       <PartidaHeader partida={partida} />
-      <ExibicaoMapaSetor partidaId={partida.id} valores={valores} />
+      <ExibicaoMapaSetor jogoId={partida.id} valores={valores} />
     </div>
   )
 }

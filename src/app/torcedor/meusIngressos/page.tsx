@@ -65,8 +65,6 @@ export default function IngressosPage() {
           return;
         }
 
-        console.log("Buscando ingressos para o torcedorId:", torcedorId);
-
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`);
 
         if (!response.ok) {

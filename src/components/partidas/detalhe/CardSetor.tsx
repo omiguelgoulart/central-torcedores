@@ -5,31 +5,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface CardSetorProps {
-  partidaId: string;
+  jogoId: string;
   setor: {
-    id: string;
+    jogoSetorId: string;      // id do jogo_setor (tabela de relação)
+    setorId: string;          // id do setor (tabela setor)
     nome: string;
-    preco: number;
+    preco: number;            // precoUnitario do lote
     disponibilidade: number;
+    loteId: string;           // id do lote (da API)
   };
-  onCancel?: () => void; // ← agora é opcional, com fallback
+  onCancel?: () => void;
 }
 
-export function CardSetor({ partidaId, setor, onCancel }: CardSetorProps) {
+export function CardSetor({ jogoId, setor, onCancel }: CardSetorProps) {
   const router = useRouter();
 
-  // 👉 Direciona direto para a página de pagamento com os dados do setor
   const confirmar = () => {
-    const query = new URLSearchParams({
-      description: `Ingresso - ${setor.nome}`,
-      subtotal: setor.preco.toString(),
-      fees: "0",
-      total: setor.preco.toString(),
-      setorId: setor.id,
-      partidaId,
-    }).toString();
+    const params = new URLSearchParams();
+    params.set("description", `Ingresso - ${setor.nome}`);
+    params.set("subtotal", setor.preco.toString());
+    params.set("fees", "0");
+    params.set("total", setor.preco.toString());
+    params.set("setorId", setor.setorId);
+    params.set("loteId", setor.loteId);
+    params.set("jogoId", jogoId);        // id do jogo (partida)
+    params.set("jogoSetorId", setor.jogoSetorId); // id da relação jogo_setor
 
-    router.push(`/pagamento?${query}`);
+    router.push(`/pagamento?${params.toString()}`);
   };
 
   const descricao = [
@@ -72,7 +74,7 @@ export function CardSetor({ partidaId, setor, onCancel }: CardSetorProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={onCancel ?? (() => router.back())} // fallback seguro
+            onClick={onCancel ?? (() => router.back())}
           >
             Cancelar
           </Button>

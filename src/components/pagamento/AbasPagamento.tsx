@@ -18,6 +18,9 @@ export type PagamentoCriado = {
   metodo: MetodoPagamento;
   paymentId?: string;
   statusInicial?: PaymentStatus | string;
+  valor: number;
+  jogoId?: string;
+  loteId?: string;
 };
 
 type TipoAbaPagamento = "pix" | "boleto" | "cartao";
@@ -31,14 +34,6 @@ type AbasPagamentoProps = {
   torcedorId?: string;
   jogoId?: string;
   loteId?: string;
-};
-
-type IngressoCreateBody = {
-  jogoId: string;
-  valor: number;
-  pagamentoId: string;
-  loteId?: string;
-  torcedorId?: string;
 };
 
 type AssinaturaCreateBody = {
@@ -69,65 +64,8 @@ export function AbasPagamento({
   const isIngresso = orderType === "ingresso";
   const isPlano = orderType === "plano";
 
-  function isStatusPago(status: PaymentStatus) {
+  function isStatusPago(status: PaymentStatus): boolean {
     return status === "PAID" || status === "APPROVED";
-  }
-
-  async function criarIngressoSeNecessario(
-    status: PaymentStatus
-  ): Promise<string | null> {
-    if (!isIngresso) return null;
-    if (!isStatusPago(status)) return null;
-
-    if (!pagamentoCriado?.paymentId) {
-      toast.error(
-        "Pagamento aprovado, mas não recebemos o ID da cobrança para vincular o ingresso."
-      );
-      return null;
-    }
-
-    if (!jogoId) {
-      toast.error("Jogo não informado para criação do ingresso.");
-      return null;
-    }
-
-    try {
-      const body: IngressoCreateBody = {
-        jogoId: jogoId!,
-        valor: orderTotal,
-        pagamentoId: pagamentoCriado.paymentId,
-      };
-
-      if (loteId) body.loteId = loteId;
-      if (torcedorId) body.torcedorId = torcedorId;
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ingressos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data) {
-        toast.error( data?.error || data?.message ||"Erro ao criar ingresso após o pagamento.");
-        return null;
-      }
-
-      const ingressoId: string | undefined =
-        data.ingressoId || data.id || data.ingresso?.id;
-
-      if (!ingressoId) {
-        toast.error("Pagamento confirmado, mas não recebemos o ID do ingresso.");
-        return null;
-      }
-
-      return ingressoId;
-    } catch (e) {
-      console.error(e);
-      toast.error("Falha ao criar ingresso após o pagamento.");
-      return null;
-    }
   }
 
   async function criarAssinaturaSeNecessario(
@@ -161,21 +99,28 @@ export function AbasPagamento({
         valor: orderTotal,
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assinaturas`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/assinaturas`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
 
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data) {
-        toast.error(data?.error || data?.message || "Erro ao criar assinatura do plano.");
+        toast.error(
+          data?.error ||
+            data?.message ||
+            "Erro ao criar assinatura do plano."
+        );
         return;
       }
 
       toast.success("Plano vinculado ao torcedor com sucesso!");
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
       toast.error("Falha ao criar assinatura do plano.");
     }
@@ -196,61 +141,208 @@ export function AbasPagamento({
     setDialogoAberto(true);
   }
 
-  const aoTentarNovamente = () => {
+  const aoTentarNovamente = (): void => {
     setDialogoAberto(false);
     setStatusPagamento(null);
   };
 
-  const aoFechar = () => {
+  const aoFechar = (): void => {
     setDialogoAberto(false);
     setStatusPagamento(null);
   };
 
-  async function handleConfirmarPagamentoFake() {
-    if (!pagamentoCriado) {
-      toast.error("Nenhum pagamento gerado ainda.");
+async function handleConfirmarPagamentoFake(): Promise<void> {
+  if (!pagamentoCriado) {
+    toast.error("Nenhum pagamento gerado ainda.");
+    return;
+  }
+
+  setConfirmLoading(true);
+
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    let status: PaymentStatus;
+
+    switch (pagamentoCriado.metodo) {
+      case "PIX":
+        status = "PAID";
+        break;
+      case "BOLETO":
+        status = "PENDING";
+        break;
+      case "CARTAO":
+        status = "APPROVED";
+        break;
+      default:
+        status = "ERROR";
+    }
+
+    let paymentId = pagamentoCriado.paymentId;
+
+    if (!paymentId) {
+      paymentId = `FAKE-${Date.now()}`;
+
+      setPagamentoCriado({
+        ...pagamentoCriado,
+        paymentId,
+      });
+    }
+
+    if (isIngresso) {
+      if (isStatusPago(status)) {
+        const query = new URLSearchParams({
+          pagamentoId: paymentId,
+          valor: String(orderTotal),
+        });
+
+        if (jogoId) {
+          query.set("jogoId", jogoId);
+        }
+
+        if (loteId) {
+          query.set("loteId", loteId);
+        }
+
+        window.location.href = `/ingressos/vincular?${query.toString()}`;
+      } else {
+        toast.warning(
+          "Pagamento ainda não está confirmado para gerar o ingresso."
+        );
+      }
+
       return;
     }
 
-    setConfirmLoading(true);
-
-    try {
-      await new Promise((r) => setTimeout(r, 1200));
-
-      let status: PaymentStatus;
-
-      switch (pagamentoCriado.metodo) {
-        case "PIX":
-          status = "PAID";
-          break;
-        case "BOLETO":
-          status = "PENDING";
-          break;
-        case "CARTAO":
-          status = "APPROVED";
-          break;
-        default:
-          status = "ERROR";
-      }
-
-      let ingressoId: string | null = null;
-      if (isIngresso) {
-        ingressoId = await criarIngressoSeNecessario(status);
-      }
-
-      if (isPlano) {
-        await criarAssinaturaSeNecessario(status);
-      }
-
-      finalizarPagamento(status, ingressoId ?? undefined);
-    } catch (e) {
-      console.error(e);
-      toast.error("Falha na simulação de confirmação de pagamento.");
-    } finally {
-      setConfirmLoading(false);
+    if (isPlano) {
+      await criarAssinaturaSeNecessario(status);
     }
-  }
 
+    finalizarPagamento(status);
+  } catch (e: unknown) {
+    console.error(e);
+    toast.error("Falha na simulação de confirmação de pagamento.");
+  } finally {
+    setConfirmLoading(false);
+  }
+}
+
+
+  return (
+    <>
+      <Tabs
+        value={abaAtiva}
+        onValueChange={(value) => setAbaAtiva(value as TipoAbaPagamento)}
+      >
+        <TabsList
+          className={`grid w-full ${
+            isIngresso ? "grid-cols-2" : "grid-cols-3"
+          }`}
+        >
+          <TabsTrigger value="pix">
+            <QrCodeIcon className="mr-2 size-4" />
+            PIX
+          </TabsTrigger>
+
+          {!isIngresso && (
+            <TabsTrigger value="boleto">
+              <FileTextIcon className="mr-2 size-4" />
+              Boleto
+            </TabsTrigger>
+          )}
+
+          <TabsTrigger value="cartao">
+            <CreditCardIcon className="mr-2 size-4" />
+            Cartão
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pix">
+          <Card>
+            <CardContent className="pt-6">
+              <PainelPix
+                customerId={customerId}
+                valor={orderTotal}
+                descricao={orderDescription}
+                onPaymentCreated={(ctx: PagamentoCriado) =>
+                  setPagamentoCriado({
+                    ...ctx,
+                    valor: orderTotal,
+                    jogoId,
+                    loteId,
+                  })
+                }
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {!isIngresso && (
+          <TabsContent value="boleto">
+            <Card>
+              <CardContent className="pt-6">
+                <PainelBoleto
+                  customerId={customerId}
+                  valor={orderTotal}
+                  descricao={orderDescription}
+                  onPaymentCreated={(ctx: PagamentoCriado) =>
+                    setPagamentoCriado({
+                      ...ctx,
+                      valor: orderTotal,
+                      jogoId,
+                      loteId,
+                    })
+                  }
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        <TabsContent value="cartao">
+          <Card>
+            <CardContent className="pt-6">
+              <CardPanel
+                customerId={customerId}
+                valor={orderTotal}
+                descricao={orderDescription}
+                onPaymentCreated={(ctx: PagamentoCriado) =>
+                  setPagamentoCriado({
+                    ...ctx,
+                    valor: orderTotal,
+                    jogoId,
+                    loteId,
+                  })
+                }
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <div className="mt-6">
+        <Button
+          className="w-full"
+          disabled={!pagamentoCriado || confirmLoading}
+          onClick={handleConfirmarPagamentoFake}
+        >
+          {confirmLoading
+            ? "Verificando pagamento..."
+            : "Confirmar pagamento"}
+        </Button>
+      </div>
+
+      <ResultadoPagamentoDialog
+        open={dialogoAberto}
+        status={statusPagamento}
+        onClose={aoFechar}
+        onRetry={aoTentarNovamente}
+      />
+    </>
+  );
+}
+
+// rota real asaas 
 // async function handleConfirmarPagamento() { 
 //   if (!pagamentoCriado?.paymentId) { 
 //     toast.error("Nenhum pagamento com ID encontrado.");
@@ -300,97 +392,3 @@ export function AbasPagamento({
 //           setConfirmLoading(false); 
 //         } 
 //       }
-
-
-  return (
-    <>
-      <Tabs
-        value={abaAtiva}
-        onValueChange={(value) => setAbaAtiva(value as TipoAbaPagamento)}
-      >
-        <TabsList
-          className={`grid w-full ${
-            isIngresso ? "grid-cols-2" : "grid-cols-3"
-          }`}
-        >
-          <TabsTrigger value="pix">
-            <QrCodeIcon className="mr-2 size-4" />
-            PIX
-          </TabsTrigger>
-
-          {!isIngresso && (
-            <TabsTrigger value="boleto">
-              <FileTextIcon className="mr-2 size-4" />
-              Boleto
-            </TabsTrigger>
-          )}
-
-          <TabsTrigger value="cartao">
-            <CreditCardIcon className="mr-2 size-4" />
-            Cartão
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pix">
-          <Card>
-            <CardContent className="pt-6">
-              <PainelPix
-                customerId={customerId}
-                valor={orderTotal}
-                descricao={orderDescription}
-                onPaymentCreated={(ctx) => setPagamentoCriado(ctx)}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {!isIngresso && (
-          <TabsContent value="boleto">
-            <Card>
-              <CardContent className="pt-6">
-                <PainelBoleto
-                  customerId={customerId}
-                  valor={orderTotal}
-                  descricao={orderDescription}
-                  onPaymentCreated={(ctx) => setPagamentoCriado(ctx)}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        <TabsContent value="cartao">
-          <Card>
-            <CardContent className="pt-6">
-              <CardPanel
-                customerId={customerId}
-                valor={orderTotal}
-                descricao={orderDescription}
-                onPaymentCreated={(ctx) => setPagamentoCriado(ctx)}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      <div className="mt-6">
-        <Button
-          className="w-full"
-          disabled={!pagamentoCriado || confirmLoading}
-          onClick={handleConfirmarPagamentoFake}
-        >
-          {confirmLoading
-            ? "Verificando pagamento..."
-            : "Confirmar pagamento"}
-        </Button>
-      </div>
-
-      <ResultadoPagamentoDialog
-        open={dialogoAberto}
-        status={statusPagamento}
-        onClose={aoFechar}
-        onRetry={aoTentarNovamente}
-      />
-    </>
-  );
-}
