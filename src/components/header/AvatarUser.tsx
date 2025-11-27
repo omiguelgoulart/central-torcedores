@@ -153,8 +153,8 @@ export function UserAvatar() {
         {/* Parte inferior: botão de logout */}
         <div className="p-4 border-t border-zinc-800">
           <Button
-            variant="destructive"
-            className="w-full bg-red-600 hover:bg-red-700 text-white"
+            variant="secondary"
+            className="w-full"
             onClick={() => logout()}
           >
             <LogOut className="mr-2 h-4 w-4" />

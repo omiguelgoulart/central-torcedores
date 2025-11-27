@@ -27,10 +27,7 @@ export function PlanosCampanha({ planos }: PlanosCampanhaProps) {
           <CreditCard className="h-6 w-6" />
           <h2 className="text-3xl font-bold">Planos de Sócio</h2>
         </div>
-        <Button variant="link" asChild>
-          <Link href="/planos">Comparar todos os planos</Link>
-        </Button>
-      </div>
+        </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         {planos.map((plano) => (
@@ -66,7 +63,9 @@ export function PlanosCampanha({ planos }: PlanosCampanhaProps) {
                 ))}
               </ul>
 
+              <Link href={`/assinatura/${plano.id}`}>
               <Button className="w-full">Assinar agora</Button>
+              </Link>
             </CardContent>
           </Card>
         ))}

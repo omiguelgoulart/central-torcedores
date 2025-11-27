@@ -21,6 +21,8 @@ function AssinaturaContent() {
 
   useEffect(() => {
     if (!planoId) {
+      setLoading(false)
+      setErrorMsg("Plano não informado. Volte e selecione um plano.")
       return
     }
 
@@ -29,7 +31,7 @@ function AssinaturaContent() {
         setLoading(true)
         setErrorMsg(null)
 
-        const res = await fetch(`${API}/planos/${planoId}`, {
+        const res = await fetch(`${API}/planos/${encodeURIComponent(planoId as string)}`, {
           cache: "no-store",
         })
 
@@ -87,7 +89,7 @@ function AssinaturaContent() {
 
       <div className="w-full lg:w-1/2">
         <FormAssinatura
-          planoId={plano.id}
+          planoId={plano.id} // 👈 esse id aqui é o que precisamos usar no POST
           planoNome={plano.nome}
           valor={plano.valor}
           defaultRecorrencia={defaultRecorrenciaParam ?? plano.periodicidade}

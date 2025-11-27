@@ -62,6 +62,11 @@ export function FormAssinatura({
     e.preventDefault();
     setErrorMsg(null);
 
+    if (!planoId) {
+      setErrorMsg("ID do plano não encontrado. Tente novamente.");
+      return;
+    }
+
     if (!recorrencia) {
       setErrorMsg("Escolha uma recorrência para continuar.");
       return;
@@ -73,9 +78,9 @@ export function FormAssinatura({
 
     const params = new URLSearchParams({
       tipo: "plano",
-      planoId,
+      planoId, // 👈 GARANTIDO
       recorrencia,
-      description,
+      description: encodeURIComponent(description),
       subtotal: String(valor),
       fees: "0",
       total: String(valor),
