@@ -15,7 +15,7 @@ type AdminTabelaProps = {
 }
 
 function getRoleLabel(role: AdminRole): string {
-  if (role === "ADMIN") return "Administrador"
+  if (role === "SUPER_ADMIN") return "Administrador"
   if (role === "PORTARIA") return "Colaborador portaria"
   return role
 }

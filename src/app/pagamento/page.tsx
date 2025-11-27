@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -12,7 +12,7 @@ import { CadastroCustomerIdForm } from "@/components/pagamento/CadastroCustomerI
 
 type TipoPedido = "ingresso" | "plano" | "mensalidade";
 
-export default function PagamentoPage() {
+function PagamentoPageContent() {
   const router = useRouter();
   const search = useSearchParams();
   const { usuario, fetchMe, loading } = useAuth();
@@ -59,6 +59,7 @@ export default function PagamentoPage() {
       const timer = setTimeout(() => router.push("/login"), 2000);
       return () => clearTimeout(timer);
     }
+    return;
   }, [loading, usuario, router]);
 
   if (loading) {
@@ -131,5 +132,21 @@ export default function PagamentoPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PagamentoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto max-w-5xl py-16 px-4 text-center">
+          <p className="text-muted-foreground">
+            Carregando informações de pagamento...
+          </p>
+        </div>
+      }
+    >
+      <PagamentoPageContent />
+    </Suspense>
   );
 }

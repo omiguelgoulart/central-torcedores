@@ -1,115 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
+import { StatusTorcedor, TorcedorUI, AssinaturaUI, PagamentoUI, IngressoUI, TorcedorPerfilResponse, AssinaturaApi, PagamentoApi, IngressoApi } from "@/components/admin/torcedores/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
-type StatusTorcedor = "ATIVO" | "INADIMPLENTE" | "CANCELADO" | "INATIVO";
-
-type TorcedorPerfilResponse = {
-  id: string;
-  matricula: string;
-  nome: string;
-  email: string;
-  telefone: string | null;
-  cpf: string | null;
-  dataNascimento: string | null;
-  genero: string | null;
-  fotoUrl: string | null;
-  enderecoLogradouro: string | null;
-  enderecoNumero: string | null;
-  enderecoBairro: string | null;
-  enderecoCidade: string | null;
-  enderecoUF: string | null;
-  enderecoCEP: string | null;
-  statusSocio: StatusTorcedor | null;
-  inadimplenteDesde: string | null;
-  criadoEm: string | null;
-  atualizadoEm: string | null;
-
-  // relacionamentos
-  assinaturas: unknown[];
-  pagamentos: unknown[];
-  ingressos: unknown[];
-  pedidos: unknown[];
-};
-
-type TorcedorUI = {
-  id: string;
-  nome: string;
-  email: string;
-  matricula: string;
-  cpf: string;
-  telefone: string;
-  status: StatusTorcedor;
-  plano: string;
-  dataCadastro: string | null;
-  dataNascimento: string | null;
-  endereco: string;
-};
-
-type AssinaturaApi = {
-  id: string;
-  status?: string | null;
-  inicioEm?: string | null;
-  proximaCobrancaEm?: string | null;
-  planoNome?: string | null;
-  plano?: {
-    nome?: string | null;
-  } | null;
-};
-
-type AssinaturaUI = {
-  id: string;
-  plano: string;
-  status: string;
-  inicio: string | null;
-  proxima: string | null;
-};
-
-type PagamentoApi = {
-  id: string;
-  valor?: number | null;
-  valorBruto?: number | null;
-  status?: string | null;
-  metodo?: string | null;
-  billingType?: string | null;
-  pagoEm?: string | null;
-  criadoEm?: string | null;
-};
-
-type PagamentoUI = {
-  id: string;
-  valor: string;
-  status: string;
-  data: string | null;
-  metodo: string;
-};
-
-type IngressoApi = {
-  id: string;
-  status?: string | null;
-  dataJogo?: string | null;
-  jogoNome?: string | null;
-  setorNome?: string | null;
-  jogo?: {
-    nome?: string | null;
-    dataJogo?: string | null;
-  } | null;
-};
-
-type IngressoUI = {
-  id: string;
-  jogo: string;
-  data: string | null;
-  setor: string;
-  status: string;
-};
 
 function formatarDataBr(valor: string | null): string {
   if (!valor) return "Não informado";
@@ -131,11 +34,11 @@ function badgeStatusVariant(status: StatusTorcedor) {
   return "outline" as const;
 }
 
-export default function PageTorcedorDetalhe({
-  params,
-}: {
-  params: { id: string };
-}) {
+export type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default function PageTorcedorDetalhe({ params }: PageProps) {
   const [abaAtiva, setAbaAtiva] = useState("personal");
   const [torcedor, setTorcedor] = useState<TorcedorUI | null>(null);
   const [assinaturas, setAssinaturas] = useState<AssinaturaUI[]>([]);
@@ -150,7 +53,9 @@ export default function PageTorcedorDetalhe({
         setCarregando(true);
         setErro(null);
 
-        const resposta = await fetch(`${API}/usuario/id/${params.id}`, {
+        const { id } = await params;
+
+        const resposta = await fetch(`${API}/usuario/id/${id}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
@@ -164,7 +69,6 @@ export default function PageTorcedorDetalhe({
 
         const dados = (await resposta.json()) as TorcedorPerfilResponse;
 
-        // endereço
         const partesEndereco = [
           dados.enderecoLogradouro,
           dados.enderecoNumero ? `nº ${dados.enderecoNumero}` : null,
@@ -245,8 +149,8 @@ export default function PageTorcedorDetalhe({
       }
     }
 
-    carregarTorcedor();
-  }, [params.id]);
+    void carregarTorcedor();
+  }, [params]);
 
   if (carregando) {
     return (
@@ -289,6 +193,7 @@ export default function PageTorcedorDetalhe({
           },
         ]}
       />
+
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">{torcedor.nome}</h1>
@@ -304,6 +209,7 @@ export default function PageTorcedorDetalhe({
         <Button variant="outline">Editar</Button>
       </div>
 
+      {/* Abas */}
       <Tabs value={abaAtiva} onValueChange={setAbaAtiva}>
         <TabsList className="grid w-full grid-cols-4 md:grid-cols-5">
           <TabsTrigger value="personal">Dados Pessoais</TabsTrigger>
@@ -313,6 +219,7 @@ export default function PageTorcedorDetalhe({
           <TabsTrigger value="invoices">Faturas</TabsTrigger>
         </TabsList>
 
+        {/* DADOS PESSOAIS */}
         <TabsContent value="personal">
           <Card>
             <CardHeader>
@@ -478,7 +385,7 @@ export default function PageTorcedorDetalhe({
           </Card>
         </TabsContent>
 
-        {/* FATURAS (ainda sem dados reais) */}
+        {/* FATURAS */}
         <TabsContent value="invoices">
           <Card>
             <CardHeader>

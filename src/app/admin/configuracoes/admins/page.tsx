@@ -1,20 +1,14 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb"
-import {
-  AdminRole,
-  AdminRow,
-} from "@/components/admin/configuracoes/types"
-import {
-  AdminDialog,
-  AdminFormValues,
-} from "@/components/admin/configuracoes/AdminDialog"
+import { AdminRole, AdminRow } from "@/components/admin/configuracoes/types"
+import { AdminDialog, AdminFormValues } from "@/components/admin/configuracoes/AdminDialog"
 import { AdminResumoCard } from "@/components/admin/configuracoes/AdminResumoCard"
 import { AdminFiltroBusca } from "@/components/admin/configuracoes/AdminFiltroBusca"
 import { AdminTabela } from "@/components/admin/configuracoes/AdminTabela"
-import { useRouter } from "next/navigation"
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
 
@@ -44,25 +38,26 @@ function mapFromApi(admin: AdminApi): AdminRow {
 }
 
 export default function AdminsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState<string>("")
   const [admins, setAdmins] = useState<AdminRow[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const router = useRouter()
 
   useEffect(() => {
-    async function carregarAdmins() {
+    async function carregarAdmins(): Promise<void> {
       try {
         setLoading(true)
         setErrorMessage(null)
 
-        const res = await fetch(`${API}/admin/user`)
+        const res = await fetch(`${API}/admin/user`, { cache: "no-store" })
+
         if (!res.ok) {
           throw new Error("Erro ao buscar admins")
         }
 
-        const data: AdminApi[] = await res.json()
+        const data = (await res.json()) as AdminApi[]
         setAdmins(data.map(mapFromApi))
       } catch (error) {
         console.error(error)
@@ -77,7 +72,7 @@ export default function AdminsPage() {
     void carregarAdmins()
   }, [])
 
-  const filteredAdmins = useMemo(() => {
+  const filteredAdmins = useMemo<AdminRow[]>(() => {
     const term = searchTerm.toLowerCase().trim()
     if (!term) return admins
 
@@ -86,7 +81,7 @@ export default function AdminsPage() {
     )
   }, [admins, searchTerm])
 
-  async function handleCreate(values: AdminFormValues) {
+  async function handleCreate(values: AdminFormValues): Promise<void> {
     try {
       setLoading(true)
       setErrorMessage(null)
@@ -105,21 +100,32 @@ export default function AdminsPage() {
 
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as
-          | { error?: string; message?: string; errors?: Record<string, string[] | string> }
+          | {
+              error?: string
+              message?: string
+              errors?: Record<string, string[] | string>
+            }
           | null
 
-        // Monta mensagem mais detalhada a partir do corpo da resposta
-        let detalhe = body?.error ?? body?.message ?? `Erro ${res.status} ${res.statusText}`
+        let detalhe =
+          body?.error ??
+          body?.message ??
+          `Erro ${res.status} ${res.statusText}`
 
         if (body?.errors) {
           const partes = Object.values(body.errors)
-        .flat()
-        .filter(Boolean)
-        .map(String)
-          if (partes.length) detalhe += `: ${partes.join("; ")}`
+            .flat()
+            .filter(Boolean)
+            .map((msg) => String(msg))
+
+          if (partes.length > 0) {
+            detalhe += `: ${partes.join("; ")}`
+          }
         }
 
-        setErrorMessage(`Não foi possível criar o administrador. ${detalhe}`)
+        setErrorMessage(
+          `Não foi possível criar o administrador. ${detalhe}`,
+        )
         return
       }
 
@@ -132,7 +138,10 @@ export default function AdminsPage() {
     }
   }
 
-  async function handleEdit(id: string, values: AdminFormValues) {
+  async function handleEdit(
+    id: string,
+    values: AdminFormValues,
+  ): Promise<void> {
     try {
       setLoading(true)
       setErrorMessage(null)
@@ -156,7 +165,8 @@ export default function AdminsPage() {
         const body = (await res.json().catch(() => null)) as
           | { error?: string }
           | null
-        throw new Error(body?.error ?? "Erro ao atualizar admin")
+        const mensagemErro = body?.error ?? "Erro ao atualizar admin"
+        throw new Error(mensagemErro)
       }
 
       router.refresh()
@@ -168,7 +178,7 @@ export default function AdminsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string): Promise<void> {
     try {
       setLoading(true)
       setErrorMessage(null)
@@ -181,7 +191,8 @@ export default function AdminsPage() {
         const body = (await res.json().catch(() => null)) as
           | { error?: string }
           | null
-        throw new Error(body?.error ?? "Erro ao deletar admin")
+        const mensagemErro = body?.error ?? "Erro ao deletar admin"
+        throw new Error(mensagemErro)
       }
 
       router.refresh()
@@ -202,18 +213,16 @@ export default function AdminsPage() {
         ]}
       />
 
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-balance">Admins</h1>
+          <h1 className="text-balance text-3xl font-bold">Admins</h1>
           <p className="text-muted-foreground">
             Gerencie usuários administradores e colaboradores de portaria.
           </p>
         </div>
 
         <AdminDialog mode="create" onSubmit={handleCreate}>
-          <Button className="gap-2">
-            Novo Admin
-          </Button>
+          <Button className="gap-2">Novo Admin</Button>
         </AdminDialog>
       </div>
 

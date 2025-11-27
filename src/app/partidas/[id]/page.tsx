@@ -1,4 +1,3 @@
-
 import { notFound } from "next/navigation"
 import { ExibicaoMapaSetor } from "@/components/partidas/detalhe/ExibicaoMapaSetor"
 import { PartidaHeader } from "@/components/partidas/detalhe/HeaderPartida"
@@ -23,22 +22,25 @@ type SetorValorApi = {
 }
 
 type PartidaDetalhePageProps = {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function PartidaDetalhePage({
   params,
 }: PartidaDetalhePageProps) {
-  const { id } = params
+  const { id } = await params
 
   let partidaApi: PartidaApi
 
   try {
-    const partidaRes = await fetch(`${API}/admin/jogo/${encodeURIComponent(id)}/full`, {
-      cache: "no-store",
-    })
+    const partidaRes = await fetch(
+      `${API}/admin/jogo/${encodeURIComponent(id)}/full`,
+      {
+        cache: "no-store",
+      },
+    )
 
     if (!partidaRes.ok) {
       if (partidaRes.status === 404) {
