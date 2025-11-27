@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutGrid, Trophy, Users, DollarSign, Ticket, Settings, LogOut, ChevronRight, ChevronDown } from "lucide-react"
+import { LayoutGrid, Trophy, Users, DollarSign, Ticket, Settings,  ChevronRight, ChevronDown } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
 
@@ -181,19 +181,6 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
             })}
           </ul>
         </nav>
-
-        {/* Footer */}
-        <div className="border-t border-sidebar-border p-4">
-          <button
-            className={cn(
-              "flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors",
-              !open && "justify-center",
-            )}
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {open && <span className="text-sm">Logout</span>}
-          </button>
-        </div>
       </div>
     </aside>
   )

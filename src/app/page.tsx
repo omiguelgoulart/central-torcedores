@@ -1,161 +1,204 @@
-// app/page.tsx (exemplo)
+"use client";
 
-import { Anuncio } from "@/components/home/Anuncio"
-import { BeneficiosDestaque } from "@/components/home/BeneficiosDestaque"
-import { CarrosselPatrocinadores } from "@/components/home/CarrosselPatrocinadores"
-import { ClubeFooter } from "@/components/home/ClubeFooter"
-import { CounterBar } from "@/components/home/CounterBar"
-import { Depoimentos } from "@/components/home/Depoimentos"
-import { FaixaDeJogos } from "@/components/home/FaixaDeJogo"
-import { FeedComunicados } from "@/components/home/FeedComunicado"
-import { IngressoDisponivel } from "@/components/home/IngressoDisponivel"
-import { ListaNoticias } from "@/components/home/ListaNoticias"
-import { Perguntas } from "@/components/home/Perguntas"
-import { PlanosCampanha } from "@/components/home/PlanosCampanha"
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-// Mock data
-const mockData = {
-  hero: {
-    titulo: "Ingresso liberado: Clássico no Bento Freitas",
-    subtitulo: "Garanta já o seu, Vem para a Baixada!",
-    midia: { tipo: "image", url: "/football-stadium-crowd.jpg" },
-    acoes: [
-      { rotulo: "Comprar ingresso", acao: "/partidas" },
-      { rotulo: "Ver detalhes", acao: "details" },
-    ],
-  },
-  comunicados: [
-    {
-      id: "a1",
-      titulo: "Nota Oficial — Abertura dos Portões",
-      resumo: "Portões abrem às 17h. Evite filas.",
-      capaUrl: "/stadium-gates.jpg",
-      tags: ["Nota Oficial"],
-      fixado: true,
-      publicadoEm: "2025-10-08T10:00:00Z",
-    },
-    {
-      id: "a2",
-      titulo: "Campanha Sócio Ouro",
-      resumo: "Assine o plano Ouro e ganhe prioridade nos ingressos.",
-      capaUrl: "/gold-membership-card.jpg",
-      tags: ["Campanha"],
-      fixado: false,
-      publicadoEm: "2025-10-07T14:32:00Z",
-    },
-  ],
-  jogos: [
-    {
-      id: "j1",
-      nome: "Brasil x Grêmio",
-      data: "2025-10-15T19:30:00Z",
-      local: "Estádio Bento Freitas",
-      descricao: "Rodada 10 - Campeonato Gaúcho",
-      hasLotes: true,
-    },
-    {
-      id: "j2",
-      nome: "Brasil x Internacional",
-      data: "2025-10-28T16:00:00Z",
-      local: "Estádio Bento Freitas",
-      descricao: "Rodada 11 - Campeonato Gaúcho",
-      hasLotes: true,
-    },
-    {
-      id: "j3",
-      nome: "Brasil x Juventude",
-      data: "2025-11-05T20:00:00Z",
-      local: "Estádio Bento Freitas",
-      descricao: "Jogo da Temporada",
-      hasLotes: false,
-    },
-  ],
-  planos: [
-    {
-      id: "p1",
-      nome: "Arquibancada",
-      descricao: "Entrada em jogos selecionados",
-      valor: 49.9,
-      periodicidade: "MENSAL",
-      destaque: false,
-      beneficios: ["Descontos parceiros", "Fila preferencial", "Prioridade compra"],
-    },
-    {
-      id: "p2",
-      nome: "Ouro",
-      descricao: "Vantagens máximas",
-      valor: 99.9,
-      periodicidade: "MENSAL",
-      destaque: true,
-      rotuloBadge: "Recomendado",
-      beneficios: ["Prioridade máxima", "Cadeira coberta", "Meet & greet (limitado)"],
-    },
-    {
-      id: "p3",
-      nome: "Torcedor",
-      descricao: "Benefícios básicos",
-      valor: 29.9,
-      periodicidade: "MENSAL",
-      destaque: false,
-      beneficios: ["Desconto em produtos", "Newsletter exclusiva"],
-    },
-  ],
-  beneficiosSpotlight: [
-    { titulo: "Prioridade de compra", icone: "Timer" },
-    { titulo: "Desconto em lojas", icone: "Percent" },
-    { titulo: "Área exclusiva", icone: "Shield" },
-    { titulo: "Ingresso digital", icone: "QrCode" },
-    { titulo: "Eventos VIP", icone: "Trophy" },
-    { titulo: "Cashback", icone: "DollarSign" },
-  ],
-  sponsors: [
-    "/generic-sponsor-logo-1.png",
-    "/generic-sponsor-logo-2.png",
-    "/generic-sponsor-logo-3.png",
-    "/sponsor-logo-4.jpg",
-  ],
-  depoimentos: [
-    { nome: "Carlos Silva", texto: "Virei sócio e comprar ingresso ficou fácil. Recomendo!" },
-    { nome: "Ana Paula", texto: "Atendimento rápido e benefícios reais. Vale muito a pena." },
-    { nome: "Roberto Lima", texto: "Os descontos em produtos oficiais compensam a mensalidade." },
-  ],
-  counters: { sociosAtivos: 12450, jogosTemporada: 38, ingressosVendidos: 185000 },
-  faqs: [
-    { pergunta: "Como compro meia-entrada?", resposta: "Selecione a opção e apresente documento na entrada." },
-    { pergunta: "Posso transferir ingresso?", resposta: "Em breve. No momento, ingresso é pessoal." },
-    { pergunta: "Como troco de plano?", resposta: "Acesse sua conta e vá em Assinatura > Trocar Plano." },
-    { pergunta: "Quais formas de pagamento?", resposta: "Aceitamos cartão, boleto e PIX." },
-    { pergunta: "Como falo com o suporte?", resposta: "Use o chat no canto inferior direito ou envie email." },
-  ],
-  noticias: [
-    { id: "n1", titulo: "Brasil anuncia reforços para a temporada", data: "2025-10-05", thumb: "/football-players.jpg" },
-    { id: "n2", titulo: "Inauguração da nova loja oficial", data: "2025-10-03", thumb: "/sports-store-interior.png" },
-    { id: "n3", titulo: "Campanha de doação de alimentos", data: "2025-10-01", thumb: "/charity-donation.png" },
-    { id: "n4", titulo: "Escolinha de futebol abre inscrições", data: "2025-09-28", thumb: "/kids-football-training.png" },
-  ],
+import { ClubeFooter } from "@/components/home/ClubeFooter";
+import { FaixaDeJogos } from "@/components/home/FaixaDeJogo";
+import { Perguntas } from "@/components/home/Perguntas";
+import { PlanosCampanha } from "@/components/home/PlanosCampanha";
+import { Button } from "@/components/ui/button";
+
+const API =
+  process.env.NEXT_PUBLIC_API_URL ?? "https://central-api-jet.vercel.app";
+
+interface JogoAPI {
+  id: string;
+  nome: string;
+  data: string;
+  local: string;
+  descricao: string | null;
+  hasLotes?: boolean;
+}
+
+interface JogoHome {
+  id: string;
+  nome: string;
+  data: string;
+  local: string;
+  descricao: string;
+  hasLotes: boolean;
+}
+
+interface PlanoAPI {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  valor: string;
+  periodicidade: string;
+  isFeatured: boolean | null;
+  badgeLabel: string | null;
+  beneficios: {
+    id: string;
+    titulo: string;
+    descricao: string | null;
+  }[];
+}
+
+interface PlanoHome {
+  id: string;
+  nome: string;
+  descricao: string;
+  valor: number;
+  periodicidade: string;
+  destaque: boolean;
+  rotuloBadge?: string;
+  beneficios: string[];
 }
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen">
-      <main>
-        <Anuncio {...mockData.hero} />
+  const router = useRouter();
 
-        <div className="container mx-auto px-4 space-y-16 py-12">
-          <FeedComunicados items={mockData.comunicados} />
-          <FaixaDeJogos jogos={mockData.jogos} />
-          <IngressoDisponivel jogo={mockData.jogos[0]} />
-          <PlanosCampanha planos={mockData.planos} />
-          <BeneficiosDestaque beneficios={mockData.beneficiosSpotlight} />
-          <ListaNoticias posts={mockData.noticias} />
-          <CarrosselPatrocinadores logos={mockData.sponsors} />
-          <Depoimentos depoimentos={mockData.depoimentos} />
-          <CounterBar {...mockData.counters} />
-          <Perguntas perguntas={mockData.faqs} />
+  const [jogos, setJogos] = useState<JogoHome[]>([]);
+  const [planos, setPlanos] = useState<PlanoHome[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    const carregar = async () => {
+      try {
+        const jogosRes = await fetch(`${API}/admin/jogo`, {
+          cache: "no-store",
+        });
+        const planosRes = await fetch(`${API}/planos`, { cache: "no-store" });
+
+        const jogosJson: JogoAPI[] = await jogosRes.json();
+        const planosJson: PlanoAPI[] = await planosRes.json();
+
+        const jogosFormatados: JogoHome[] = jogosJson.map((j) => ({
+          id: j.id,
+          nome: j.nome,
+          data: j.data,
+          local: j.local,
+          descricao: j.descricao ?? "",
+          hasLotes: true, // temporário até integrar com backend dos lotes
+        }));
+
+        const planosFormatados: PlanoHome[] = planosJson.map((p) => ({
+          id: p.id,
+          nome: p.nome,
+          descricao: p.descricao ?? "",
+          valor: Number(p.valor),
+          periodicidade: p.periodicidade,
+          destaque: p.isFeatured ?? false,
+          rotuloBadge: p.badgeLabel ?? undefined,
+          beneficios: p.beneficios?.map((b) => b.titulo) ?? [],
+        }));
+
+        setJogos(jogosFormatados);
+        setPlanos(planosFormatados);
+      } catch (e) {
+        console.error("Erro ao carregar home:", e);
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    void carregar();
+  }, []);
+
+  const faqs = [
+    {
+      pergunta: "Como compro meia-entrada?",
+      resposta: "Selecione a opção e apresente documento na entrada.",
+    },
+    {
+      pergunta: "Posso transferir ingresso?",
+      resposta: "Em breve. No momento, o ingresso é pessoal.",
+    },
+    {
+      pergunta: "Como troco de plano?",
+      resposta: "Acesse sua conta e vá em Assinatura > Trocar Plano.",
+    },
+    {
+      pergunta: "Quais formas de pagamento?",
+      resposta: "Aceitamos cartão, boleto e PIX.",
+    },
+  ];
+
+  const proximoJogo = jogos.at(0);
+
+  // 🔒 Enquanto estiver carregando, mostra só a tela de loading
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">
+          Carregando informações da Central de Torcedores...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <main className="flex-1">
+        {/* HERO */}
+        <section className="relative w-full h-[320px] rounded-b-2xl overflow-hidden">
+          <div className="absolute inset-0">
+            <Image
+              src="/football-stadium-crowd.jpg"
+              alt="Estádio"
+              fill
+              className="object-cover"
+            />
+          </div>
+
+          <div className="absolute inset-0 bg-black/50" />
+
+          <div className="relative z-10 px-4 py-8 flex flex-col justify-end h-full space-y-3">
+            <h1 className="text-2xl font-bold text-white drop-shadow">
+              {proximoJogo?.nome ?? "Confira os próximos jogos na Baixada"}
+            </h1>
+
+            <p className="text-sm text-white/90 drop-shadow">
+              {proximoJogo?.descricao ??
+                "Garanta seu ingresso com antecedência."}
+            </p>
+
+            <div className="flex gap-2 mt-3">
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => router.push("/planos")}
+              >
+                Ver planos de sócio
+              </Button>
+
+              <Button size="lg" onClick={() => router.push("/partidas")}>
+                Comprar ingresso
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <div className="container mx-auto px-4 pt-12 space-y-14 pb-20">
+          {jogos.length > 0 && <FaixaDeJogos jogos={jogos} />}
+
+          {planos.length > 0 && (
+            <section className="space-y-6">
+              <h2 className="text-xl font-semibold">Planos de sócio</h2>
+              <PlanosCampanha planos={planos} />
+            </section>
+          )}
+
+          <section className="space-y-6">
+            <h2 className="text-xl font-semibold">Dúvidas frequentes</h2>
+            <Perguntas perguntas={faqs} />
+          </section>
         </div>
       </main>
 
       <ClubeFooter />
     </div>
-  )
+  );
 }

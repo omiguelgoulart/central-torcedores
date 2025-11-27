@@ -8,7 +8,6 @@ import { usePathname } from "next/navigation";
 export function Header() {
   const pathname = usePathname();
 
-  // Se estiver em /admin ou qualquer subrota de /admin/** → não renderiza
   if (pathname.startsWith("/admin")) {
     return null;
   }

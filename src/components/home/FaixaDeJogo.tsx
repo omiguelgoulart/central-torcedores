@@ -1,75 +1,87 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Ticket } from "lucide-react"
-import Link from "next/link"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, MapPin, Ticket } from "lucide-react";
+import Link from "next/link";
 
 interface Jogo {
-  id: string
-  nome: string
-  data: string
-  local: string
-  descricao: string
-  hasLotes: boolean
+  id: string;
+  nome: string;
+  data: string;
+  local: string;
+  descricao: string;
+  hasLotes: boolean;
 }
 
 interface FaixaDeJogosProps {
-  jogos: Jogo[]
+  jogos: Jogo[];
 }
 
 export function FaixaDeJogos({ jogos }: FaixaDeJogosProps) {
   const formatarData = (dataString: string) => {
-    const data = new Date(dataString)
+    const data = new Date(dataString);
     return new Intl.DateTimeFormat("pt-BR", {
       day: "2-digit",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(data)
-  }
+    }).format(data);
+  };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Calendar className="h-6 w-6" />
-          <h2 className="text-3xl font-bold">Próximos Jogos</h2>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5" />
+          <h2 className="text-xl font-semibold">Próximos jogos</h2>
         </div>
+
         <Button variant="link" asChild>
-          <Link href="/jogos">Ver todos os jogos</Link>
+          <Link href="/jogos">Ver todos</Link>
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Carrossel horizontal no mobile, grid no desktop */}
+      <div className=" flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 sm:overflow-visible scrollbar-none">
         {jogos.map((jogo) => (
-          <Card key={jogo.id} className="hover:border transition-all">
+          <Card
+            key={jogo.id}
+            className="
+              min-w-[80%] sm:min-w-0
+              transition-all duration-200
+              hover:shadow-md hover:-translate-y-1
+              snap-start
+            "
+          >
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-lg">{jogo.nome}</CardTitle>
+                <CardTitle className="text-base font-semibold">
+                  {jogo.nome}
+                </CardTitle>
                 {jogo.hasLotes && <Badge>Disponível</Badge>}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2 text-sm">
+
+            <CardContent className="space-y-3 text-sm">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  {formatarData(jogo.data)}
+                  <span>{formatarData(jogo.data)}</span>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  {jogo.local}
+                  <span>{jogo.local}</span>
                 </div>
+
                 <p>{jogo.descricao}</p>
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 bg-transparent"
-                >
+                <Button variant="outline" size="sm" className="flex-1">
                   Detalhes
                 </Button>
+
                 {jogo.hasLotes && (
                   <Button size="sm" className="flex-1">
                     <Ticket className="h-4 w-4 mr-1" />
@@ -82,5 +94,5 @@ export function FaixaDeJogos({ jogos }: FaixaDeJogosProps) {
         ))}
       </div>
     </section>
-  )
+  );
 }

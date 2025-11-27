@@ -2,44 +2,42 @@
 
 import { Jogo, JogoCard } from "./CardJogo"
 
+interface ListaJogosProps {
+  jogos: Jogo[]
+}
 
-export function ListaJogos() {
-  const jogos: Jogo[] = [
-    {
-      id: "1",
-      nome: "Brasil de Pelotas x Grêmio",
-      data: "2025-11-10T19:30:00.000Z",
-      local: "Estádio Bento Freitas",
-      descricao: "Rodada 15 do Campeonato Gaúcho. Um clássico imperdível em Pelotas!",
-      status: "Ingressos disponíveis"
-    },
-    {
-      id: "2",
-      nome: "Brasil de Pelotas x Juventude",
-      data: "2025-11-24T18:00:00.000Z",
-      local: "Estádio Bento Freitas",
-      descricao: "Duelo direto pela classificação no Gauchão.",
-      status: "Últimos ingressos"
-    },
-    {
-      id: "3",
-      nome: "Brasil de Pelotas x Inter",
-      data: "2025-12-05T20:00:00.000Z",
-      local: "Estádio Bento Freitas",
-      descricao: "Encerramento da fase de grupos com casa cheia!",
-      status: "Esgotado"
-    }
-  ]
-  const agora = new Date();
+export function ListaJogos({ jogos }: ListaJogosProps) {
+  const agora = new Date()
+
   const jogosFuturos = jogos
-    .filter(j => new Date(j.data) > agora)
-    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    .filter((jogo) => new Date(jogo.data) > agora)
+    .sort(
+      (a, b) =>
+        new Date(a.data).getTime() - new Date(b.data).getTime(),
+    )
 
-  jogos.splice(0, jogos.length, ...jogosFuturos);
+  if (jogosFuturos.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Não há partidas futuras disponíveis no momento.
+      </p>
+    )
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      {jogos.map((jogo) => (
-        <JogoCard key={jogo.id} jogo={jogo} />
+    <div className="flex gap-4 overflow-x-auto pb-2">
+      {jogosFuturos.map((jogo) => (
+        <div
+          key={jogo.id}
+          className="
+            flex-shrink-0
+            min-w-[85%]
+            sm:min-w-[60%]
+            md:min-w-[33.333%]
+          "
+        >
+          <JogoCard jogo={jogo} />
+        </div>
       ))}
     </div>
   )
