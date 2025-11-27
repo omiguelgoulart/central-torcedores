@@ -63,7 +63,7 @@ export function PlanosCampanha({ planos }: PlanosCampanhaProps) {
                 ))}
               </ul>
 
-              <Link href={`/assinatura/${plano.id}`}>
+              <Link href={`/planos`}>
               <Button className="w-full">Assinar agora</Button>
               </Link>
             </CardContent>

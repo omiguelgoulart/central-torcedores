@@ -1,5 +1,4 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { HelpCircle } from "lucide-react"
 
 interface PerguntaFrequente {
   pergunta: string
@@ -13,10 +12,6 @@ interface AcordeaoPerguntasProps {
 export function Perguntas({ perguntas }: AcordeaoPerguntasProps) {
   return (
     <section className="space-y-6">
-      <div className="flex items-center gap-3">
-        <HelpCircle className="h-6 w-6 text-zinc-700" />
-        <h2 className="text-3xl font-bold text-zinc-900">Perguntas Frequentes</h2>
-      </div>
 
       <Accordion type="single" collapsible className="w-full space-y-2">
         {perguntas.map((item, indice) => (

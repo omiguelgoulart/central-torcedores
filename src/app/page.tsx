@@ -75,27 +75,36 @@ export default function HomePage() {
         const jogosJson: JogoAPI[] = await jogosRes.json();
         const planosJson: PlanoAPI[] = await planosRes.json();
 
-        const jogosFormatados: JogoHome[] = jogosJson.map((j) => ({
-          id: j.id,
-          nome: j.nome,
-          data: j.data,
-          local: j.local,
-          descricao: j.descricao ?? "",
+        const jogosFormatadosBase: JogoHome[] = jogosJson.map((jogo) => ({
+          id: jogo.id,
+          nome: jogo.nome,
+          data: jogo.data,
+          local: jogo.local,
+          descricao: jogo.descricao ?? "",
           hasLotes: true, // temporário até integrar com backend dos lotes
         }));
 
-        const planosFormatados: PlanoHome[] = planosJson.map((p) => ({
-          id: p.id,
-          nome: p.nome,
-          descricao: p.descricao ?? "",
-          valor: Number(p.valor),
-          periodicidade: p.periodicidade,
-          destaque: p.isFeatured ?? false,
-          rotuloBadge: p.badgeLabel ?? undefined,
-          beneficios: p.beneficios?.map((b) => b.titulo) ?? [],
+        const agora = new Date();
+
+        const jogosFuturosOrdenados: JogoHome[] = jogosFormatadosBase
+          .filter((jogo) => new Date(jogo.data) >= agora)
+          .sort(
+            (a, b) =>
+              new Date(a.data).getTime() - new Date(b.data).getTime()
+          );
+
+        const planosFormatados: PlanoHome[] = planosJson.map((plano) => ({
+          id: plano.id,
+          nome: plano.nome,
+          descricao: plano.descricao ?? "",
+          valor: Number(plano.valor),
+          periodicidade: plano.periodicidade,
+          destaque: plano.isFeatured ?? false,
+          rotuloBadge: plano.badgeLabel ?? undefined,
+          beneficios: plano.beneficios?.map((b) => b.titulo) ?? [],
         }));
 
-        setJogos(jogosFormatados);
+        setJogos(jogosFuturosOrdenados);
         setPlanos(planosFormatados);
       } catch (e) {
         console.error("Erro ao carregar home:", e);
@@ -128,7 +137,6 @@ export default function HomePage() {
 
   const proximoJogo = jogos.at(0);
 
-  // 🔒 Enquanto estiver carregando, mostra só a tela de loading
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

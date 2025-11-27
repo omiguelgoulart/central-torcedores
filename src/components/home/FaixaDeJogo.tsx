@@ -77,14 +77,10 @@ export function FaixaDeJogos({ jogos }: FaixaDeJogosProps) {
                 <p>{jogo.descricao}</p>
               </div>
 
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  Detalhes
-                </Button>
-
+              <div>
                 {jogo.hasLotes && (
                   <Link href={`/partidas?jogoId=${jogo.id}`}>
-                  <Button size="sm" className="flex-1">
+                  <Button size="sm" className="flex-1 w-full">
                     <Ticket className="h-4 w-4 mr-1" />
                     Comprar
                   </Button>
