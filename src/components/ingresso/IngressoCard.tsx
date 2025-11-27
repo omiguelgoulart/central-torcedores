@@ -42,18 +42,14 @@ export function IngressoCardCompact({ ingresso }: IngressoCardCompactProps) {
       <CardContent className="p-4 flex items-center justify-between gap-4">
         <div className="flex flex-col">
           <h3 className="font-semibold text-lg leading-tight text-foreground">
-            {jogo?.mandante || 'Time'} <span className="text-muted-foreground">vs</span> {jogo?.visitante || 'Time'}
+            {jogo?.nome}
           </h3>
 
           <p className="text-sm text-muted-foreground mt-0.5">
             {dataFormatada}
           </p>
 
-          {/* {ingresso.setor && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Setor: <span className="font-medium text-foreground">{ingresso.setor}</span>
-            </p>
-          )} */}
+          {ingresso?.lote?.setor ?? 'Setor indisponível'}
         </div>
 
         <Badge className={`${status.className} px-3 py-1 text-xs rounded-md border-0`}>

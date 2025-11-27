@@ -48,7 +48,7 @@ export function IngressoCard({ ingresso, isLink = false }: IngressoCardProps) {
       <CardHeader className="bg-red-600 text-white pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg">{jogo?.mandante || 'Time'} vs {jogo?.visitante || 'Time'}</CardTitle>
+            <CardTitle className="text-lg">{jogo?.nome}</CardTitle>
             <CardDescription className="text-red-100">Jogo</CardDescription>
           </div>
           <Badge className={`${status.className} border-0`}>{status.label}</Badge>

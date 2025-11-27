@@ -3,13 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -94,7 +88,9 @@ export default function IngressoDetalhePage() {
     };
   }, [ingressoId, token]);
 
-  const status = ingresso ? statusConfig[ingresso.status] ?? statusConfig.VALIDO : null;
+  const status = ingresso
+    ? statusConfig[ingresso.status] ?? statusConfig.VALIDO
+    : null;
   const jogo = ingresso?.jogo;
   const lote = ingresso?.lote;
   const nome = ingresso?.jogo?.nome || "Ingresso";
@@ -117,23 +113,40 @@ export default function IngressoDetalhePage() {
     });
   }, [jogo?.dataHora]);
 
-const qrCodeSrc = useMemo(() => {
-  if (!ingresso) return "/placeholder.svg";
+  const valorFormatado = useMemo(() => {
+    if (!ingresso?.valor) return "R$ 0,00";
+    const num = Number(ingresso.valor);
+    if (Number.isNaN(num)) return `R$ ${ingresso.valor}`;
+    return num.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+  }, [ingresso?.valor]);
 
-  if ("qrPngUrl" in ingresso) {
-    const qrPngUrl = (ingresso as unknown as { qrPngUrl?: string }).qrPngUrl;
-    if (qrPngUrl) {
-      return `${API}${qrPngUrl}`;
+  const qrSrc = useMemo(() => {
+    if (!ingresso) return "/placeholder.svg";
+
+    const withExtras = ingresso as ingressoItf & {
+      qrPngDataUrl?: string;
+      qrPngUrl?: string;
+    };
+
+    if (withExtras.qrPngDataUrl) {
+      return withExtras.qrPngDataUrl;
     }
-  }
 
-  if (ingresso.qrCode && ingresso.qrCode.startsWith("http")) {
-    return ingresso.qrCode;
-  }
+    if (withExtras.qrPngUrl) {
+      return withExtras.qrPngUrl.startsWith("http")
+        ? withExtras.qrPngUrl
+        : `${API}${withExtras.qrPngUrl}`;
+    }
 
-  return `${API}/admin/ingresso/${ingresso.id}/qrcode.png`;
-}, [ingresso]);
+    if (ingresso.qrCode && ingresso.qrCode.startsWith("http")) {
+      return ingresso.qrCode;
+    }
 
+    return `${API}/admin/ingresso/${ingresso.id}/qrcode.png`;
+  }, [ingresso]);
 
   if (isLoading) {
     return (
@@ -178,9 +191,7 @@ const qrCodeSrc = useMemo(() => {
             <CardHeader className="bg-red-600 text-white pb-4 md:pb-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <CardTitle className="text-xl md:text-2xl">
-                    {nome}
-                  </CardTitle>
+                  <CardTitle className="text-xl md:text-2xl">{nome}</CardTitle>
                   <CardDescription className="text-red-100">
                     Seu Ingresso
                   </CardDescription>
@@ -253,7 +264,7 @@ const qrCodeSrc = useMemo(() => {
               <div className="pb-6 border-b border-border">
                 <p className="text-sm text-muted-foreground mb-1">Valor</p>
                 <p className="text-3xl md:text-4xl font-bold text-red-600">
-                  R$ {ingresso.valor}
+                  {valorFormatado}
                 </p>
               </div>
 
@@ -264,7 +275,7 @@ const qrCodeSrc = useMemo(() => {
                 </p>
                 <div className="bg-muted p-6 md:p-8 rounded-lg">
                   <img
-                    src={qrCodeSrc}
+                    src={qrSrc}
                     alt="QR Code do ingresso"
                     width={250}
                     height={250}

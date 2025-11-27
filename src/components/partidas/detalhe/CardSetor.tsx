@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 interface CardSetorProps {
   jogoId: string;
   setor: {
-    jogoSetorId: string;      // id do jogo_setor (tabela de relação)
-    setorId: string;          // id do setor (tabela setor)
+    jogoSetorId: string; // id do jogo_setor (tabela de relação)
+    setorId: string; // id do setor (tabela setor)
     nome: string;
-    preco: number;            // precoUnitario do lote
+    preco: number; // precoUnitario do lote
     disponibilidade: number;
-    loteId: string;           // id do lote (da API)
+    loteId: string; // id do lote (da API)
   };
   onCancel?: () => void;
 }
@@ -28,7 +28,7 @@ export function CardSetor({ jogoId, setor, onCancel }: CardSetorProps) {
     params.set("total", setor.preco.toString());
     params.set("setorId", setor.setorId);
     params.set("loteId", setor.loteId);
-    params.set("jogoId", jogoId);        // id do jogo (partida)
+    params.set("jogoId", jogoId); // id do jogo (partida)
     params.set("jogoSetorId", setor.jogoSetorId); // id da relação jogo_setor
 
     router.push(`/pagamento?${params.toString()}`);
@@ -60,10 +60,7 @@ export function CardSetor({ jogoId, setor, onCancel }: CardSetorProps) {
       <CardContent className="px-0">
         <div className="space-y-2 text-sm">
           {descricao.map((item) => (
-            <div
-              className="flex items-center justify-between"
-              key={item.label}
-            >
+            <div className="flex items-center justify-between" key={item.label}>
               <span className="text-muted-foreground">{item.label}:</span>
               <span className="font-medium">{item.value}</span>
             </div>

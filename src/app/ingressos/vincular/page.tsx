@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import {
@@ -26,23 +26,16 @@ type TorcedorResumo = {
   cpf?: string | null;
 };
 
-export default function VincularIngressoPage() {
+function VincularIngressoContent() {
   const router = useRouter();
   const search = useSearchParams();
   const { token } = useAuth();
 
-  // dados vindos da página de pagamento (query string)
+  // dados vindos da página de pagamento
   const pagamentoId = search.get("pagamentoId");
-  const jogoId = search.get("jogoId"); // deve ser o UUID do jogo
+  const jogoId = search.get("jogoId");
   const loteId = search.get("loteId") ?? undefined;
-  const valorParam = search.get("valor"); // string ou null
-
-  const valorFormatado = useMemo(() => {
-    if (!valorParam) return "--";
-    const n = Number(valorParam);
-    if (Number.isNaN(n)) return valorParam;
-    return n.toFixed(2);
-  }, [valorParam]);
+  const valor = search.get("valor");
 
   const [cpf, setCpf] = useState("");
   const [torcedor, setTorcedor] = useState<TorcedorResumo | null>(null);
@@ -88,37 +81,24 @@ export default function VincularIngressoPage() {
   }
 
   async function gerarIngresso() {
-    // valida se os dados essenciais vieram da URL
-    if (!jogoId) {
-      setErrorMessage("Dados do jogo não informados. Volte ao pagamento e tente novamente.");
-      return;
-    }
-
-    if (!valorParam) {
-      setErrorMessage("Valor do ingresso não informado.");
-      return;
-    }
-
-    if (!pagamentoId) {
-      setErrorMessage("ID do pagamento não informado.");
-      return;
-    }
-
     if (!torcedor) {
       setErrorMessage("Selecione um torcedor antes.");
       return;
     }
 
+    if (!jogoId || !valor) {
+      setErrorMessage("Dados do ingresso inválidos. Volte e tente novamente.");
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     const payload = {
-      jogoId,                 // 👈 nome que o backend espera
-      loteId,                 // opcional, backend trata como optional
-      valor: valorParam,      // string, o zod transforma pra decimal
+      jogoId,
+      loteId,
+      valor,
       torcedorId: torcedor.id,
-      pagamentoId,
     };
 
     try {
@@ -133,28 +113,22 @@ export default function VincularIngressoPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json().catch(() => null);
+      const data = await response.json();
 
       if (!response.ok) {
-        const msg =
-          data?.error ??
-          data?.message ??
-          "Erro ao gerar ingresso.";
-        setErrorMessage(msg);
+        setErrorMessage(data?.error ?? data?.message ?? "Erro ao gerar ingresso.");
         return;
       }
 
-      const ingressoId =
-        data?.ingressoId ?? data?.ingresso?.id ?? null;
+      const ingressoId = data?.ingressoId ?? data?.ingresso?.id;
 
       setSuccessMessage("Ingresso criado com sucesso!");
 
-      // se não tiver id, só volta pra listagem (evita quebrar)
       setTimeout(() => {
         if (ingressoId) {
           router.push(`/ingressos/${ingressoId}`);
         } else {
-          router.push("/ingressos");
+          router.push("/meus-ingressos");
         }
       }, 1200);
     } catch {
@@ -189,23 +163,24 @@ export default function VincularIngressoPage() {
             </Alert>
           )}
 
-          {/* RESUMO DO PEDIDO */}
           <div className="border p-4 rounded-lg space-y-1 text-sm">
             <p>
-              <strong>Jogo:</strong> {jogoId ?? "Não informado"}
+              <strong>Jogo:</strong> {jogoId}
             </p>
             <p>
               <strong>Lote:</strong> {loteId ?? "Não informado"}
             </p>
             <p>
-              <strong>Valor:</strong> R$ {valorFormatado}
+              <strong>Valor:</strong>{" "}
+              {valor
+                ? `R$ ${Number(valor).toFixed(2)}`
+                : "Não informado"}
             </p>
             <p>
               <strong>Pagamento ID:</strong> {pagamentoId ?? "Não informado"}
             </p>
           </div>
 
-          {/* BUSCAR TORCEDOR */}
           <div className="space-y-2">
             <Label>CPF do Torcedor</Label>
             <Input
@@ -230,7 +205,6 @@ export default function VincularIngressoPage() {
             </Button>
           </div>
 
-          {/* TORCEDOR ENCONTRADO */}
           {torcedor && (
             <div className="border p-4 rounded-lg space-y-1">
               <p>
@@ -245,24 +219,27 @@ export default function VincularIngressoPage() {
               <p>
                 <strong>CPF:</strong> {torcedor.cpf}</p>
 
-              <Button
-                className="w-full mt-3"
-                onClick={gerarIngresso}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Gerando ingresso...
-                  </>
-                ) : (
-                  "Gerar Ingresso"
-                )}
+              <Button className="w-full mt-3" onClick={gerarIngresso}>
+                Gerar Ingresso
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function VincularIngressoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-xl mx-auto py-10 px-4 text-center">
+          <p className="text-muted-foreground">Carregando dados do ingresso...</p>
+        </div>
+      }
+    >
+      <VincularIngressoContent />
+    </Suspense>
   );
 }
