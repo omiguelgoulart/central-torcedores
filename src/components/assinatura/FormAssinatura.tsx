@@ -3,26 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
-
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Periodicidade } from "@/app/types/planoItf";
+import { useAuth } from "@/hooks/useAuth";
 
 interface FormAssinaturaProps {
   planoId: string;
@@ -45,6 +32,7 @@ export function FormAssinatura({
   defaultRecorrencia,
 }: FormAssinaturaProps) {
   const router = useRouter();
+  const { usuario } = useAuth();
 
   const [recorrencia, setRecorrencia] =
     useState<Periodicidade>(defaultRecorrencia);
@@ -73,12 +61,17 @@ export function FormAssinatura({
     }
 
     setIsSubmitting(true);
+        if (!usuario?.id) {
+      setErrorMsg("Não foi possível identificar seu usuário.");
+      return;
+    }
 
     const description = `Plano Sócio - ${planoNome} (${recorrenciaLabel[recorrencia]})`;
 
     const params = new URLSearchParams({
       tipo: "plano",
-      planoId, // 👈 GARANTIDO
+      planoId,
+      clienteId: usuario.id,
       recorrencia,
       description: encodeURIComponent(description),
       subtotal: String(valor),

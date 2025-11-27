@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type ChangeEvent,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,20 +12,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { CardPreview } from "./CardPreview";
 import { detectCardBrand } from "@/lib/card-utils";
-import {
-  formatCardNumber,
-  formatCVV,
-  formatCPFCNPJ,
-  formatPostalCode,
-  formatPhone,
-} from "@/lib/formatters";
+import { formatCardNumber, formatCVV, formatCPFCNPJ, formatPostalCode, formatPhone } from "@/lib/formatters";
 
-import type {
-  CardPaymentData,
-  CardType,
-  CardBrand,
-  PaymentStatus,
-} from "@/app/types/pagamentoItf";
+import type { CardPaymentData, CardType, CardBrand, PaymentStatus } from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { toast } from "sonner";
 
@@ -40,11 +23,8 @@ const cardSchema = z.object({
   holderName: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   number: z.string().min(19, "Número do cartão inválido"),
   expiryMonth: z.string().regex(/^\d{2}$/, "Mês inválido"),
-  expiryYear: z.string().regex(/^\d{2}$/, "Ano inválido"),
-  ccv: z
-    .string()
-    .min(3, "CVV deve ter 3 ou 4 dígitos")
-    .max(4, "CVV deve ter 3 ou 4 dígitos"),
+  expiryYear: z.string().regex(/^\d{4}$/, "Ano inválido"),
+  ccv: z.string().min(3, "CVV deve ter 3 ou 4 dígitos").max(4, "CVV deve ter 3 ou 4 dígitos"),
   name: z.string().min(3, "Nome completo obrigatório"),
   email: z.string().email("E-mail inválido"),
   cpfCnpj: z.string().min(11, "CPF/CNPJ inválido"),
@@ -90,12 +70,7 @@ type MaskedInputProps = Omit<React.ComponentProps<typeof Input>, "onChange"> & {
   name: keyof CardPaymentData;
 };
 
-function MaskedInput({
-  onMask,
-  setValue,
-  name,
-  ...rest
-}: MaskedInputProps) {
+function MaskedInput({ onMask, setValue, name, ...rest }: MaskedInputProps) {
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const masked = onMask(e.target.value);
@@ -140,7 +115,12 @@ interface CardPanelProps {
   onPaymentCreated: (ctx: PagamentoCriado) => void;
 }
 
-export function CardPanel({ customerId, valor, descricao, onPaymentCreated }: CardPanelProps) {
+export function CardPanel({
+  customerId,
+  valor,
+  descricao,
+  onPaymentCreated,
+}: CardPanelProps) {
   const [previewCartao, setPreviewCartao] = useState<{
     holderName: string;
     number: string;
@@ -150,7 +130,13 @@ export function CardPanel({ customerId, valor, descricao, onPaymentCreated }: Ca
   const [bandeiraCartao, setBandeiraCartao] = useState<CardBrand>("unknown");
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CardPaymentData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<CardPaymentData>({
     resolver: zodResolver(cardSchema),
     defaultValues: { cardType: "credit" },
     mode: "onBlur",
@@ -158,7 +144,8 @@ export function CardPanel({ customerId, valor, descricao, onPaymentCreated }: Ca
 
   const tipoSelecionado = watch("cardType");
 
-  const aoMudarNumeroCartao = useCallback((valorDigitado: string) => {
+  const aoMudarNumeroCartao = useCallback(
+    (valorDigitado: string) => {
       const formatado = formatCardNumber(valorDigitado);
       setValue("number", formatado, { shouldValidate: true });
       setPreviewCartao((prev) => ({ ...prev, number: formatado }));
@@ -167,8 +154,8 @@ export function CardPanel({ customerId, valor, descricao, onPaymentCreated }: Ca
     [setValue]
   );
 
-
-  const aoMudarHolder = useCallback((valorDigitado: string) => {
+  const aoMudarHolder = useCallback(
+    (valorDigitado: string) => {
       const upper = valorDigitado.toUpperCase();
       setValue("holderName", upper, { shouldValidate: true });
       setPreviewCartao((prev) => ({ ...prev, holderName: upper }));
@@ -176,92 +163,85 @@ export function CardPanel({ customerId, valor, descricao, onPaymentCreated }: Ca
     [setValue]
   );
 
-const onSubmit = useCallback(
-  async (data: CardPaymentData) => {
-    const expiryYear4 =
-      data.expiryYear.length === 2
-        ? `20${data.expiryYear}`
-        : data.expiryYear;
+  const onSubmit = useCallback(
+    async (data: CardPaymentData) => {
+      const expiryYear4 =
+        data.expiryYear.length === 2 ? `20${data.expiryYear}` : data.expiryYear;
 
-    try {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      const tipo =
-        data.cardType === "credit" ? "CREDIT_CARD" : "DEBIT_CARD";
+        const tipo = data.cardType === "credit" ? "CREDIT_CARD" : "DEBIT_CARD";
 
-      const body = {
-        customerId,
-        valor,
-        descricao,
-        tipo,
-        cartao: {
-          holderName: data.holderName,
-          number: data.number.replace(/\s/g, ""),
-          expiryMonth: data.expiryMonth,
-          expiryYear: expiryYear4,
-          ccv: data.ccv,
-        },
-        portador: {
-          name: data.name,
-          email: data.email,
-          cpfCnpj: data.cpfCnpj,
-          postalCode: data.postalCode,
-          addressNumber: data.addressNumber,
-          phone: data.phone,
-        },
-      };
+        const body = {
+          customerId,
+          valor,
+          descricao,
+          tipo,
+          cartao: {
+            holderName: data.holderName,
+            number: data.number.replace(/\s/g, ""),
+            expiryMonth: data.expiryMonth,
+            expiryYear: expiryYear4,
+            ccv: data.ccv,
+          },
+          portador: {
+            name: data.name,
+            email: data.email,
+            cpfCnpj: data.cpfCnpj,
+            postalCode: data.postalCode,
+            addressNumber: data.addressNumber,
+            phone: data.phone,
+          },
+        };
 
-      // console.log("Enviando pagamento cartão:", body);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        );
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+        const resposta = await response.json().catch(() => null);
+
+        if (!response.ok || !resposta) {
+          toast.error("Falha ao processar pagamento com cartão");
+          onPaymentCreated({
+            metodo: "CARTAO",
+            statusInicial: "ERROR",
+            valor: 0,
+          });
+          return;
         }
-      );
 
-      const resposta = await response.json().catch(() => null);
+        const uiStatus = mapStatusToUiStatus(resposta.status ?? "");
 
-      if (!response.ok || !resposta) {
-        toast.error("Falha ao processar pagamento com cartão");
+        onPaymentCreated({
+          metodo: "CARTAO",
+          paymentId: resposta.id,
+          statusInicial: uiStatus,
+          valor: resposta.valor || 0,
+        });
+
+        toast.success(
+          "Pagamento enviado para processamento. Clique em confirmar para verificar o status."
+        );
+      } catch (err) {
+        toast.error("Falha ao processar pagamento com cartão", {
+          description: err instanceof Error ? err.message : String(err),
+        });
         onPaymentCreated({
           metodo: "CARTAO",
           statusInicial: "ERROR",
-          valor: 0
+          valor: 0,
         });
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      const uiStatus = mapStatusToUiStatus(resposta.status ?? "");
-
-      onPaymentCreated({
-        metodo: "CARTAO",
-        paymentId: resposta.id,
-        statusInicial: uiStatus,
-        valor: resposta.valor || 0
-      });
-
-      toast.success(
-        "Pagamento enviado para processamento. Clique em confirmar para verificar o status."
-      );
-    } catch (err) {
-      toast.error("Falha ao processar pagamento com cartão", {
-        description: err instanceof Error ? err.message : String(err),
-      });
-      onPaymentCreated({
-        metodo: "CARTAO",
-        statusInicial: "ERROR",
-        valor: 0
-      });
-    } finally {
-      setLoading(false);
-    }
-  },
-  [customerId, valor, descricao, onPaymentCreated]
-);
-
+    },
+    [customerId, valor, descricao, onPaymentCreated]
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -301,9 +281,7 @@ const onSubmit = useCallback(
           </div>
         </RadioGroup>
         {errors.cardType && (
-          <p className="text-sm text-destructive">
-            {errors.cardType.message}
-          </p>
+          <p className="text-sm text-destructive">{errors.cardType.message}</p>
         )}
       </div>
 
@@ -342,32 +320,41 @@ const onSubmit = useCallback(
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
-            <Field
+          <Field
             id="expiry"
             label="Validade"
             error={
               errors.expiryMonth || errors.expiryYear
-              ? "Validade inválida"
-              : undefined
+                ? "Validade inválida"
+                : undefined
             }
-            >
+          >
             <Input
               id="expiry"
               placeholder="MM/YYYY"
               maxLength={7}
               aria-invalid={!!errors.expiryMonth || !!errors.expiryYear}
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              const digits = e.target.value.replace(/\D/g, "").slice(0, 6); // MM + YYYY
-              const mes = digits.slice(0, 2);
-              const ano = digits.slice(2); // pode ter 0..4 dígitos
-              const formatted = mes + (ano ? `/${ano}` : "");
-              setValue("expiryMonth", mes || "", { shouldValidate: true });
-              setValue("expiryYear", ano || "", { shouldValidate: true });
-              setPreviewCartao((prev) => ({ ...prev, expiry: formatted }));
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+
+                const mes = digits.slice(0, 2);
+                const ano = digits.slice(2, 6);
+
+                let formatted = "";
+                if (mes) formatted = mes;
+                if (digits.length > 2) formatted += "/" + ano;
+
+                setValue("expiryMonth", mes || "", { shouldValidate: true });
+                setValue("expiryYear", ano || "", { shouldValidate: true });
+
+                setPreviewCartao((prev) => ({
+                  ...prev,
+                  expiry: formatted,
+                }));
+                e.target.value = formatted;
               }}
             />
-            </Field>
-
+          </Field>
           <Field id="ccv" label="CVV" error={errors.ccv?.message}>
             <MaskedInput
               id="ccv"
@@ -408,11 +395,7 @@ const onSubmit = useCallback(
           />
         </Field>
 
-        <Field
-          id="cpfCnpj"
-          label="CPF/CNPJ"
-          error={errors.cpfCnpj?.message}
-        >
+        <Field id="cpfCnpj" label="CPF/CNPJ" error={errors.cpfCnpj?.message}>
           <MaskedInput
             id="cpfCnpj"
             placeholder="000.000.000-00"
@@ -427,11 +410,7 @@ const onSubmit = useCallback(
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field
-            id="postalCode"
-            label="CEP"
-            error={errors.postalCode?.message}
-          >
+          <Field id="postalCode" label="CEP" error={errors.postalCode?.message}>
             <MaskedInput
               id="postalCode"
               placeholder="00000-000"
@@ -478,9 +457,7 @@ const onSubmit = useCallback(
       <Button type="submit" disabled={loading} className="w-full">
         {loading
           ? "Processando..."
-          : `Pagar com ${
-              tipoSelecionado === "credit" ? "Crédito" : "Débito"
-            }`}
+          : `Pagar com ${tipoSelecionado === "credit" ? "Crédito" : "Débito"}`}
       </Button>
     </form>
   );

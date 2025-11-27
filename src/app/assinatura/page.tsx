@@ -89,7 +89,7 @@ function AssinaturaContent() {
 
       <div className="w-full lg:w-1/2">
         <FormAssinatura
-          planoId={plano.id} // 👈 esse id aqui é o que precisamos usar no POST
+          planoId={plano.id}
           planoNome={plano.nome}
           valor={plano.valor}
           defaultRecorrencia={defaultRecorrenciaParam ?? plano.periodicidade}

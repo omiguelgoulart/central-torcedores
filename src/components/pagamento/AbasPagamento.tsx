@@ -39,7 +39,7 @@ type AbasPagamentoProps = {
 type AssinaturaCreateBody = {
   planoId: string;
   torcedorId: string;
-  pagamentoId: string;
+  gatewayAssinaturaId: string;
   valor: number;
 };
 
@@ -95,12 +95,13 @@ export function AbasPagamento({
       const body: AssinaturaCreateBody = {
         planoId,
         torcedorId,
-        pagamentoId: pagamentoCriado.paymentId,
+        gatewayAssinaturaId: pagamentoCriado.paymentId,
         valor: orderTotal,
       };
 
+      console.log("Criando assinatura com o body:", body);
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/assinaturas`,
+        `${process.env.NEXT_PUBLIC_API_URL}/assinatura`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
