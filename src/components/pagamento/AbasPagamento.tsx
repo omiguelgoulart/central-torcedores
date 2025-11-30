@@ -36,29 +36,11 @@ type AbasPagamentoProps = {
   loteId?: string;
 };
 
-type AssinaturaCreateBody = {
-  planoId: string;
-  torcedorId: string;
-  gatewayAssinaturaId: string;
-  valor: number;
-};
-
-export function AbasPagamento({
-  customerId,
-  orderDescription,
-  orderTotal,
-  orderType,
-  planoId,
-  torcedorId,
-  jogoId,
-  loteId,
-}: AbasPagamentoProps) {
+export function AbasPagamento({ customerId, orderDescription, orderTotal, orderType, planoId, torcedorId, jogoId, loteId }: AbasPagamentoProps) {
   const [dialogoAberto, setDialogoAberto] = useState(false);
-  const [statusPagamento, setStatusPagamento] =
-    useState<PaymentStatus | null>(null);
+  const [statusPagamento, setStatusPagamento] = useState<PaymentStatus | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<TipoAbaPagamento>("pix");
-  const [pagamentoCriado, setPagamentoCriado] =
-    useState<PagamentoCriado | null>(null);
+  const [pagamentoCriado, setPagamentoCriado] = useState<PagamentoCriado | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   const isIngresso = orderType === "ingresso";
@@ -68,79 +50,84 @@ export function AbasPagamento({
     return status === "PAID" || status === "APPROVED";
   }
 
-  async function criarAssinaturaSeNecessario(
-    status: PaymentStatus
-  ): Promise<void> {
+  async function criarAssinaturaSeNecessario( status: PaymentStatus,  paymentId?: string ): Promise<void> {
     if (!isPlano) return;
     if (!isStatusPago(status)) return;
 
-    if (!pagamentoCriado?.paymentId) {
-      toast.error(
-        "Pagamento do plano aprovado, mas não recebemos o ID da cobrança."
-      );
+    if (!paymentId) {
+      toast.error("Pagamento aprovado, mas sem ID da cobrança.");
       return;
     }
 
     if (!planoId) {
-      toast.error("Plano não informado para criação da assinatura.");
+      toast.error("Plano não informado.");
       return;
     }
 
     if (!torcedorId) {
-      toast.error("Torcedor não informado para vincular o plano.");
+      toast.error("Torcedor não informado.");
       return;
     }
 
     try {
-      const body: AssinaturaCreateBody = {
-        planoId,
+      const body = {
         torcedorId,
-        gatewayAssinaturaId: pagamentoCriado.paymentId,
-        valor: orderTotal,
+        planoId,
+        status: "ATIVA",
+        inicioEm: new Date().toISOString(),
+        proximaCobrancaEm: null,
+        periodicidade: "MENSAL",
+        gatewayAssinaturaId: paymentId,
       };
 
-      console.log("Criando assinatura com o body:", body);
-      const res = await fetch(
+      console.log("Body enviado para /assinatura:", body);
+
+      const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/assinatura`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
 
-      const data = await res.json().catch(() => null);
+      const data = await response.json().catch(() => null);
 
-      if (!res.ok || !data) {
+      if (!response.ok || !data) {
         toast.error(
-          data?.error ||
-            data?.message ||
-            "Erro ao criar assinatura do plano."
+          data?.error ??
+            data?.message ??
+            "Erro ao criar assinatura.",
         );
         return;
       }
 
-      toast.success("Plano vinculado ao torcedor com sucesso!");
-    } catch (e: unknown) {
-      console.error(e);
-      toast.error("Falha ao criar assinatura do plano.");
+      toast.success("Assinatura criada com sucesso!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Falha ao criar assinatura.");
     }
   }
 
-  function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
-    setStatusPagamento(status);
+function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
+  setStatusPagamento(status);
 
-    if (isIngresso) {
-      if (ingressoId) {
-        window.location.href = `/ingressos/${ingressoId}`;
-      } else {
-        window.location.href = `/meus-ingressos`;
-      }
-      return;
+  if (isIngresso) {
+    if (ingressoId) {
+      window.location.href = `/ingressos/${ingressoId}`;
+    } else {
+      window.location.href = `/meus-ingressos`;
     }
-
-    setDialogoAberto(true);
+    return;
   }
+
+  if (isPlano && isStatusPago(status)) {
+    window.location.href = "/torcedor/minhaAssociacao";
+    return;
+  }
+
+  setDialogoAberto(true);
+}
 
   const aoTentarNovamente = (): void => {
     setDialogoAberto(false);
@@ -152,82 +139,80 @@ export function AbasPagamento({
     setStatusPagamento(null);
   };
 
-async function handleConfirmarPagamentoFake(): Promise<void> {
-  if (!pagamentoCriado) {
-    toast.error("Nenhum pagamento gerado ainda.");
-    return;
-  }
-
-  setConfirmLoading(true);
-
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    let status: PaymentStatus;
-
-    switch (pagamentoCriado.metodo) {
-      case "PIX":
-        status = "PAID";
-        break;
-      case "BOLETO":
-        status = "PENDING";
-        break;
-      case "CARTAO":
-        status = "APPROVED";
-        break;
-      default:
-        status = "ERROR";
+  async function handleConfirmarPagamentoFake(): Promise<void> {
+    if (!pagamentoCriado) {
+      toast.error("Nenhum pagamento gerado ainda.");
+      return;
     }
 
-    let paymentId = pagamentoCriado.paymentId;
+    setConfirmLoading(true);
 
-    if (!paymentId) {
-      paymentId = `FAKE-${Date.now()}`;
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      let status: PaymentStatus;
+
+      switch (pagamentoCriado.metodo) {
+        case "PIX":
+          status = "PAID";
+          break;
+        case "BOLETO":
+          status = "PENDING";
+          break;
+        case "CARTAO":
+          status = "APPROVED";
+          break;
+        default:
+          status = "ERROR";
+      }
+
+      const paymentId = pagamentoCriado.paymentId ?? `FAKE-${Date.now()}`;
 
       setPagamentoCriado({
         ...pagamentoCriado,
         paymentId,
+        valor: orderTotal,
+        jogoId,
+        loteId,
       });
-    }
 
-    if (isIngresso) {
-      if (isStatusPago(status)) {
-        const query = new URLSearchParams({
-          pagamentoId: paymentId,
-          valor: String(orderTotal),
-        });
+      if (isIngresso) {
+        if (isStatusPago(status)) {
+          const query = new URLSearchParams({
+            pagamentoId: paymentId,
+            valor: String(orderTotal),
+          });
 
-        if (jogoId) {
-          query.set("jogoId", jogoId);
+          if (jogoId) {
+            query.set("jogoId", jogoId);
+          }
+
+          if (loteId) {
+            query.set("loteId", loteId);
+          }
+
+          window.location.href = `/ingressos/vincular?${query.toString()}`;
+        } else {
+          toast.warning(
+            "Pagamento ainda não está confirmado para gerar o ingresso.",
+          );
         }
 
-        if (loteId) {
-          query.set("loteId", loteId);
-        }
-
-        window.location.href = `/ingressos/vincular?${query.toString()}`;
-      } else {
-        toast.warning(
-          "Pagamento ainda não está confirmado para gerar o ingresso."
-        );
+        return;
       }
 
-      return;
-    }
+      if (isPlano) {
+        await criarAssinaturaSeNecessario(status, paymentId);
+      }
 
-    if (isPlano) {
-      await criarAssinaturaSeNecessario(status);
+      finalizarPagamento(status);
+    } catch (e: unknown) {
+      console.error(e);
+      toast.error("Falha na simulação de confirmação de pagamento.");
+    } finally {
+      setConfirmLoading(false);
     }
-
-    finalizarPagamento(status);
-  } catch (e: unknown) {
-    console.error(e);
-    toast.error("Falha na simulação de confirmação de pagamento.");
-  } finally {
-    setConfirmLoading(false);
   }
-}
-
 
   return (
     <>
@@ -342,54 +327,3 @@ async function handleConfirmarPagamentoFake(): Promise<void> {
     </>
   );
 }
-
-// rota real asaas 
-// async function handleConfirmarPagamento() { 
-//   if (!pagamentoCriado?.paymentId) { 
-//     toast.error("Nenhum pagamento com ID encontrado.");
-//      return; 
-//     } 
-//     setConfirmLoading(true); 
-//       try { 
-//         const res = await fetch( ${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos/${encodeURIComponent( pagamentoCriado.paymentId )}/status, {
-//            method: "GET", headers: { "Content-Type": "application/json" }, 
-//           } 
-//         ); 
-//         if (!res.ok) { 
-//           const text = await res.text().catch(() => ""); 
-//           throw new Error(HTTP ${res.status} ${text}); 
-//         } 
-//         const data = await res.json().catch(() => ({} as any)); 
-//         const rawStatus = 
-//         data?.status || 
-//         data?.payment?.status || 
-//         data?.data?.status || 
-//         data?.result?.status || 
-//         data?.statusName || null; 
-//         if (!rawStatus) { 
-//           toast.error( "Resposta inválida do servidor ao consultar status do pagamento." ); 
-//           return; 
-//         } 
-//         const normalized = String(rawStatus).toUpperCase();
-//          let status: PaymentStatus; 
-//          if (["PAID", "PAGO", "COMPLETED", "CONFIRMED"].some((s) => normalized.includes(s) )) { 
-//           status = "PAID"; 
-//         } else if (["APPROVED", "APROVADO"].some((s) => normalized.includes(s) )) {
-//           status = "APPROVED";
-//         } else if ( ["PENDING", "PENDENTE", "AWAITING_PAYMENT"].some((s) => normalized.includes(s) ) ) {
-//            status = "PENDING";
-//         } else { 
-//           status = "ERROR"; 
-//         } 
-//         let ingressoId: string | null = null; 
-//         if (isIngresso) { 
-//           ingressoId = await criarIngressoSeNecessario(status);
-//          } 
-//          finalizarPagamento(status, ingressoId ?? undefined);
-//          } catch (e) { 
-//           console.error(e); 
-//           toast.error("Falha ao consultar status do pagamento.");
-//         } finally { 
-//           setConfirmLoading(false); 
-//         } 
-//       }
