@@ -69,19 +69,16 @@ export default function AdminLoginPage() {
       const body: AdminLoginResponse = await res.json();
 
       if (body.token) {
-        // limpa cookies antigos
         Cookies.remove("adminToken");
         Cookies.remove("adminRole");
         Cookies.remove("adminName");
 
-        // token do admin
         Cookies.set("adminToken", body.token, {
           expires: 7,
           sameSite: "strict",
           secure: process.env.NODE_ENV === "production",
         });
 
-        // infos auxiliares (não sensíveis)
         if (body.admin?.role) {
           Cookies.set("adminRole", String(body.admin.role), {
             expires: 7,
@@ -101,8 +98,12 @@ export default function AdminLoginPage() {
 
       toast.success("Login realizado com sucesso!");
       router.push("/admin");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao fazer login.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Erro desconhecido ao tentar fazer login.");
+      }
     } finally {
       setIsLoading(false);
     }

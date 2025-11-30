@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { useRouter, usePathname } from "next/navigation";
 
+type AdminRole = "SUPER_ADMIN" | "OPERACIONAL" | "PORTARIA" | string;
+
 export default function AdminLayout({
   children,
 }: {
@@ -14,11 +16,13 @@ export default function AdminLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
 
   const router = useRouter();
   const pathname = usePathname();
 
   const isLoginPage = pathname === "/admin/login";
+  const isCheckinRoute = pathname.startsWith("/admin/checkin");
 
   useEffect(() => {
     const token = Cookies.get("adminToken");
@@ -33,6 +37,8 @@ export default function AdminLayout({
       return;
     }
 
+    const roleFromCookie = Cookies.get("adminRole") as AdminRole | undefined;
+    setAdminRole(roleFromCookie ?? null);
     setIsAuthenticated(true);
   }, [router, isLoginPage]);
 
@@ -46,6 +52,23 @@ export default function AdminLayout({
 
   if (!isAuthenticated) {
     return <main className="min-h-screen w-full">{children}</main>;
+  }
+
+  if (adminRole === "PORTARIA" && !isCheckinRoute && !isLoginPage) {
+    router.push("/admin/checkin");
+    return (
+      <main className="flex items-center justify-center h-screen">
+        Redirecionando para área de check-in...
+      </main>
+    );
+  }
+
+  if (isCheckinRoute) {
+    return (
+      <main className="min-h-screen w-full p-4 bg-muted/30">
+        {children}
+      </main>
+    );
   }
 
   return (

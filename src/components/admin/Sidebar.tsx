@@ -91,7 +91,6 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
       )}
     >
       <div className="flex flex-col h-full">
-        {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b border-sidebar-border">
           <Link href="/admin/" className="flex items-center gap-3 px-4">
           <Image
@@ -104,7 +103,6 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
           </Link>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-2">
             {navigationItems.map((item) => {
@@ -115,7 +113,6 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
               return (
                 <li key={item.href}>
                   {hasChildren ? (
-                    // Botão que abre/fecha o menu suspenso
                     <button
                       type="button"
                       onClick={() => toggleMenu(item.href)}
@@ -140,7 +137,6 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
                       )}
                     </button>
                   ) : (
-                    // Item simples, sem submenu
                     <Link
                       href={item.href}
                       className={cn(
@@ -156,7 +152,6 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
                     </Link>
                   )}
 
-                  {/* Subitens – aparecem só quando o sidebar está aberto e o menu está expandido */}
                   {open && hasChildren && isExpanded && (
                     <ul className="mt-1 ml-8 space-y-1">
                       {item.items!.map((subitem) => (
