@@ -5,64 +5,10 @@ import Cookies from "js-cookie";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { CarteirinhaSocio } from "@/components/torcedor/minhaAssociacao/CarteirinhaSocio";
-import {
-  ParcelaRegistro,
-  TabelaPagamentosSocio,
-} from "@/components/torcedor/minhaAssociacao/TablePagamento";
+import { ParcelaRegistro, TabelaPagamentosSocio } from "@/components/torcedor/minhaAssociacao/TablePagamento";
 import { CardResumo } from "@/components/torcedor/minhaAssociacao/CardResumo";
+import { ApiAssinatura, AssociacaoData, UsuarioResponse } from "@/app/types/associacao";
 
-type PeriodicidadePlano = "MENSAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL";
-type StatusAssinaturaApi = "ATIVA" | "CANCELADA" | "SUSPENSA" | "EXPIRADA";
-type StatusFaturaApi = "ABERTA" | "PAGA" | "ATRASADA" | "CANCELADA";
-
-interface ApiFatura {
-  id: string;
-  competencia: string;
-  valor: number | string;
-  status: StatusFaturaApi;
-  vencimentoEm: string;
-}
-
-interface ApiPlano {
-  id: string;
-  nome: string;
-  descricao?: string | null;
-  valor?: number | string | null;
-  periodicidade?: PeriodicidadePlano | null;
-}
-
-interface ApiAssinatura {
-  id: string;
-  status: StatusAssinaturaApi;
-  inicioEm?: string | null;
-  proximaCobrancaEm?: string | null;
-  valorAtual?: number | string | null;
-  periodicidade?: PeriodicidadePlano | null;
-  plano?: ApiPlano | null;
-  faturas?: ApiFatura[];
-}
-
-interface UsuarioResponse {
-  id: string;
-  nome: string;
-  matricula: string;
-  numeroCartao?: string | null;
-  assinaturas?: ApiAssinatura[];
-}
-
-interface AssociacaoData {
-  planoId: string | null;
-  planoNome: string | null;
-  descricao?: string | null;
-  status: "ATIVA" | "PENDENTE" | "CANCELADA" | "SEM_PLANO";
-  valor: number | null;
-  periodicidade: PeriodicidadePlano | null;
-  dataInicio?: string | null;
-  proximaCobranca?: string | null;
-  matricula: string;
-  numeroCartao?: string | null;
-  nomeSocio: string;
-}
 
 type AuthCookieUser = { id?: string };
 type AuthCookie = { id?: string; user?: AuthCookieUser };
@@ -80,6 +26,21 @@ function getTorcedorIdFromCookies(): string | null {
   } catch {
     return null;
   }
+}
+
+function selecionarAssinaturaAtiva(assinaturas: ApiAssinatura[]): ApiAssinatura | null {
+  if (!assinaturas.length) return null;
+
+  // prioriza ATIVA, depois o resto
+  const ativa = assinaturas.find((a) => a.status === "ATIVA");
+  if (ativa) return ativa;
+
+  // se não tiver ATIVA, pega a mais recente
+  return [...assinaturas].sort((a, b) => {
+    const da = a.inicioEm ? new Date(a.inicioEm).getTime() : 0;
+    const db = b.inicioEm ? new Date(b.inicioEm).getTime() : 0;
+    return db - da;
+  })[0];
 }
 
 export default function AssociacaoPage() {
@@ -100,7 +61,9 @@ export default function AssociacaoPage() {
           return;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
+        );
 
         if (!response.ok) {
           throw new Error("Erro ao buscar dados");
@@ -109,52 +72,67 @@ export default function AssociacaoPage() {
         const data = (await response.json()) as UsuarioResponse;
 
         const assinaturas = data.assinaturas ?? [];
-        const assinaturaAtiva =
-          assinaturas.find((a) => a.status === "ATIVA") ?? null;
+        const assinaturaSelecionada = selecionarAssinaturaAtiva(assinaturas);
+        const plano = assinaturaSelecionada?.plano ?? null;
+        const faturas = assinaturaSelecionada?.faturas ?? [];
 
-        const plano = assinaturaAtiva?.plano ?? null;
-        const faturas = assinaturaAtiva?.faturas ?? [];
+        const hoje = new Date();
 
         const parcelasConvertidas: ParcelaRegistro[] = faturas.map((f) => {
+          const valorParcela =
+            typeof f.valor === "string" ? Number(f.valor) : f.valor;
+
+          // status padrão da UI
           let statusParcela: ParcelaRegistro["status"] = "A_VENCER";
 
-          if (f.status === "PAGA") statusParcela = "PAGO";
+          if (f.status === "PAGA") {
+            statusParcela = "PAGO";
+          } else {
+            const vencimento = new Date(f.vencimentoEm);
+            if (vencimento < hoje && f.status !== "CANCELADA") {
+              // vencido e não cancelado -> continua "A_VENCER" ou "ATRASADO"
+              // se no enum de ParcelaRegistro existir "ATRASADO", pode trocar aqui
+              statusParcela = "A_VENCER";
+            }
+          }
 
           return {
             id: f.id,
             numeroParcela: f.competencia,
             dataVencimento: f.vencimentoEm,
-            valor: typeof f.valor === "string" ? Number(f.valor) : f.valor,
+            valor: valorParcela,
             status: statusParcela,
           };
         });
 
         const statusAssociacao =
-          assinaturaAtiva?.status === "ATIVA"
+          assinaturaSelecionada?.status === "ATIVA"
             ? "ATIVA"
-            : assinaturaAtiva?.status === "CANCELADA"
+            : assinaturaSelecionada?.status === "CANCELADA"
             ? "CANCELADA"
-            : assinaturaAtiva
+            : assinaturaSelecionada
             ? "PENDENTE"
             : "SEM_PLANO";
+
+        const valorPlano =
+          assinaturaSelecionada?.valorAtual != null
+            ? Number(assinaturaSelecionada.valorAtual)
+            : plano?.valor != null
+            ? Number(plano.valor)
+            : null;
 
         setAssociacao({
           planoId: plano?.id ?? null,
           planoNome: plano?.nome ?? null,
           descricao: plano?.descricao ?? null,
           status: statusAssociacao,
-          valor:
-            assinaturaAtiva?.valorAtual != null
-              ? Number(assinaturaAtiva.valorAtual)
-              : plano?.valor != null
-              ? Number(plano.valor)
-              : null,
+          valor: valorPlano,
           periodicidade:
-            assinaturaAtiva?.periodicidade ??
+            assinaturaSelecionada?.periodicidade ??
             plano?.periodicidade ??
             null,
-          dataInicio: assinaturaAtiva?.inicioEm ?? null,
-          proximaCobranca: assinaturaAtiva?.proximaCobrancaEm ?? null,
+          dataInicio: assinaturaSelecionada?.inicioEm ?? null,
+          proximaCobranca: assinaturaSelecionada?.proximaCobrancaEm ?? null,
           matricula: data.matricula,
           numeroCartao: data.numeroCartao ?? null,
           nomeSocio: data.nome,
@@ -168,7 +146,7 @@ export default function AssociacaoPage() {
       }
     }
 
-    fetchAssociacao();
+    void fetchAssociacao();
   }, []);
 
   if (loading) {
@@ -198,23 +176,23 @@ export default function AssociacaoPage() {
         />
         <div className="p-4 space-y-3">
           <div>
-          <h1 className="text-3xl font-bold">Minha Associação</h1>
-          <p className="text-zinc-400 text-sm mt-1">
-            Informações sobre sua assinatura
-          </p>
-        </div>
+            <h1 className="text-3xl font-bold">Minha Associação</h1>
+            <p className="text-zinc-400 text-sm mt-1">
+              Informações sobre sua assinatura
+            </p>
+          </div>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="px-6 py-12 text-center">
-            <p className="text-zinc-400">
-              Você ainda não possui um plano ativo.
-            </p>
-            <p className="text-zinc-500 text-sm mt-2">
-              Acesse a página de planos para escolher o melhor para você.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="px-6 py-12 text-center">
+              <p className="text-zinc-400">
+                Você ainda não possui um plano ativo.
+              </p>
+              <p className="text-zinc-500 text-sm mt-2">
+                Acesse a página de planos para escolher o melhor para você.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

@@ -1,34 +1,15 @@
 "use client";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface AssociacaoData {
-  planoId: string | null;
-  planoNome: string | null;
-  descricao?: string | null;
-  status: "ATIVA" | "PENDENTE" | "CANCELADA" | "SEM_PLANO";
-  valor: number | null;
-  periodicidade: "MENSAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL" | null;
-  dataInicio?: string | null;
-  proximaCobranca?: string | null;
-  matricula: string;
-  numeroCartao?: string | null;
-  nomeSocio: string;
-}
+import { AssociacaoData } from "@/app/types/associacao";
 
 interface CardResumoProps {
   associacao: AssociacaoData;
 }
 
 export function CardResumo({ associacao }: CardResumoProps) {
-  function getStatusColor(status: string) {
+  function getStatusColor(status: AssociacaoData["status"]) {
     switch (status) {
       case "ATIVA":
         return "bg-green-500/20 text-green-400";
@@ -45,6 +26,11 @@ export function CardResumo({ associacao }: CardResumoProps) {
   function formatDate(date: string) {
     return new Date(date).toLocaleDateString("pt-BR");
   }
+
+  const valorFormatado =
+    associacao.valor != null
+      ? `R$ ${associacao.valor.toFixed(2)}`
+      : "--";
 
   return (
     <Card>
@@ -64,14 +50,12 @@ export function CardResumo({ associacao }: CardResumoProps) {
       </CardHeader>
 
       <CardContent>
-        <div className=" gap-6 flex justify-between flex-wrap">
+        <div className="gap-6 flex justify-between flex-wrap">
           <div>
             <p className="text-xs text-zinc-400 uppercase tracking-wide mb-2">
               Valor
             </p>
-            <p className="font-semibold">
-              R$ {associacao.valor?.toFixed(2)}
-            </p>
+            <p className="font-semibold">{valorFormatado}</p>
           </div>
 
           <div>
@@ -83,6 +67,7 @@ export function CardResumo({ associacao }: CardResumoProps) {
               {associacao.periodicidade === "TRIMESTRAL" && "Trimestral"}
               {associacao.periodicidade === "SEMESTRAL" && "Semestral"}
               {associacao.periodicidade === "ANUAL" && "Anual"}
+              {!associacao.periodicidade && "--"}
             </p>
           </div>
 
