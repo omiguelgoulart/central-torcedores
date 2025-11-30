@@ -73,8 +73,7 @@ export default async function PartidaDetalhePage({
 
   const partida = {
     id: partidaApi.id,
-    mandante: partidaApi.mandante ?? partidaApi.nome ?? "Mandante",
-    visitante: partidaApi.visitante ?? "Visitante",
+    nome: partidaApi.nome,
     data: partidaApi.data,
     local: partidaApi.local,
   }
