@@ -36,11 +36,23 @@ type AbasPagamentoProps = {
   loteId?: string;
 };
 
-export function AbasPagamento({ customerId, orderDescription, orderTotal, orderType, planoId, torcedorId, jogoId, loteId }: AbasPagamentoProps) {
+export function AbasPagamento({
+  customerId,
+  orderDescription,
+  orderTotal,
+  orderType,
+  planoId,
+  torcedorId,
+  jogoId,
+  loteId,
+}: AbasPagamentoProps) {
   const [dialogoAberto, setDialogoAberto] = useState(false);
-  const [statusPagamento, setStatusPagamento] = useState<PaymentStatus | null>(null);
+  const [statusPagamento, setStatusPagamento] = useState<PaymentStatus | null>(
+    null
+  );
   const [abaAtiva, setAbaAtiva] = useState<TipoAbaPagamento>("pix");
-  const [pagamentoCriado, setPagamentoCriado] = useState<PagamentoCriado | null>(null);
+  const [pagamentoCriado, setPagamentoCriado] =
+    useState<PagamentoCriado | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   const isIngresso = orderType === "ingresso";
@@ -50,7 +62,10 @@ export function AbasPagamento({ customerId, orderDescription, orderTotal, orderT
     return status === "PAID" || status === "APPROVED";
   }
 
-  async function criarAssinaturaSeNecessario( status: PaymentStatus,  paymentId?: string ): Promise<void> {
+  async function criarAssinaturaSeNecessario(
+    status: PaymentStatus,
+    paymentId?: string
+  ): Promise<void> {
     if (!isPlano) return;
     if (!isStatusPago(status)) return;
 
@@ -88,16 +103,14 @@ export function AbasPagamento({ customerId, orderDescription, orderTotal, orderT
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        },
+        }
       );
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data) {
         toast.error(
-          data?.error ??
-            data?.message ??
-            "Erro ao criar assinatura.",
+          data?.error ?? data?.message ?? "Erro ao criar assinatura."
         );
         return;
       }
@@ -109,25 +122,25 @@ export function AbasPagamento({ customerId, orderDescription, orderTotal, orderT
     }
   }
 
-function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
-  setStatusPagamento(status);
+  function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
+    setStatusPagamento(status);
 
-  if (isIngresso) {
-    if (ingressoId) {
-      window.location.href = `/ingressos/${ingressoId}`;
-    } else {
-      window.location.href = `/meus-ingressos`;
+    if (isIngresso) {
+      if (ingressoId) {
+        window.location.href = `/ingressos/${ingressoId}`;
+      } else {
+        window.location.href = `/meus-ingressos`;
+      }
+      return;
     }
-    return;
-  }
 
-  if (isPlano && isStatusPago(status)) {
-    window.location.href = "/torcedor/minhaAssociacao";
-    return;
-  }
+    if (isPlano && isStatusPago(status)) {
+      window.location.href = "/torcedor/minhaAssociacao";
+      return;
+    }
 
-  setDialogoAberto(true);
-}
+    setDialogoAberto(true);
+  }
 
   const aoTentarNovamente = (): void => {
     setDialogoAberto(false);
@@ -194,7 +207,7 @@ function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
           window.location.href = `/ingressos/vincular?${query.toString()}`;
         } else {
           toast.warning(
-            "Pagamento ainda não está confirmado para gerar o ingresso.",
+            "Pagamento ainda não está confirmado para gerar o ingresso."
           );
         }
 
@@ -292,6 +305,7 @@ function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
                 customerId={customerId}
                 valor={orderTotal}
                 descricao={orderDescription}
+                dueDate={new Date().toISOString().slice(0, 10)}
                 onPaymentCreated={(ctx: PagamentoCriado) =>
                   setPagamentoCriado({
                     ...ctx,
@@ -312,9 +326,7 @@ function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
           disabled={!pagamentoCriado || confirmLoading}
           onClick={handleConfirmarPagamentoFake}
         >
-          {confirmLoading
-            ? "Verificando pagamento..."
-            : "Confirmar pagamento"}
+          {confirmLoading ? "Verificando pagamento..." : "Confirmar pagamento"}
         </Button>
       </div>
 

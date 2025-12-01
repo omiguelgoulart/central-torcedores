@@ -112,13 +112,16 @@ interface CardPanelProps {
   customerId: string;
   valor: number;
   descricao: string;
+  dueDate?: string;
   onPaymentCreated: (ctx: PagamentoCriado) => void;
 }
+
 
 export function CardPanel({
   customerId,
   valor,
   descricao,
+  dueDate,
   onPaymentCreated,
 }: CardPanelProps) {
   const [previewCartao, setPreviewCartao] = useState<{
@@ -177,6 +180,7 @@ export function CardPanel({
           customerId,
           valor,
           descricao,
+          dueDate,
           tipo,
           cartao: {
             holderName: data.holderName,
@@ -240,7 +244,7 @@ export function CardPanel({
         setLoading(false);
       }
     },
-    [customerId, valor, descricao, onPaymentCreated]
+    [customerId, valor, descricao, dueDate, onPaymentCreated]
   );
 
   return (

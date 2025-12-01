@@ -249,11 +249,7 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <div className="text-xs text-muted-foreground">
-              Interface pensada para uso em <strong>mobile first</strong> pelos agentes
-              de portaria.
-            </div>
-
+            
             <CheckinScanner
               cameraActive={cameraActive}
               isProcessing={isProcessing}

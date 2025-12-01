@@ -62,7 +62,6 @@ export const useAuth = create<AuthState>()(
 
           // Atualiza estado
           set({ usuario });
-          toast.success("Login realizado com sucesso!");
         } catch (e: unknown) {
           const errorMessage = e instanceof Error ? e.message : "Erro ao fazer login";
           console.error("Erro no login:", e);

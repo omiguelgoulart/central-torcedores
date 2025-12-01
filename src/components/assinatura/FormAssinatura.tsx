@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Periodicidade } from "@/app/types/planoItf";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,7 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 interface FormAssinaturaProps {
   planoId: string;
   planoNome: string;
-  valor: number;
+  valor: number; // valor base (ex.: mensal)
   defaultRecorrencia: Periodicidade;
 }
 
@@ -23,6 +35,13 @@ const recorrenciaLabel: Record<Periodicidade, string> = {
   TRIMESTRAL: "Trimestral",
   SEMESTRAL: "Semestral",
   ANUAL: "Anual",
+};
+
+const multiplicadorRecorrencia: Record<Periodicidade, number> = {
+  MENSAL: 1,
+  TRIMESTRAL: 3,
+  SEMESTRAL: 6,
+  ANUAL: 12,
 };
 
 export function FormAssinatura({
@@ -40,11 +59,21 @@ export function FormAssinatura({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const precoBRL = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 2,
-  }).format(valor);
+  // valor por ciclo conforme recorrência
+  const valorCiclo = useMemo(() => {
+    const fator = multiplicadorRecorrencia[recorrencia] ?? 1;
+    return valor * fator;
+  }, [valor, recorrencia]);
+
+  const precoBRL = useMemo(
+    () =>
+      new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        maximumFractionDigits: 2,
+      }).format(valorCiclo),
+    [valorCiclo]
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,11 +89,12 @@ export function FormAssinatura({
       return;
     }
 
-    setIsSubmitting(true);
-        if (!usuario?.id) {
+    if (!usuario?.id) {
       setErrorMsg("Não foi possível identificar seu usuário.");
       return;
     }
+
+    setIsSubmitting(true);
 
     const description = `Plano Sócio - ${planoNome} (${recorrenciaLabel[recorrencia]})`;
 
@@ -73,10 +103,10 @@ export function FormAssinatura({
       planoId,
       clienteId: usuario.id,
       recorrencia,
-      description: encodeURIComponent(description),
-      subtotal: String(valor),
+      description, // URLSearchParams já faz o encode
+      subtotal: String(valorCiclo),
       fees: "0",
-      total: String(valor),
+      total: String(valorCiclo),
     });
 
     router.push(`/pagamento?${params.toString()}`);
@@ -87,7 +117,8 @@ export function FormAssinatura({
       <CardHeader>
         <CardTitle>Escolha a recorrência</CardTitle>
         <CardDescription>
-          Defina como deseja ser cobrado pelo plano <strong>{planoNome}</strong>.
+          Defina como deseja ser cobrado pelo plano{" "}
+          <strong>{planoNome}</strong>.
         </CardDescription>
       </CardHeader>
 
@@ -101,7 +132,9 @@ export function FormAssinatura({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Valor */}
           <div>
-            <p className="text-sm text-muted-foreground">Valor por ciclo:</p>
+            <p className="text-sm text-muted-foreground">
+              Valor por ciclo ({recorrenciaLabel[recorrencia]}):
+            </p>
             <p className="text-2xl font-semibold">{precoBRL}</p>
           </div>
 

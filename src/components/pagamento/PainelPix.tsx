@@ -61,7 +61,8 @@ export function PainelPix({
         dueDate,
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -86,7 +87,7 @@ export function PainelPix({
         metodo: "PIX",
         paymentId: pagamento.id,
         statusInicial: pagamento.status,
-        valor: 0
+        valor: 0,
       });
 
       const qrResponse = await fetch(
@@ -144,6 +145,9 @@ export function PainelPix({
         : `data:image/png;base64,${pixQr.encodedImage}`
       : "/placeholder.svg";
 
+  const expirationDate =
+    pixQr?.expiresponseAt ? new Date(pixQr.expiresponseAt) : null;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center gap-4">
@@ -181,10 +185,13 @@ export function PainelPix({
       <Alert>
         <ClockIcon className="size-4" />
         <AlertDescription>
-          {pixQr?.expiresponseAt
-            ? `Este QR Code expira em ${new Date(
-                pixQr.expiresponseAt
-              ).toLocaleTimeString("pt-BR")}`
+          {expirationDate
+            ? `Este QR Code expira no dia ${expirationDate.toLocaleDateString(
+                "pt-BR"
+              )} às ${expirationDate.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`
             : "Este QR Code possui validade limitada."}
         </AlertDescription>
       </Alert>

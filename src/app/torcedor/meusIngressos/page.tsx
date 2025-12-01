@@ -61,8 +61,7 @@ export default function IngressosPage() {
           return;
         }
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`
         );
 
         if (!response.ok) {
