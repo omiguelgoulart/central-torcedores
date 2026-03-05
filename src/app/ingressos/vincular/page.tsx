@@ -40,7 +40,7 @@ function VincularIngressoContent() {
   const [cpf, setCpf] = useState("");
   const [torcedor, setTorcedor] = useState<TorcedorResumo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [ingressoGerado, setIngressoGerado] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -81,6 +81,11 @@ function VincularIngressoContent() {
   }
 
   async function gerarIngresso() {
+    if (ingressoGerado) {
+      setErrorMessage("O ingresso já foi gerado para este pagamento.");
+      return;
+    }
+
     if (!torcedor) {
       setErrorMessage("Selecione um torcedor antes.");
       return;
@@ -99,6 +104,7 @@ function VincularIngressoContent() {
       loteId,
       valor,
       torcedorId: torcedor.id,
+      pagamentoId,
     };
 
     try {
@@ -116,13 +122,16 @@ function VincularIngressoContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrorMessage(data?.error ?? data?.message ?? "Erro ao gerar ingresso.");
+        setErrorMessage(
+          data?.error ?? data?.message ?? "Erro ao gerar ingresso.",
+        );
         return;
       }
 
       const ingressoId = data?.ingressoId ?? data?.ingresso?.id;
 
       setSuccessMessage("Ingresso criado com sucesso!");
+      setIngressoGerado(true);
 
       setTimeout(() => {
         if (ingressoId) {
@@ -172,9 +181,7 @@ function VincularIngressoContent() {
             </p>
             <p>
               <strong>Valor:</strong>{" "}
-              {valor
-                ? `R$ ${Number(valor).toFixed(2)}`
-                : "Não informado"}
+              {valor ? `R$ ${Number(valor).toFixed(2)}` : "Não informado"}
             </p>
             <p>
               <strong>Pagamento ID:</strong> {pagamentoId ?? "Não informado"}
@@ -187,12 +194,13 @@ function VincularIngressoContent() {
               placeholder="000.000.000-00"
               value={cpf}
               onChange={(e) => setCpf(e.target.value)}
+              disabled={ingressoGerado}
             />
 
             <Button
               className="w-full"
               onClick={buscarTorcedor}
-              disabled={isLoading}
+              disabled={isLoading || ingressoGerado}
             >
               {isLoading ? (
                 <>
@@ -217,10 +225,15 @@ function VincularIngressoContent() {
                 <strong>Email:</strong> {torcedor.email}
               </p>
               <p>
-                <strong>CPF:</strong> {torcedor.cpf}</p>
+                <strong>CPF:</strong> {torcedor.cpf}
+              </p>
 
-              <Button className="w-full mt-3" onClick={gerarIngresso}>
-                Gerar Ingresso
+              <Button
+                className="w-full mt-3"
+                onClick={gerarIngresso}
+                disabled={isLoading || ingressoGerado}
+              >
+                {ingressoGerado ? "Ingresso já gerado" : "Gerar Ingresso"}
               </Button>
             </div>
           )}
@@ -235,7 +248,9 @@ export default function VincularIngressoPage() {
     <Suspense
       fallback={
         <div className="max-w-xl mx-auto py-10 px-4 text-center">
-          <p className="text-muted-foreground">Carregando dados do ingresso...</p>
+          <p className="text-muted-foreground">
+            Carregando dados do ingresso...
+          </p>
         </div>
       }
     >
