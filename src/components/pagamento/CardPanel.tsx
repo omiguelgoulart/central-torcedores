@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,9 +18,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { CardPreview } from "./CardPreview";
 import { detectCardBrand } from "@/lib/card-utils";
-import { formatCardNumber, formatCVV, formatCPFCNPJ, formatPostalCode, formatPhone } from "@/lib/formatters";
+import {
+  formatCardNumber,
+  formatCVV,
+  formatCPFCNPJ,
+  formatPostalCode,
+  formatPhone,
+} from "@/lib/formatters";
 
-import type { CardPaymentData, CardType, CardBrand, PaymentStatus } from "@/app/types/pagamentoItf";
+import type {
+  CardPaymentData,
+  CardType,
+  CardBrand,
+  PaymentStatus,
+} from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { toast } from "sonner";
 
@@ -24,7 +41,10 @@ const cardSchema = z.object({
   number: z.string().min(19, "Número do cartão inválido"),
   expiryMonth: z.string().regex(/^\d{2}$/, "Mês inválido"),
   expiryYear: z.string().regex(/^\d{4}$/, "Ano inválido"),
-  ccv: z.string().min(3, "CVV deve ter 3 ou 4 dígitos").max(4, "CVV deve ter 3 ou 4 dígitos"),
+  ccv: z
+    .string()
+    .min(3, "CVV deve ter 3 ou 4 dígitos")
+    .max(4, "CVV deve ter 3 ou 4 dígitos"),
   name: z.string().min(3, "Nome completo obrigatório"),
   email: z.string().email("E-mail inválido"),
   cpfCnpj: z.string().min(11, "CPF/CNPJ inválido"),
@@ -76,7 +96,7 @@ function MaskedInput({ onMask, setValue, name, ...rest }: MaskedInputProps) {
       const masked = onMask(e.target.value);
       setValue(name, masked);
     },
-    [name, onMask, setValue]
+    [name, onMask, setValue],
   );
 
   return <Input {...rest} onChange={handleChange} />;
@@ -87,7 +107,7 @@ function mapStatusToUiStatus(status: string): PaymentStatus {
 
   if (
     ["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH", "APPROVED", "PAID"].includes(
-      s
+      s,
     )
   ) {
     return "APPROVED";
@@ -115,7 +135,6 @@ interface CardPanelProps {
   dueDate?: string;
   onPaymentCreated: (ctx: PagamentoCriado) => void;
 }
-
 
 export function CardPanel({
   customerId,
@@ -154,7 +173,7 @@ export function CardPanel({
       setPreviewCartao((prev) => ({ ...prev, number: formatado }));
       setBandeiraCartao(detectCardBrand(formatado));
     },
-    [setValue]
+    [setValue],
   );
 
   const aoMudarHolder = useCallback(
@@ -163,7 +182,7 @@ export function CardPanel({
       setValue("holderName", upper, { shouldValidate: true });
       setPreviewCartao((prev) => ({ ...prev, holderName: upper }));
     },
-    [setValue]
+    [setValue],
   );
 
   const onSubmit = useCallback(
@@ -176,35 +195,63 @@ export function CardPanel({
 
         const tipo = data.cardType === "credit" ? "CREDIT_CARD" : "DEBIT_CARD";
 
+        const tokenResponse = await fetch(
+          "https://www.asaas.com/api/v3/creditCard/tokenize",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              access_token: process.env.NEXT_PUBLIC_ASAAS_PUBLIC_KEY!,
+            },
+            body: JSON.stringify({
+              customer: customerId,
+              creditCard: {
+                holderName: data.holderName,
+                number: data.number.replace(/\s/g, ""),
+                expiryMonth: data.expiryMonth,
+                expiryYear: expiryYear4,
+                ccv: data.ccv,
+              },
+              creditCardHolderInfo: {
+                name: data.name,
+                email: data.email,
+                cpfCnpj: data.cpfCnpj.replace(/\D/g, ""),
+                postalCode: data.postalCode.replace(/\D/g, ""),
+                addressNumber: data.addressNumber,
+                phone: data.phone.replace(/\D/g, ""),
+              },
+            }),
+          },
+        );
+
+        const tokenData = await tokenResponse.json().catch(() => null);
+
+        if (!tokenResponse.ok || !tokenData?.creditCardToken) {
+          toast.error("Falha ao tokenizar cartão. Verifique os dados.");
+          onPaymentCreated({
+            metodo: "CARTAO",
+            statusInicial: "ERROR",
+            valor: 0,
+          });
+          return;
+        }
+
         const body = {
           customerId,
           valor,
           descricao,
           dueDate,
           tipo,
-          cartao: {
-            holderName: data.holderName,
-            number: data.number.replace(/\s/g, ""),
-            expiryMonth: data.expiryMonth,
-            expiryYear: expiryYear4,
-            ccv: data.ccv,
-          },
-          portador: {
-            name: data.name,
-            email: data.email,
-            cpfCnpj: data.cpfCnpj,
-            postalCode: data.postalCode,
-            addressNumber: data.addressNumber,
-            phone: data.phone,
-          },
+          creditCardToken: tokenData.creditCardToken,
         };
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
-          }
+          },
         );
 
         const resposta = await response.json().catch(() => null);
@@ -229,7 +276,7 @@ export function CardPanel({
         });
 
         toast.success(
-          "Pagamento enviado para processamento. Clique em confirmar para verificar o status."
+          "Pagamento enviado para processamento. Clique em confirmar para verificar o status.",
         );
       } catch (err) {
         toast.error("Falha ao processar pagamento com cartão", {
@@ -244,12 +291,11 @@ export function CardPanel({
         setLoading(false);
       }
     },
-    [customerId, valor, descricao, dueDate, onPaymentCreated]
+    [customerId, valor, descricao, dueDate, onPaymentCreated],
   );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Pré-visualização do cartão */}
       <div className="mb-6">
         <CardPreview
           holderName={previewCartao.holderName}
@@ -259,7 +305,6 @@ export function CardPanel({
         />
       </div>
 
-      {/* Tipo de Cartão */}
       <div className="space-y-3">
         <Label>Tipo de Cartão</Label>
         <RadioGroup
@@ -289,7 +334,6 @@ export function CardPanel({
         )}
       </div>
 
-      {/* Dados do Cartão */}
       <div className="space-y-4">
         <h3 className="font-semibold">Dados do Cartão</h3>
 
@@ -376,7 +420,6 @@ export function CardPanel({
         </div>
       </div>
 
-      {/* Dados Pessoais */}
       <div className="space-y-4">
         <h3 className="font-semibold">Dados Pessoais</h3>
 

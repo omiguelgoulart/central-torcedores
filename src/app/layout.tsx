@@ -32,6 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
+      <script src="https://www.asaas.com/static/js/card-tokenization/asaas-card-tokenization.min.js" async></script>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
       >
