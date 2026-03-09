@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (!pathname.startsWith("/admin")) {
@@ -9,12 +10,6 @@ export function middleware(req: NextRequest) {
   }
 
   const token = req.cookies.get("adminToken")?.value;
-  const role = req.cookies.get("adminRole")?.value as
-    | "SUPER_ADMIN"
-    | "OPERACIONAL"
-    | "PORTARIA"
-    | undefined;
-
   const isLoginPage = pathname === "/admin/login";
   const isCheckinRoute = pathname.startsWith("/admin/check-in");
 
@@ -27,17 +22,30 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (role === "PORTARIA" && isLoginPage) {
-    const redirectUrl = new URL("/admin/check-in", req.url);
-    return NextResponse.redirect(redirectUrl);
-  }
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    const { payload } = await jwtVerify(token, secret);
+    const role = payload.role as
+      | "SUPER_ADMIN"
+      | "OPERACIONAL"
+      | "PORTARIA"
+      | undefined;
 
-  if (role === "PORTARIA" && !isCheckinRoute) {
-    const redirectUrl = new URL("/admin/check-in", req.url);
-    return NextResponse.redirect(redirectUrl);
-  }
+    if (role === "PORTARIA" && isLoginPage) {
+      const redirectUrl = new URL("/admin/check-in", req.url);
+      return NextResponse.redirect(redirectUrl);
+    }
 
-  return NextResponse.next();
+    if (role === "PORTARIA" && !isCheckinRoute) {
+      const redirectUrl = new URL("/admin/check-in", req.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    return NextResponse.next();
+  } catch {
+    const loginUrl = new URL("/admin/login", req.url);
+    return NextResponse.redirect(loginUrl);
+  }
 }
 
 export const config = {
