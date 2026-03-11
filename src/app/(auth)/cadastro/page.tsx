@@ -1,23 +1,17 @@
-
-import { FormCadastro } from "@/components/(auth)/cadastro/FormCadastro"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { FormCadastro } from "@/components/(auth)/cadastro/FormCadastro";
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
-      <Card className="w-full max-w-sm sm:max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            Criar Conta
-          </CardTitle>
-          <CardDescription className="text-center">
+    <div className="flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-sm sm:max-w-md space-y-6">
+        <div className="space-y-1 text-center">
+          <h1 className="text-2xl font-bold">Criar Conta</h1>
+          <p className="text-sm text-muted-foreground">
             Preencha os campos abaixo para se cadastrar
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FormCadastro />
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+        <FormCadastro />
+      </div>
     </div>
-  )
+  );
 }

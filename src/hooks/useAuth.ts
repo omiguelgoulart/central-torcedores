@@ -18,6 +18,7 @@ type AuthState = {
   usuario: Usuario | null;
   loading: boolean;
   login: (email: string, senha: string) => Promise<void>;
+  loginSilencioso: (email: string, senha: string) => Promise<boolean>;
   fetchMe: () => Promise<void>;
   logout: () => Promise<void>;
   token?: string;
@@ -69,6 +70,29 @@ export const useAuth = create<AuthState>()(
           throw e;
         } finally {
           set({ loading: false });
+        }
+      },
+      loginSilencioso: async (email, senha) => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, senha }),
+          });
+
+          if (!response.ok) return false;
+
+          const usuario = (await response.json()) as Usuario;
+
+          Cookies.set("auth", JSON.stringify(usuario), {
+            secure: true,
+            sameSite: "strict",
+          });
+
+          set({ usuario });
+          return true;
+        } catch {
+          return false;
         }
       },
       fetchMe: async () => {
