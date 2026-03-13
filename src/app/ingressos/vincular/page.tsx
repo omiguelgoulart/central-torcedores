@@ -119,6 +119,11 @@ function VincularIngressoContent() {
         body: JSON.stringify(payload),
       });
 
+      if (response.status === 409) {
+        setErrorMessage("Este pagamento já possui um ingresso gerado.");
+        return;
+      }
+
       const data = await response.json();
 
       if (!response.ok) {

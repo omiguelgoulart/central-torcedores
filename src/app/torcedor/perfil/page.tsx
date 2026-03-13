@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Cookies from "js-cookie";
+import { toast } from "sonner";
+import { Camera } from "lucide-react";
 
 import {
   Card,
@@ -13,8 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-
 
 type StatusSocio = "ATIVO" | "INADIMPLENTE" | "CANCELADO" | null;
 
@@ -66,14 +68,23 @@ function formatDate(dateIso?: string | null): string {
   return d.toLocaleDateString("pt-BR");
 }
 
-function PerfilField(props: { label: string; value?: string | null; type?: string }) {
+function PerfilField(props: {
+  label: string;
+  value?: string | null;
+  type?: string;
+}) {
   const { label, value, type = "text" } = props;
   return (
     <div className="space-y-1">
       <p className="text-xs text-muted-foreground uppercase tracking-wide">
         {label}
       </p>
-      <Input value={value ?? ""} type={type} readOnly className="bg-background" />
+      <Input
+        value={value ?? ""}
+        type={type}
+        readOnly
+        className="bg-background"
+      />
     </div>
   );
 }
@@ -84,6 +95,8 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [torcedor, setTorcedor] = useState<TorcedorPerfilResponse | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const inputFotoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function fetchPerfil() {
@@ -99,7 +112,7 @@ export default function PerfilPage() {
         }
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`
+          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
         );
 
         if (!res.ok) {
@@ -154,6 +167,92 @@ export default function PerfilPage() {
 
   const statusKey: StatusSocioKey = torcedor.statusSocio ?? "DESCONHECIDO";
 
+  async function handleUploadFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+
+    const authCookie = Cookies.get("auth");
+    if (!authCookie) {
+      toast.error("Sessão expirada. Faça login novamente.");
+      return;
+    }
+
+    let token: string | undefined;
+    try {
+      const parsed = JSON.parse(authCookie) as { token?: string };
+      token = parsed.token;
+    } catch {
+      toast.error("Erro ao ler sessão.");
+      return;
+    }
+
+    if (!token) {
+      toast.error("Token não encontrado. Faça login novamente.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("foto", file);
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/usuario/foto/url`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        },
+      );
+
+      const body = (await res.json().catch(() => null)) as {
+        fotoUrl?: string;
+        error?: string;
+        detalhes?: string;
+      } | null;
+
+      if (!res.ok) {
+        toast.error(body?.error || "Erro ao enviar foto.");
+        if (body?.detalhes)
+          console.error("Detalhe do servidor:", body.detalhes);
+        return;
+      }
+
+      if (body?.fotoUrl) {
+        setTorcedor((prev) =>
+          prev ? { ...prev, fotoUrl: body.fotoUrl! } : prev,
+        );
+      }
+
+      toast.success("Foto atualizada com sucesso!");
+    } catch {
+      toast.error("Erro inesperado ao enviar foto.");
+    } finally {
+      setUploading(false);
+      if (inputFotoRef.current) inputFotoRef.current.value = "";
+    }
+  }
+
+  const iniciais =
+    torcedor.nome
+      ?.trim()
+      .split(/\s+/)
+      .map((n) => n[0] ?? "")
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "US";
+
   return (
     <div className="space-y-6 p-4">
       {/* HEADER */}
@@ -162,6 +261,49 @@ export default function PerfilPage() {
         <p className="text-muted-foreground text-sm mt-1">
           Visualize e gerencie seus dados pessoais.
         </p>
+      </div>
+
+      {/* FOTO DE PERFIL */}
+      <div className="flex items-center gap-4">
+        <div className="relative group">
+          <Avatar className="h-20 w-20">
+            <AvatarImage
+              src={torcedor.fotoUrl || undefined}
+              alt="Foto de perfil"
+            />
+            <AvatarFallback className="text-lg">{iniciais}</AvatarFallback>
+          </Avatar>
+
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => inputFotoRef.current?.click()}
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-wait"
+            aria-label="Alterar foto de perfil"
+          >
+            <Camera className="h-6 w-6 text-white" />
+          </button>
+
+          <input
+            ref={inputFotoRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUploadFoto}
+          />
+        </div>
+
+        <div>
+          <p className="font-semibold">{torcedor.nome}</p>
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => inputFotoRef.current?.click()}
+            className="text-sm text-primary hover:underline disabled:opacity-50"
+          >
+            {uploading ? "Enviando..." : "Alterar foto"}
+          </button>
+        </div>
       </div>
 
       {/* CARD DADOS PESSOAIS */}
@@ -201,7 +343,6 @@ export default function PerfilPage() {
             />
             <PerfilField label="Gênero" value={torcedor.genero} />
           </div>
-
         </CardContent>
       </Card>
 
@@ -212,10 +353,12 @@ export default function PerfilPage() {
           <CardDescription>Dados de localização e comunicação.</CardDescription>
         </CardHeader>
 
-
         <CardContent className="pt-6 space-y-6">
           <div className="grid md:grid-cols-2 gap-4">
-            <PerfilField label="Logradouro" value={torcedor.enderecoLogradouro} />
+            <PerfilField
+              label="Logradouro"
+              value={torcedor.enderecoLogradouro}
+            />
             <PerfilField label="Número" value={torcedor.enderecoNumero} />
             <PerfilField label="Bairro" value={torcedor.enderecoBairro} />
             <PerfilField label="Cidade" value={torcedor.enderecoCidade} />

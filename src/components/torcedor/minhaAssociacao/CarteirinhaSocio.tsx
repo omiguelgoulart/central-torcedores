@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface CarteirinhaSocioProps {
   nome: string;
@@ -10,7 +10,7 @@ interface CarteirinhaSocioProps {
   planoNome: string;
   numeroCartao?: string;
   className?: string;
-  avatarUrl?: string | null;
+  fotoUrl?: string | null;
 }
 
 export function CarteirinhaSocio({
@@ -19,7 +19,7 @@ export function CarteirinhaSocio({
   planoNome,
   numeroCartao,
   className,
-  avatarUrl,
+  fotoUrl,
 }: CarteirinhaSocioProps) {
   return (
     <Card
@@ -30,17 +30,26 @@ export function CarteirinhaSocio({
         className
       )}
     >
-      {/* Área superior */}
       <div className="flex items-start gap-4">
-        {/* Avatar com fallback */}
-        <div className="h-30 w-30 rounded-xl overflow-hidden bg-red-900/40 flex items-center justify-center">
-          <Image
-            src={avatarUrl || "/avatar-default.png"}
-            alt="Avatar do sócio"
-            width={80}
-            height={80}
-            className="h-full w-full object-cover"
-          />
+        <div className="h-24 w-20 rounded-xl overflow-hidden bg-red-900/40 flex items-center justify-center">
+          {fotoUrl ? (
+            <Image
+              src={fotoUrl}
+              alt="Foto de perfil"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-lg font-bold text-white">
+              {nome
+                .trim()
+                .split(/\s+/)
+                .map((n) => n[0] ?? "")
+                .filter(Boolean)
+                .slice(0, 2)
+                .join("")
+                .toUpperCase() || "US"}
+            </span>
+          )}
         </div>
 
         {/* Dados */}

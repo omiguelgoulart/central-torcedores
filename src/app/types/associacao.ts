@@ -38,6 +38,7 @@ export interface UsuarioResponse {
   matricula: string;
   numeroCartao?: string | null;
   assinaturas?: ApiAssinatura[];
+  fotoUrl?: string | null;
 }
 
 export type StatusAssociacaoUI = "ATIVA" | "PENDENTE" | "CANCELADA" | "SEM_PLANO";
@@ -54,4 +55,5 @@ export interface AssociacaoData {
   matricula: string;
   numeroCartao?: string | null;
   nomeSocio: string;
+  fotoUrl?: string | null;
 }

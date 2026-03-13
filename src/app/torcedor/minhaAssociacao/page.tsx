@@ -5,148 +5,184 @@ import Cookies from "js-cookie";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { CarteirinhaSocio } from "@/components/torcedor/minhaAssociacao/CarteirinhaSocio";
-import { ParcelaRegistro, TabelaPagamentosSocio } from "@/components/torcedor/minhaAssociacao/TablePagamento";
+import {
+  ParcelaRegistro,
+  TabelaPagamentosSocio,
+} from "@/components/torcedor/minhaAssociacao/TablePagamento";
 import { CardResumo } from "@/components/torcedor/minhaAssociacao/CardResumo";
-import { ApiAssinatura, AssociacaoData, UsuarioResponse } from "@/app/types/associacao";
+import {
+  ApiAssinatura,
+  AssociacaoData,
+  UsuarioResponse,
+} from "@/app/types/associacao";
 
+type AuthCookieUser = {
+  id?: string;
+};
 
-type AuthCookieUser = { id?: string };
-type AuthCookie = { id?: string; user?: AuthCookieUser };
+type AuthCookie = {
+  id?: string;
+  user?: AuthCookieUser;
+};
 
 function getTorcedorIdFromCookies(): string | null {
-  const direto = Cookies.get("usuarioId");
-  if (direto) return direto;
+  const usuarioId = Cookies.get("usuarioId");
+  if (usuarioId) return usuarioId;
 
   const auth = Cookies.get("auth");
   if (!auth) return null;
 
   try {
-    const parsed: AuthCookie = JSON.parse(auth);
+    const parsed = JSON.parse(auth) as AuthCookie;
     return parsed.user?.id ?? parsed.id ?? null;
   } catch {
     return null;
   }
 }
 
-function selecionarAssinaturaAtiva(assinaturas: ApiAssinatura[]): ApiAssinatura | null {
+function selecionarAssinaturaPrincipal(
+  assinaturas: ApiAssinatura[]
+): ApiAssinatura | null {
   if (!assinaturas.length) return null;
 
-  // prioriza ATIVA, depois o resto
-  const ativa = assinaturas.find((a) => a.status === "ATIVA");
-  if (ativa) return ativa;
+  const assinaturaAtiva = assinaturas.find((assinatura) => assinatura.status === "ATIVA");
+  if (assinaturaAtiva) return assinaturaAtiva;
 
-  // se não tiver ATIVA, pega a mais recente
   return [...assinaturas].sort((a, b) => {
-    const da = a.inicioEm ? new Date(a.inicioEm).getTime() : 0;
-    const db = b.inicioEm ? new Date(b.inicioEm).getTime() : 0;
-    return db - da;
+    const dataA = a.inicioEm ? new Date(a.inicioEm).getTime() : 0;
+    const dataB = b.inicioEm ? new Date(b.inicioEm).getTime() : 0;
+    return dataB - dataA;
   })[0];
+}
+
+function mapearParcelas(assinatura: ApiAssinatura | null): ParcelaRegistro[] {
+  if (!assinatura?.faturas?.length) return [];
+
+  const hoje = new Date();
+
+  return assinatura.faturas.map((fatura) => {
+    const valor =
+      typeof fatura.valor === "string" ? Number(fatura.valor) : fatura.valor;
+
+    let status: ParcelaRegistro["status"] = "A_VENCER";
+
+    if (fatura.status === "PAGA") {
+      status = "PAGO";
+    } else if (fatura.status === "CANCELADA") {
+      status = "A_VENCER";
+    } else {
+      const vencimento = new Date(fatura.vencimentoEm);
+      if (vencimento < hoje) {
+        status = "A_VENCER";
+      }
+    }
+
+    return {
+      id: fatura.id,
+      numeroParcela: fatura.competencia,
+      dataVencimento: fatura.vencimentoEm,
+      valor,
+      status,
+    };
+  });
+}
+
+function montarAssociacao(
+  data: UsuarioResponse,
+  assinatura: ApiAssinatura | null
+): AssociacaoData {
+  const plano = assinatura?.plano ?? null;
+
+  const status: AssociacaoData["status"] =
+    assinatura?.status === "ATIVA"
+      ? "ATIVA"
+      : assinatura?.status === "CANCELADA"
+      ? "CANCELADA"
+      : assinatura
+      ? "PENDENTE"
+      : "SEM_PLANO";
+
+  const valor =
+    assinatura?.valorAtual != null
+      ? Number(assinatura.valorAtual)
+      : plano?.valor != null
+      ? Number(plano.valor)
+      : null;
+
+  return {
+    planoId: plano?.id ?? null,
+    planoNome: plano?.nome ?? null,
+    descricao: plano?.descricao ?? null,
+    status,
+    valor,
+    periodicidade: assinatura?.periodicidade ?? plano?.periodicidade ?? null,
+    dataInicio: assinatura?.inicioEm ?? null,
+    proximaCobranca: assinatura?.proximaCobrancaEm ?? null,
+    matricula: data.matricula,
+    numeroCartao: data.numeroCartao ?? null,
+    nomeSocio: data.nome,
+    fotoUrl: data.fotoUrl ?? null,
+  };
+}
+
+async function buscarAssociacaoDoTorcedor(
+  torcedorId: string
+): Promise<{
+  associacao: AssociacaoData;
+  parcelas: ParcelaRegistro[];
+}> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Erro ao buscar dados da associação");
+  }
+
+  const data = (await response.json()) as UsuarioResponse;
+  const assinaturaSelecionada = selecionarAssinaturaPrincipal(data.assinaturas ?? []);
+
+  return {
+    associacao: montarAssociacao(data, assinaturaSelecionada),
+    parcelas: mapearParcelas(assinaturaSelecionada),
+  };
 }
 
 export default function AssociacaoPage() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-
   const [associacao, setAssociacao] = useState<AssociacaoData | null>(null);
   const [parcelas, setParcelas] = useState<ParcelaRegistro[]>([]);
 
   useEffect(() => {
-    async function fetchAssociacao() {
+    async function carregarPagina() {
       try {
+        setLoading(true);
+        setErro(null);
+
         const torcedorId = getTorcedorIdFromCookies();
 
         if (!torcedorId) {
           setErro("Usuário não encontrado.");
-          setLoading(false);
           return;
         }
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
-        );
+        const resultado = await buscarAssociacaoDoTorcedor(torcedorId);
 
-        if (!response.ok) {
-          throw new Error("Erro ao buscar dados");
-        }
-
-        const data = (await response.json()) as UsuarioResponse;
-
-        const assinaturas = data.assinaturas ?? [];
-        const assinaturaSelecionada = selecionarAssinaturaAtiva(assinaturas);
-        const plano = assinaturaSelecionada?.plano ?? null;
-        const faturas = assinaturaSelecionada?.faturas ?? [];
-
-        const hoje = new Date();
-
-        const parcelasConvertidas: ParcelaRegistro[] = faturas.map((f) => {
-          const valorParcela =
-            typeof f.valor === "string" ? Number(f.valor) : f.valor;
-
-          // status padrão da UI
-          let statusParcela: ParcelaRegistro["status"] = "A_VENCER";
-
-          if (f.status === "PAGA") {
-            statusParcela = "PAGO";
-          } else {
-            const vencimento = new Date(f.vencimentoEm);
-            if (vencimento < hoje && f.status !== "CANCELADA") {
-              // vencido e não cancelado -> continua "A_VENCER" ou "ATRASADO"
-              // se no enum de ParcelaRegistro existir "ATRASADO", pode trocar aqui
-              statusParcela = "A_VENCER";
-            }
-          }
-
-          return {
-            id: f.id,
-            numeroParcela: f.competencia,
-            dataVencimento: f.vencimentoEm,
-            valor: valorParcela,
-            status: statusParcela,
-          };
-        });
-
-        const statusAssociacao =
-          assinaturaSelecionada?.status === "ATIVA"
-            ? "ATIVA"
-            : assinaturaSelecionada?.status === "CANCELADA"
-            ? "CANCELADA"
-            : assinaturaSelecionada
-            ? "PENDENTE"
-            : "SEM_PLANO";
-
-        const valorPlano =
-          assinaturaSelecionada?.valorAtual != null
-            ? Number(assinaturaSelecionada.valorAtual)
-            : plano?.valor != null
-            ? Number(plano.valor)
-            : null;
-
-        setAssociacao({
-          planoId: plano?.id ?? null,
-          planoNome: plano?.nome ?? null,
-          descricao: plano?.descricao ?? null,
-          status: statusAssociacao,
-          valor: valorPlano,
-          periodicidade:
-            assinaturaSelecionada?.periodicidade ??
-            plano?.periodicidade ??
-            null,
-          dataInicio: assinaturaSelecionada?.inicioEm ?? null,
-          proximaCobranca: assinaturaSelecionada?.proximaCobrancaEm ?? null,
-          matricula: data.matricula,
-          numeroCartao: data.numeroCartao ?? null,
-          nomeSocio: data.nome,
-        });
-
-        setParcelas(parcelasConvertidas);
-      } catch {
+        setAssociacao(resultado.associacao);
+        setParcelas(resultado.parcelas);
+      } catch (error) {
+        console.error(error);
         setErro("Erro ao carregar informações da associação.");
       } finally {
         setLoading(false);
       }
     }
 
-    void fetchAssociacao();
+    void carregarPagina();
   }, []);
 
   if (loading) {
@@ -169,25 +205,23 @@ export default function AssociacaoPage() {
     return (
       <div className="space-y-6">
         <section
-          className="relative w-full h-[220px] sm:h-[260px] bg-center bg-cover flex items-center justify-center"
-          style={{
-            backgroundImage: "url('/fundoPartidas.jpeg')",
-          }}
+          className="relative h-[220px] w-full bg-cover bg-center sm:h-[260px] flex items-center justify-center"
+          style={{ backgroundImage: "url('/fundoPartidas.jpeg')" }}
         />
-        <div className="p-4 space-y-3">
+        <div className="space-y-3 p-4">
           <div>
             <h1 className="text-3xl font-bold">Minha Associação</h1>
-            <p className="text-zinc-400 text-sm mt-1">
+            <p className="mt-1 text-sm text-zinc-400">
               Informações sobre sua assinatura
             </p>
           </div>
 
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="border-zinc-800 bg-zinc-900">
             <CardContent className="px-6 py-12 text-center">
               <p className="text-zinc-400">
                 Você ainda não possui um plano ativo.
               </p>
-              <p className="text-zinc-500 text-sm mt-2">
+              <p className="mt-2 text-sm text-zinc-500">
                 Acesse a página de planos para escolher o melhor para você.
               </p>
             </CardContent>
@@ -200,23 +234,22 @@ export default function AssociacaoPage() {
   return (
     <div>
       <section
-        className="relative w-full h-[220px] sm:h-[260px] bg-center bg-cover flex items-center justify-center"
-        style={{
-          backgroundImage: "url('/fundoPartidas.jpeg')",
-        }}
+        className="relative h-[220px] w-full bg-cover bg-center sm:h-[260px] flex items-center justify-center"
+        style={{ backgroundImage: "url('/fundoPartidas.jpeg')" }}
       />
       <div className="space-y-8 p-4">
-        <div className="flex flex-col gap-2 items-center">
+        <div className="flex flex-col items-center gap-2">
           <h1 className="text-3xl font-bold">Minha Associação</h1>
         </div>
 
-        <div className="flex gap-2 flex-col md:flex-row items-center justify-between">
+        <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
           <div className="flex-shrink-0 md:w-1/3">
             <CarteirinhaSocio
               nome={associacao.nomeSocio}
               matricula={associacao.matricula}
               planoNome={associacao.planoNome ?? ""}
               numeroCartao={associacao.numeroCartao ?? undefined}
+              fotoUrl={associacao.fotoUrl ?? undefined}
             />
           </div>
 
