@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
+import { removeAuthCookie, setAuthCookie } from "@/lib/storageToken";
 
 type Usuario = {
   id: string;
@@ -55,10 +55,7 @@ export const useAuth = create<AuthState>()(
           const rawUser = (await response.json()) as Usuario;
           const usuario: Usuario = rawUser;
 
-          Cookies.set("auth", JSON.stringify(usuario), {
-            secure: true,
-            sameSite: "strict",
-          });
+          setAuthCookie(usuario);
 
           set({ usuario });
         } catch (e: unknown) {
@@ -83,10 +80,7 @@ export const useAuth = create<AuthState>()(
 
           const usuario = (await response.json()) as Usuario;
 
-          Cookies.set("auth", JSON.stringify(usuario), {
-            secure: true,
-            sameSite: "strict",
-          });
+          setAuthCookie(usuario);
 
           set({ usuario });
           return true;
@@ -116,7 +110,7 @@ export const useAuth = create<AuthState>()(
       },
       logout: async () => {
         set({ usuario: null });
-        Cookies.remove("auth");
+        removeAuthCookie();
         toast.success("Você saiu da sua conta.");
       },
     }),
