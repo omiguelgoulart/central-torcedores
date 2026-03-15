@@ -11,6 +11,7 @@ import { PainelBoleto } from "@/components/pagamento/PainelBoleto";
 import { CardPanel } from "@/components/pagamento/CardPanel";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { PAYMENT_STATUS } from "@/lib/constants";
 
 export type MetodoPagamento = "PIX" | "BOLETO" | "CARTAO";
 
@@ -77,24 +78,20 @@ export function AbasPagamento({
       }
 
       sessionStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // Ignora erro de storage indisponivel.
-    }
+    } catch {}
   }, [pagamentoCriado]);
 
   const isIngresso = orderType === "ingresso";
   const isPlano = orderType === "plano";
 
   function isStatusPago(status: PaymentStatus): boolean {
-    return status === "PAID" || status === "APPROVED";
+    return status === PAYMENT_STATUS.PAID || status === PAYMENT_STATUS.APPROVED;
   }
 
   function limparPagamentoPendente() {
     try {
       sessionStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // Ignora erro de storage indisponivel.
-    }
+    } catch {}
 
     setPagamentoCriado(null);
   }
@@ -205,16 +202,16 @@ export function AbasPagamento({
 
       switch (pagamentoCriado.metodo) {
         case "PIX":
-          status = "PAID";
+          status = PAYMENT_STATUS.PAID;
           break;
         case "BOLETO":
-          status = "PENDING";
+          status = PAYMENT_STATUS.PENDING;
           break;
         case "CARTAO":
-          status = "APPROVED";
+          status = PAYMENT_STATUS.APPROVED;
           break;
         default:
-          status = "ERROR";
+          status = PAYMENT_STATUS.ERROR;
       }
 
       const paymentId = pagamentoCriado.paymentId ?? `FAKE-${Date.now()}`;

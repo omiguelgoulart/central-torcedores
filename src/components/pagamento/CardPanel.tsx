@@ -30,10 +30,11 @@ import type {
   CardPaymentData,
   CardType,
   CardBrand,
-  PaymentStatus,
 } from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { toast } from "sonner";
+import { PAYMENT_STATUS } from "@/lib/constants";
+import { mapStatusToUiStatus } from "@/lib/payment-utils";
 
 const cardSchema = z.object({
   cardType: z.enum(["credit", "debit"] as const),
@@ -100,32 +101,6 @@ function MaskedInput({ onMask, setValue, name, ...rest }: MaskedInputProps) {
   );
 
   return <Input {...rest} onChange={handleChange} />;
-}
-
-function mapStatusToUiStatus(status: string): PaymentStatus {
-  const s = status.toUpperCase();
-
-  if (
-    ["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH", "APPROVED", "PAID"].includes(
-      s,
-    )
-  ) {
-    return "APPROVED";
-  }
-
-  if (["PENDING", "AWAITING", "IN_PROCESS"].includes(s)) {
-    return "PENDING";
-  }
-
-  if (["OVERDUE", "EXPIRED"].includes(s)) {
-    return "EXPIRED";
-  }
-
-  if (["CANCELLED", "REFUNDED", "DECLINED"].includes(s)) {
-    return "DECLINED";
-  }
-
-  return "ERROR";
 }
 
 interface CardPanelProps {
@@ -230,7 +205,7 @@ export function CardPanel({
           toast.error("Falha ao tokenizar cartão. Verifique os dados.");
           onPaymentCreated({
             metodo: "CARTAO",
-            statusInicial: "ERROR",
+            statusInicial: PAYMENT_STATUS.ERROR,
             valor: 0,
           });
           return;
@@ -261,7 +236,7 @@ export function CardPanel({
           toast.error("Falha ao processar pagamento com cartão");
           onPaymentCreated({
             metodo: "CARTAO",
-            statusInicial: "ERROR",
+            statusInicial: PAYMENT_STATUS.ERROR,
             valor: 0,
           });
           return;
@@ -285,7 +260,7 @@ export function CardPanel({
         });
         onPaymentCreated({
           metodo: "CARTAO",
-          statusInicial: "ERROR",
+          statusInicial: PAYMENT_STATUS.ERROR,
           valor: 0,
         });
       } finally {

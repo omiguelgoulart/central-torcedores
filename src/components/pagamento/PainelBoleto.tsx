@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileTextIcon, DownloadIcon } from "lucide-react";
 import { toast } from "sonner";
-import type { BoletoLinks, PaymentStatus } from "@/app/types/pagamentoItf";
+import type { BoletoLinks } from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
+import { mapStatusToUiStatus } from "@/lib/payment-utils";
 
 interface PainelBoletoProps {
   customerId: string;
@@ -22,32 +23,6 @@ type PagamentoApiResponse = {
   invoiceUrl?: string;
   dueDate?: string;
 };
-
-function mapStatusToUiStatus(status: string): PaymentStatus {
-  const s = status.toUpperCase();
-
-  if (
-    ["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH", "APPROVED", "PAID"].includes(
-      s
-    )
-  ) {
-    return "PAID";
-  }
-
-  if (["PENDING", "AWAITING", "IN_PROCESS"].includes(s)) {
-    return "PENDING";
-  }
-
-  if (["OVERDUE", "EXPIRED"].includes(s)) {
-    return "EXPIRED";
-  }
-
-  if (["CANCELLED", "REFUNDED", "DECLINED"].includes(s)) {
-    return "ERROR";
-  }
-
-  return "ERROR";
-}
 
 export function PainelBoleto({
   customerId,
@@ -71,18 +46,19 @@ export function PainelBoleto({
         tipo: "BOLETO" as const,
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
         {
           credentials: "include",
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
 
-      const data = (await res.json().catch(() => null)) as
-        | PagamentoApiResponse
-        | null;
+      const data = (await res
+        .json()
+        .catch(() => null)) as PagamentoApiResponse | null;
 
       if (!res.ok || !data) {
         toast.error("Falha ao gerar boleto");
@@ -99,7 +75,7 @@ export function PainelBoleto({
         metodo: "BOLETO",
         paymentId: data.id,
         statusInicial: mapStatusToUiStatus(data.status ?? ""),
-        valor: valor
+        valor: valor,
       });
 
       toast.success("Boleto gerado com sucesso!");

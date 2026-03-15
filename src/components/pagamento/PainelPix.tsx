@@ -7,6 +7,7 @@ import { CopyIcon, ClockIcon } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
+import { mapStatusToUiStatus } from "@/lib/payment-utils";
 
 type PixQrLocal = {
   encodedImage?: string;
@@ -87,7 +88,7 @@ export function PainelPix({
       onPaymentCreated({
         metodo: "PIX",
         paymentId: pagamento.id,
-        statusInicial: pagamento.status,
+        statusInicial: mapStatusToUiStatus(String(pagamento.status ?? "")),
         valor: 0,
       });
 

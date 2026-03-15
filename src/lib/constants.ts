@@ -1,0 +1,10 @@
+export const PAYMENT_STATUS = {
+    PAID: "PAID",
+    APPROVED: "APPROVED",
+    PENDING: "PENDING",
+    EXPIRED: "EXPIRED",
+    DECLINED: "DECLINED",
+    ERROR: "ERROR",
+    CONFIRMED: "CONFIRMED",
+    RECEIVED: "RECEIVED",
+} as const;
