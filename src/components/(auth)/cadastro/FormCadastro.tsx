@@ -3,7 +3,7 @@
 import { useForm, Controller, FieldError } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -97,6 +97,7 @@ export function FormCadastro() {
 
   const [loading, setLoading] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const {
     register,
@@ -144,11 +145,16 @@ export function FormCadastro() {
       return;
     }
 
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setBuscandoCep(true);
 
     try {
       const response = await fetch(
         `https://viacep.com.br/ws/${cepLimpo}/json/`,
+        { signal: controller.signal },
       );
       const data: {
         erro?: boolean;
@@ -180,8 +186,9 @@ export function FormCadastro() {
       }
 
       toast.success("Endereço preenchido!");
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      console.error(e);
       toast.error("Erro ao buscar CEP");
     } finally {
       setBuscandoCep(false);
