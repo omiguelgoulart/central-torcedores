@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { QrCodeIcon, FileTextIcon, CreditCardIcon } from "lucide-react";
@@ -25,6 +25,8 @@ export type PagamentoCriado = {
 
 type TipoAbaPagamento = "pix" | "boleto" | "cartao";
 
+const STORAGE_KEY = "pagamento_pendente";
+
 type AbasPagamentoProps = {
   customerId: string;
   orderDescription: string;
@@ -48,12 +50,37 @@ export function AbasPagamento({
 }: AbasPagamentoProps) {
   const [dialogoAberto, setDialogoAberto] = useState(false);
   const [statusPagamento, setStatusPagamento] = useState<PaymentStatus | null>(
-    null
+    null,
   );
   const [abaAtiva, setAbaAtiva] = useState<TipoAbaPagamento>("pix");
   const [pagamentoCriado, setPagamentoCriado] =
     useState<PagamentoCriado | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const salvo = sessionStorage.getItem(STORAGE_KEY);
+      if (!salvo) return;
+
+      const pagamentoPendente = JSON.parse(salvo) as PagamentoCriado;
+      setPagamentoCriado(pagamentoPendente);
+    } catch {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (pagamentoCriado) {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(pagamentoCriado));
+        return;
+      }
+
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignora erro de storage indisponivel.
+    }
+  }, [pagamentoCriado]);
 
   const isIngresso = orderType === "ingresso";
   const isPlano = orderType === "plano";
@@ -62,9 +89,19 @@ export function AbasPagamento({
     return status === "PAID" || status === "APPROVED";
   }
 
+  function limparPagamentoPendente() {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignora erro de storage indisponivel.
+    }
+
+    setPagamentoCriado(null);
+  }
+
   async function criarAssinaturaSeNecessario(
     status: PaymentStatus,
-    paymentId?: string
+    paymentId?: string,
   ): Promise<void> {
     if (!isPlano) return;
     if (!isStatusPago(status)) return;
@@ -104,14 +141,14 @@ export function AbasPagamento({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data) {
         toast.error(
-          data?.error ?? data?.message ?? "Erro ao criar assinatura."
+          data?.error ?? data?.message ?? "Erro ao criar assinatura.",
         );
         return;
       }
@@ -190,6 +227,10 @@ export function AbasPagamento({
         loteId,
       });
 
+      if (isStatusPago(status)) {
+        limparPagamentoPendente();
+      }
+
       if (isIngresso) {
         if (isStatusPago(status)) {
           const query = new URLSearchParams({
@@ -208,7 +249,7 @@ export function AbasPagamento({
           window.location.href = `/ingressos/vincular?${query.toString()}`;
         } else {
           toast.warning(
-            "Pagamento ainda não está confirmado para gerar o ingresso."
+            "Pagamento ainda não está confirmado para gerar o ingresso.",
           );
         }
 
