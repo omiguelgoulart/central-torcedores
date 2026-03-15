@@ -32,6 +32,7 @@ function AssinaturaContent() {
         setErrorMsg(null)
 
         const res = await fetch(`${API}/planos/${encodeURIComponent(planoId as string)}`, {
+          credentials: "include",
           cache: "no-store",
         })
 

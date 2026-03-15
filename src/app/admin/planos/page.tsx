@@ -60,6 +60,7 @@ export default function PaginaPlanos() {
       setErro(null);
 
       const response = await fetch(`${API}/planos`, {
+        credentials: "include",
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
@@ -151,6 +152,7 @@ export default function PaginaPlanos() {
 
       if (planoDialogMode === "create") {
         const res = await fetch(`${API}/planos`, {
+          credentials: "include",
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -164,6 +166,7 @@ export default function PaginaPlanos() {
         }
       } else if (planoDialogMode === "edit" && planoSelecionado) {
         const res = await fetch(`${API}/planos/${planoSelecionado.id}`, {
+          credentials: "include",
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -203,6 +206,7 @@ export default function PaginaPlanos() {
       setErro(null);
 
       const res = await fetch(`${API}/planos/${plano.id}`, {
+        credentials: "include",
         method: "DELETE",
       });
 

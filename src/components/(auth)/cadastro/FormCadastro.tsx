@@ -206,6 +206,7 @@ export function FormCadastro() {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/usuario`,
         {
+          credentials: "include",
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

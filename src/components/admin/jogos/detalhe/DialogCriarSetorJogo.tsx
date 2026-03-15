@@ -59,7 +59,7 @@ export function DialogCriarSetorJogo({
         setErro(null);
         setCarregou(false);
 
-        const res = await fetch(`${API}/admin/setor`);
+        const res = await fetch(`${API}/admin/setor`, { credentials: "include" });
         if (!res.ok) throw new Error();
 
         const data: SetorBase[] = await res.json();
@@ -101,6 +101,7 @@ export function DialogCriarSetorJogo({
       };
 
       const res = await fetch(`${API}/admin/jogoSetor`, {
+        credentials: "include",
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

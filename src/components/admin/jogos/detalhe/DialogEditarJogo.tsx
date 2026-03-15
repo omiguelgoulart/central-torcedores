@@ -58,6 +58,7 @@ export function DialogEditarSetorJogo({
       };
 
       const res = await fetch(`${API}/admin/jogoSetor/${setor.id}`, {
+        credentials: "include",
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

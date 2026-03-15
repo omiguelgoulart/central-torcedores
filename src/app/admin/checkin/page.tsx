@@ -42,7 +42,7 @@ export default function CheckinJogosPage() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`${API}/admin/jogo`);
+        const response = await fetch(`${API}/admin/jogo`, { credentials: "include" });
         if (!response.ok) {
           setError("Não foi possível carregar os jogos disponíveis.");
           setLoading(false);

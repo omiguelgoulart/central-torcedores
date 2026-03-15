@@ -49,6 +49,7 @@ export default function IngressoDetalhePage() {
         setError(null);
 
         const res = await fetch(`${API}/admin/ingresso/${ingressoId}`, {
+          credentials: "include",
           signal: controller.signal,
           headers: {
             "Content-Type": "application/json",

@@ -43,6 +43,7 @@ export default function PageTorcedores() {
         setErro(null);
 
         const resposta = await fetch(`${API}/usuario`, {
+          credentials: "include",
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",

@@ -62,7 +62,9 @@ export default function JogosIngressosPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API}/admin/jogo`);
+        const res = await fetch(`${API}/admin/jogo`, {
+          credentials: "include",
+        });
         if (!res.ok) {
           throw new Error("Erro ao buscar jogos");
         }
@@ -76,7 +78,8 @@ export default function JogosIngressosPage() {
 
             try {
               const ingressosRes = await fetch(
-                `${API}/admin/ingresso?jogoId=${jogo.id}&page=1&pageSize=1000`
+                `${API}/admin/ingresso?jogoId=${jogo.id}&page=1&pageSize=1000`,
+                { credentials: "include" },
               );
 
               if (ingressosRes.ok) {
@@ -84,7 +87,7 @@ export default function JogosIngressosPage() {
                 totalPedidos = data.total;
                 valorTotal = data.items.reduce(
                   (acc, ingresso) => acc + parseValor(ingresso.valor),
-                  0
+                  0,
                 );
               }
             } catch {}
@@ -101,7 +104,7 @@ export default function JogosIngressosPage() {
               totalCheckins: 0,
               taxaCheckin: 0,
             };
-          })
+          }),
         );
 
         setJogos(jogosComStats);
@@ -120,7 +123,7 @@ export default function JogosIngressosPage() {
     return jogos.filter((jogo) =>
       `${jogo.nome} ${jogo.data}`
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(searchTerm.toLowerCase()),
     );
   }, [jogos, searchTerm]);
 

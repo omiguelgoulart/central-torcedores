@@ -37,6 +37,7 @@ export function AbaSetoresJogo({
 
     try {
       const res = await fetch(`${API}/admin/jogoSetor/${id}`, {
+        credentials: "include",
         method: "DELETE",
       });
       if (!res.ok) throw new Error();

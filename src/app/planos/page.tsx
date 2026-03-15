@@ -12,7 +12,7 @@ export default function PlanosPage() {
   useEffect(() => {
     async function fetchPlanos() {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/planos`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/planos`, { credentials: "include" });
         if (!response.ok) throw new Error("Erro ao buscar planos");
 
         const data = (await response.json()) as IPlano[];

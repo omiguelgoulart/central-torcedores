@@ -33,6 +33,7 @@ export default function PaginaSetoresEstadio() {
       try {
         setCarregando(true);
         const resposta = await fetch(`${API}/admin/setor`, {
+          credentials: "include",
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -99,6 +100,7 @@ export default function PaginaSetoresEstadio() {
         setCarregando(true);
 
         const res = await fetch(`${API}/admin/setor/${id}`, {
+          credentials: "include",
           method: "DELETE",
         });
 
@@ -127,6 +129,7 @@ export default function PaginaSetoresEstadio() {
           const res = await fetch(
             `${API}/admin/setor/${setorSelecionado.id}`,
             {
+              credentials: "include",
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
@@ -153,6 +156,7 @@ export default function PaginaSetoresEstadio() {
           );
         } else {
           const res = await fetch(`${API}/admin/setor`, {
+            credentials: "include",
             method: "POST",
             headers: {
               "Content-Type": "application/json",

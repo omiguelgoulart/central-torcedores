@@ -97,6 +97,7 @@ export function DialogCriarLoteJogo({
       };
 
       const res = await fetch(`${API}/admin/lote`, {
+        credentials: "include",
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -112,7 +113,7 @@ export function DialogCriarLoteJogo({
       const loteId = body.loteId as string;
 
       // Buscar lote completo para atualizar lista sem recarregar
-      const resLote = await fetch(`${API}/admin/lote/${loteId}`);
+      const resLote = await fetch(`${API}/admin/lote/${loteId}`, { credentials: "include" });
       const lote: JogoLote = await resLote.json();
 
       onCreated(lote);

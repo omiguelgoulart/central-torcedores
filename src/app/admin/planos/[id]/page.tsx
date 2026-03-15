@@ -57,7 +57,7 @@ export default function BeneficiosDoPlanoPage() {
 
   const carregarPlano = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/planos/${planoId}`);
+      const res = await fetch(`${API}/planos/${planoId}`, { credentials: "include" });
       if (!res.ok) return;
       const data = (await res.json()) as PlanoDetalheApi;
       setPlano(data);
@@ -71,7 +71,7 @@ export default function BeneficiosDoPlanoPage() {
       setCarregando(true);
       setErro(null);
 
-      const res = await fetch(`${API}/beneficio?planoId=${planoId}`);
+      const res = await fetch(`${API}/beneficio?planoId=${planoId}`, { credentials: "include" });
       if (!res.ok) {
         console.error("Falha no GET /beneficio");
         setBeneficios([]);
@@ -132,6 +132,7 @@ export default function BeneficiosDoPlanoPage() {
 
       if (dialogMode === "create") {
         const res = await fetch(`${API}/beneficio`, {
+          credentials: "include",
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -145,6 +146,7 @@ export default function BeneficiosDoPlanoPage() {
         }
       } else if (dialogMode === "edit" && beneficioSelecionado) {
         const res = await fetch(`${API}/beneficio/${beneficioSelecionado.id}`, {
+          credentials: "include",
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -184,6 +186,7 @@ export default function BeneficiosDoPlanoPage() {
       setErro(null);
 
       const res = await fetch(`${API}/beneficio/${beneficio.id}`, {
+        credentials: "include",
         method: "DELETE",
       });
 

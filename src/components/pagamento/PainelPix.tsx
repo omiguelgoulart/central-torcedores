@@ -64,10 +64,11 @@ export function PainelPix({
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
         {
+          credentials: "include",
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       const pagamento = await response.json();
@@ -91,7 +92,8 @@ export function PainelPix({
       });
 
       const qrResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos/${pagamento.id}/pixQrCode`
+        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos/${pagamento.id}/pixQrCode`,
+        { credentials: "include" },
       );
       const qrData = await qrResponse.json();
 
@@ -145,8 +147,9 @@ export function PainelPix({
         : `data:image/png;base64,${pixQr.encodedImage}`
       : "/placeholder.svg";
 
-  const expirationDate =
-    pixQr?.expiresponseAt ? new Date(pixQr.expiresponseAt) : null;
+  const expirationDate = pixQr?.expiresponseAt
+    ? new Date(pixQr.expiresponseAt)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -187,7 +190,7 @@ export function PainelPix({
         <AlertDescription>
           {expirationDate
             ? `Este QR Code expira no dia ${expirationDate.toLocaleDateString(
-                "pt-BR"
+                "pt-BR",
               )} às ${expirationDate.toLocaleTimeString("pt-BR", {
                 hour: "2-digit",
                 minute: "2-digit",

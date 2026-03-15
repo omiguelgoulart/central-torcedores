@@ -61,7 +61,9 @@ export default function IngressosPage() {
           return;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
+          { credentials: "include" },
         );
 
         if (!response.ok) {
@@ -94,7 +96,7 @@ export default function IngressosPage() {
   });
 
   const anteriores = ingressos.filter(
-    (ing) => !proximos.some((p) => p.id === ing.id)
+    (ing) => !proximos.some((p) => p.id === ing.id),
   );
 
   const listaVisivel = abaAtiva === "PROXIMOS" ? proximos : anteriores;

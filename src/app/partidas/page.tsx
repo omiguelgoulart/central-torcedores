@@ -15,6 +15,7 @@ export default function PartidasPage() {
     async function carregar() {
       try {
         const res = await fetch(`${API}/admin/jogo`, {
+          credentials: "include",
           cache: "no-store",
         })
 

@@ -46,6 +46,7 @@ export function CadastroCustomerIdForm({ defaultName, defaultEmail, onCustomerCr
     setLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/asaas/clientes`, {
+        credentials: "include",
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

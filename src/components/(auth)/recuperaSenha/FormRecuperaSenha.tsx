@@ -30,6 +30,7 @@
      async function onSubmit(data: FormData) {
        try {
          const res = await fetch(`${API}/auth/recuperar-senha`, {
+           credentials: "include",
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ email: data.email }),

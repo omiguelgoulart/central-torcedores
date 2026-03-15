@@ -21,7 +21,7 @@ export default function PageJogos() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`${API}/admin/jogo`);
+      const res = await fetch(`${API}/admin/jogo`, { credentials: "include" });
       if (!res.ok) throw new Error();
 
       const data: Jogo[] = await res.json();

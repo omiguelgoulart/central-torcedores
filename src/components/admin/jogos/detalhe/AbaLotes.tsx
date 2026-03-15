@@ -39,6 +39,7 @@ export function AbaLotesJogo({
 
     try {
       const res = await fetch(`${API}/admin/jogo-lote/${id}`, {
+        credentials: "include",
         method: "DELETE",
       });
       if (!res.ok) throw new Error();

@@ -59,6 +59,7 @@ function VincularIngressoContent() {
       setIsLoading(true);
 
       const response = await fetch(`${API}/usuario/cpf/${cpfLimpo}`, {
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -111,6 +112,7 @@ function VincularIngressoContent() {
       console.log("Payload para criar ingresso:", payload);
 
       const response = await fetch(`${API}/admin/ingresso`, {
+        credentials: "include",
         method: "POST",
         headers: {
           "Content-Type": "application/json",

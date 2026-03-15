@@ -55,6 +55,7 @@ export default function PageAssinatura() {
         setErro(null);
 
         const resposta = await fetch(`${API}/assinatura`, {
+          credentials: "include",
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",

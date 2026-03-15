@@ -113,6 +113,7 @@ export default function PerfilPage() {
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
+          { credentials: "include" },
         );
 
         if (!res.ok) {
@@ -209,6 +210,7 @@ export default function PerfilPage() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/usuario/foto/url`,
         {
+          credentials: "include",
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
           body: formData,

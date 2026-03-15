@@ -78,7 +78,7 @@ export default function PageDetalheJogo() {
     const carregar = async () => {
       try {
         setLoading(true);
-        const req = await fetch(`${API}/admin/jogo/${id}/full`);
+        const req = await fetch(`${API}/admin/jogo/${id}/full`, { credentials: "include" });
 
         if (!req.ok) {
           throw new Error("Erro ao carregar jogo");

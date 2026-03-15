@@ -68,9 +68,10 @@ export default function HomePage() {
     const carregar = async () => {
       try {
         const jogosRes = await fetch(`${API}/admin/jogo`, {
+          credentials: "include",
           cache: "no-store",
         });
-        const planosRes = await fetch(`${API}/planos`, { cache: "no-store" });
+        const planosRes = await fetch(`${API}/planos`, { credentials: "include", cache: "no-store" });
 
         const jogosJson: JogoAPI[] = await jogosRes.json();
         const planosJson: PlanoAPI[] = await planosRes.json();

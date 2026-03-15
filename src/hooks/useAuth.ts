@@ -33,6 +33,7 @@ export const useAuth = create<AuthState>()(
         set({ loading: true });
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+            credentials: "include",
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, senha }),
@@ -51,17 +52,14 @@ export const useAuth = create<AuthState>()(
             throw new Error(msg);
           }
 
-          // Dados básicos do usuário vindos do backend
           const rawUser = (await response.json()) as Usuario;
           const usuario: Usuario = rawUser;
 
-          // Atualiza cookies
           Cookies.set("auth", JSON.stringify(usuario), {
             secure: true,
             sameSite: "strict",
           });
 
-          // Atualiza estado
           set({ usuario });
         } catch (e: unknown) {
           const errorMessage = e instanceof Error ? e.message : "Erro ao fazer login";
@@ -75,6 +73,7 @@ export const useAuth = create<AuthState>()(
       loginSilencioso: async (email, senha) => {
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+            credentials: "include",
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, senha }),
@@ -98,25 +97,18 @@ export const useAuth = create<AuthState>()(
       fetchMe: async () => {
         set({ loading: true });
         try {
-          const authCookie = Cookies.get("auth");
-          if (!authCookie) {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
+            credentials: "include",
+          });
+
+          if (!res.ok) {
             set({ usuario: null });
             return;
           }
 
-          let usuario: Usuario;
-          try {
-            usuario = JSON.parse(authCookie) as Usuario;
-          } catch (err) {
-            console.error("auth cookie inválido:", err);
-            Cookies.remove("auth");
-            set({ usuario: null });
-            return;
-          }
-
+          const usuario = (await res.json()) as Usuario;
           set({ usuario });
-        } catch (e) {
-          console.error("Erro no fetchMe:", e);
+        } catch {
           set({ usuario: null });
         } finally {
           set({ loading: false });

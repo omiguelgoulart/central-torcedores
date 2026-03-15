@@ -69,6 +69,7 @@ export function FormRedefinirSenha() {
 
     try {
       const res = await fetch(`${API}/auth/redefinir-senha`, {
+        credentials: "include",
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, novaSenha: data.novaSenha }),

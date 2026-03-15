@@ -74,7 +74,7 @@ export default function PaymentsPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API}/pagamento`);
+        const res = await fetch(`${API}/pagamento`, { credentials: "include" });
         if (!res.ok) {
           throw new Error("Erro ao buscar pagamentos");
         }

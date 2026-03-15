@@ -56,6 +56,7 @@ export default function PageTorcedorDetalhe({ params }: PageProps) {
         const { id } = await params;
 
         const resposta = await fetch(`${API}/usuario/id/${id}`, {
+          credentials: "include",
           method: "GET",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",

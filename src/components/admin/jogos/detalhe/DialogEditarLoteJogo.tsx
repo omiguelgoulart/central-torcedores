@@ -80,6 +80,7 @@ export function DialogEditarLoteJogo({
       };
 
       const res = await fetch(`${API}/admin/lote/${lote.id}`, {
+        credentials: "include",
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

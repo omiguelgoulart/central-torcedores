@@ -22,6 +22,7 @@ export function DeletaJogo({ id, onDeleted }: Props) {
 
     try {
       const res = await fetch(`${API}/admin/jogo/${id}`, {
+        credentials: "include",
         method: "DELETE",
       });
 

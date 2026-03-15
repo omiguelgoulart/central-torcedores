@@ -107,7 +107,7 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
         setErroJogo(null);
 
         console.log("Carregando dados do jogo (via ingressos):", jogoId);
-        const response = await fetch(`${API}/admin/ingresso/jogo/${jogoId}`);
+        const response = await fetch(`${API}/admin/ingresso/jogo/${jogoId}`, { credentials: "include" });
 
         if (!response.ok) {
           setErroJogo("Não foi possível carregar os dados do jogo.");
@@ -155,6 +155,7 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
 
       try {
         const response = await fetch(`${API}/admin/checkin/`, {
+          credentials: "include",
           method: "POST",
           headers: {
             "Content-Type": "application/json",

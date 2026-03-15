@@ -51,7 +51,7 @@ export default function AdminsPage() {
         setLoading(true)
         setErrorMessage(null)
 
-        const res = await fetch(`${API}/admin/user`, { cache: "no-store" })
+        const res = await fetch(`${API}/admin/user`, { credentials: "include", cache: "no-store" })
 
         if (!res.ok) {
           throw new Error("Erro ao buscar admins")
@@ -87,6 +87,7 @@ export default function AdminsPage() {
       setErrorMessage(null)
 
       const res = await fetch(`${API}/admin/user`, {
+        credentials: "include",
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -147,6 +148,7 @@ export default function AdminsPage() {
       setErrorMessage(null)
 
       const res = await fetch(`${API}/admin/user/${id}`, {
+        credentials: "include",
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -184,6 +186,7 @@ export default function AdminsPage() {
       setErrorMessage(null)
 
       const res = await fetch(`${API}/admin/user/${id}`, {
+        credentials: "include",
         method: "DELETE",
       })
 
