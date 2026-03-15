@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import type { IBeneficio } from "@/app/types/beneficioItf";
 import type { IPlano, Periodicidade } from "@/app/types/planoItf";
@@ -30,12 +31,13 @@ const periodicidadeLabel: Record<Periodicidade, string> = {
 
 export function CardPlano({ plano, beneficiosOverride }: CardPlanoProps) {
   const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const beneficios: IBeneficio[] = Array.isArray(beneficiosOverride)
     ? beneficiosOverride
     : Array.isArray(plano.beneficios)
-    ? plano.beneficios
-    : [];
+      ? plano.beneficios
+      : [];
 
   const precoBRL = new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -43,19 +45,18 @@ export function CardPlano({ plano, beneficiosOverride }: CardPlanoProps) {
     maximumFractionDigits: 2,
   }).format(plano.valor);
 
-function onSubmit() {
-  const params = new URLSearchParams({
-    planoId: plano.id,
-    planoNome: plano.nome,
-    valor: String(plano.valor),
-    defaultRecorrencia: plano.periodicidade,
-  });
+  function onSubmit() {
+    if (isNavigating) return;
+    setIsNavigating(true);
+    const params = new URLSearchParams({
+      planoId: plano.id,
+      planoNome: plano.nome,
+      valor: String(plano.valor),
+      defaultRecorrencia: plano.periodicidade,
+    });
 
-  const url = `/assinatura?${params.toString()}`;
-  console.log("Indo para URL:", url);
-
-  router.push(url);
-}
+    router.push(`/assinatura?${params.toString()}`);
+  }
 
   return (
     <Card className="flex flex-col">
@@ -96,8 +97,13 @@ function onSubmit() {
       </CardContent>
 
       <CardFooter>
-        <Button onClick={onSubmit} className="w-full" size="lg">
-          Assinar agora
+        <Button
+          onClick={onSubmit}
+          className="w-full"
+          size="lg"
+          disabled={isNavigating}
+        >
+          {isNavigating ? "Redirecionando..." : "Assinar agora"}
         </Button>
       </CardFooter>
     </Card>
