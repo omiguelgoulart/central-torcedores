@@ -63,6 +63,7 @@ export default function HomePage() {
   const [jogos, setJogos] = useState<JogoHome[]>([]);
   const [planos, setPlanos] = useState<PlanoHome[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
 
   useEffect(() => {
     const carregar = async () => {
@@ -71,7 +72,10 @@ export default function HomePage() {
           credentials: "include",
           cache: "no-store",
         });
-        const planosRes = await fetch(`${API}/planos`, { credentials: "include", cache: "no-store" });
+        const planosRes = await fetch(`${API}/planos`, {
+          credentials: "include",
+          cache: "no-store",
+        });
 
         const jogosJson: JogoAPI[] = await jogosRes.json();
         const planosJson: PlanoAPI[] = await planosRes.json();
@@ -82,7 +86,7 @@ export default function HomePage() {
           data: jogo.data,
           local: jogo.local,
           descricao: jogo.descricao ?? "",
-          hasLotes: true, // temporário até integrar com backend dos lotes
+          hasLotes: true,
         }));
 
         const agora = new Date();
@@ -90,8 +94,7 @@ export default function HomePage() {
         const jogosFuturosOrdenados: JogoHome[] = jogosFormatadosBase
           .filter((jogo) => new Date(jogo.data) >= agora)
           .sort(
-            (a, b) =>
-              new Date(a.data).getTime() - new Date(b.data).getTime()
+            (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime(),
           );
 
         const planosFormatados: PlanoHome[] = planosJson.map((plano) => ({
@@ -109,6 +112,7 @@ export default function HomePage() {
         setPlanos(planosFormatados);
       } catch (e) {
         console.error("Erro ao carregar home:", e);
+        setErro(true);
       } finally {
         setCarregando(false);
       }
@@ -144,6 +148,19 @@ export default function HomePage() {
         <p className="text-sm text-muted-foreground">
           Carregando informações da Central de Torcedores...
         </p>
+      </div>
+    );
+  }
+  
+  if (erro) {
+    return (
+      <div className="container mx-auto max-w-5xl py-20 text-center space-y-4">
+        <p className="text-muted-foreground">
+          Não foi possível carregar os dados. Verifique sua conexão.
+        </p>
+        <Button onClick={() => window.location.reload()}>
+          Tentar novamente
+        </Button>
       </div>
     );
   }
