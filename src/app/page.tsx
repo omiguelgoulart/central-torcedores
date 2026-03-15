@@ -6,21 +6,14 @@ import { useRouter } from "next/navigation";
 
 import { ClubeFooter } from "@/components/home/ClubeFooter";
 import { FaixaDeJogos } from "@/components/home/FaixaDeJogo";
+import { HomeLoadingSkeleton } from "@/components/home/HomeLoadingSkeleton";
 import { Perguntas } from "@/components/home/Perguntas";
 import { PlanosCampanha } from "@/components/home/PlanosCampanha";
 import { Button } from "@/components/ui/button";
+import { JogoAPISchema, PlanoAPISchema } from "@/lib/schemas";
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ?? "https://central-api-jet.vercel.app";
-
-interface JogoAPI {
-  id: string;
-  nome: string;
-  data: string;
-  local: string;
-  descricao: string | null;
-  hasLotes?: boolean;
-}
 
 interface JogoHome {
   id: string;
@@ -29,21 +22,6 @@ interface JogoHome {
   local: string;
   descricao: string;
   hasLotes: boolean;
-}
-
-interface PlanoAPI {
-  id: string;
-  nome: string;
-  descricao: string | null;
-  valor: string;
-  periodicidade: string;
-  isFeatured: boolean | null;
-  badgeLabel: string | null;
-  beneficios: {
-    id: string;
-    titulo: string;
-    descricao: string | null;
-  }[];
 }
 
 interface PlanoHome {
@@ -77,8 +55,12 @@ export default function HomePage() {
           cache: "no-store",
         });
 
-        const jogosJson: JogoAPI[] = await jogosRes.json();
-        const planosJson: PlanoAPI[] = await planosRes.json();
+        if (!jogosRes.ok || !planosRes.ok) {
+          throw new Error("Falha ao carregar dados da home");
+        }
+
+        const jogosJson = JogoAPISchema.array().parse(await jogosRes.json());
+        const planosJson = PlanoAPISchema.array().parse(await planosRes.json());
 
         const jogosFormatadosBase: JogoHome[] = jogosJson.map((jogo) => ({
           id: jogo.id,
@@ -143,15 +125,9 @@ export default function HomePage() {
   const proximoJogo = jogos.at(0);
 
   if (carregando) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">
-          Carregando informações da Central de Torcedores...
-        </p>
-      </div>
-    );
+    return <HomeLoadingSkeleton />;
   }
-  
+
   if (erro) {
     return (
       <div className="container mx-auto max-w-5xl py-20 text-center space-y-4">

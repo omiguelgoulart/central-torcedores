@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { IPlano } from "@/app/types/planoItf";
 import { HeaderPlano } from "@/components/planos/HeaderPlano";
 import { CardPlano } from "@/components/planos/CardPlano";
+import { PlanosLoadingSkeleton } from "@/components/planos/PlanosLoadingSkeleton";
 
 export default function PlanosPage() {
   const [planos, setPlanos] = useState<IPlano[]>([]);
@@ -12,7 +13,10 @@ export default function PlanosPage() {
   useEffect(() => {
     async function fetchPlanos() {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/planos`, { credentials: "include" });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/planos`,
+          { credentials: "include" },
+        );
         if (!response.ok) throw new Error("Erro ao buscar planos");
 
         const data = (await response.json()) as IPlano[];
@@ -28,11 +32,7 @@ export default function PlanosPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <p className="text-muted-foreground">Carregando dados...</p>
-      </div>
-    );
+    return <PlanosLoadingSkeleton />;
   }
 
   return (

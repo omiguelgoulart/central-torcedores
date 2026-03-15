@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListaJogos } from "@/components/partidas/ListaJogos";
+import { PartidasLoadingSkeleton } from "@/components/partidas/PartidasLoadingSkeleton";
 import type { Jogo } from "@/components/partidas/CardJogo";
 import { Button } from "@/components/ui/button";
 
@@ -53,44 +54,42 @@ export default function PartidasPage() {
       />
 
       <section className="p-4">
-        <div className="mt-6">
-          <Card className="mx-auto border-none bg-transparent shadow-none">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold">
-                Próximas Partidas
-              </CardTitle>
-              <div className="flex justify-center gap-4 mt-6">
-                <Button
-                  variant="outline"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  Anterior
-                </Button>
-                <span className="self-center text-sm text-muted-foreground">
-                  Página {page} de {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Próxima
-                </Button>
-              </div>
-            </CardHeader>
+        {loading ? (
+          <PartidasLoadingSkeleton />
+        ) : (
+          <div className="mt-6">
+            <Card className="mx-auto border-none bg-transparent shadow-none">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold">
+                  Próximas Partidas
+                </CardTitle>
+                <div className="flex justify-center gap-4 mt-6">
+                  <Button
+                    variant="outline"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    Anterior
+                  </Button>
+                  <span className="self-center text-sm text-muted-foreground">
+                    Página {page} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Próxima
+                  </Button>
+                </div>
+              </CardHeader>
 
-            <CardContent>
-              {loading ? (
-                <p className="text-center text-muted-foreground">
-                  Carregando partidas…
-                </p>
-              ) : (
+              <CardContent>
                 <ListaJogos jogos={jogos} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </section>
     </main>
   );
