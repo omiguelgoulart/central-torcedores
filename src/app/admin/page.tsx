@@ -82,10 +82,10 @@ export default function PageDashboard() {
         setLoading(true);
 
         const [pagRes, assRes, fatRes, ingRes] = await Promise.all([
-          fetch(`${API}/pagamento`, { credentials: "include" }),
-          fetch(`${API}/assinatura`, { credentials: "include" }),
-          fetch(`${API}/fatura`, { credentials: "include" }),
-          fetch(`${API}/admin/ingresso?page=1&pageSize=1`, { credentials: "include" }),
+          fetch(`${API}/pagamento`, {}),
+          fetch(`${API}/assinatura`, {}),
+          fetch(`${API}/fatura`, {}),
+          fetch(`${API}/admin/ingresso?page=1&pageSize=1`, {}),
         ]);
 
         // Pagamentos

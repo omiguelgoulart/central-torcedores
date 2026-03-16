@@ -55,11 +55,10 @@ export default function PageAssinatura() {
         setErro(null);
 
         const resposta = await fetch(`${API}/assinatura`, {
-          credentials: "include",
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-        });
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store"
+});
 
         if (!resposta.ok) {
           console.error("Falha ao buscar assinaturas em /assinatura");

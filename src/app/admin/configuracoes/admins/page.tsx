@@ -51,7 +51,7 @@ export default function AdminsPage() {
         setLoading(true)
         setErrorMessage(null)
 
-        const res = await fetch(`${API}/admin/user`, { credentials: "include", cache: "no-store" })
+        const res = await fetch(`${API}/admin/user`, { cache: "no-store" })
 
         if (!res.ok) {
           throw new Error("Erro ao buscar admins")

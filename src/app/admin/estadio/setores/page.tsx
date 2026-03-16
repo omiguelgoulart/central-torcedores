@@ -33,13 +33,12 @@ export default function PaginaSetoresEstadio() {
       try {
         setCarregando(true);
         const resposta = await fetch(`${API}/admin/setor`, {
-          credentials: "include",
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          cache: "no-store",
-        });
+    method: "GET",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    cache: "no-store"
+});
 
         if (!resposta.ok) {
           console.error("Falha ao buscar setores da API /admin/setor");

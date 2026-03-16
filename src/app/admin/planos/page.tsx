@@ -60,11 +60,10 @@ export default function PaginaPlanos() {
       setErro(null);
 
       const response = await fetch(`${API}/planos`, {
-        credentials: "include",
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-      });
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store"
+});
 
       if (!response.ok) {
         console.error("Falha no GET /planos");

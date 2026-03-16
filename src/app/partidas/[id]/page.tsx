@@ -54,9 +54,8 @@ export default async function PartidaDetalhePage({
     const partidaRes = await fetch(
       `${API}/admin/jogo/${encodeURIComponent(id)}/jogo`,
       {
-        credentials: "include",
-        cache: "no-store",
-      },
+    cache: "no-store"
+},
     )
 
     if (!partidaRes.ok) {

@@ -42,11 +42,10 @@ export default function PsgeFatura() {
         setErro(null)
 
         const resposta = await fetch(`${API}/fatura`, {
-          credentials: "include",
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-        })
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store"
+})
 
         if (!resposta.ok) {
           console.error("Falha ao buscar faturas em /fatura")

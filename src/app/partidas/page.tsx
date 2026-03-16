@@ -21,9 +21,8 @@ export default function PartidasPage() {
         setLoading(true);
 
         const res = await fetch(`${API}/admin/jogo?page=${page}&limit=10`, {
-          credentials: "include",
-          cache: "no-store",
-        });
+    cache: "no-store"
+});
 
         if (!res.ok) throw new Error("Erro ao buscar jogos");
 

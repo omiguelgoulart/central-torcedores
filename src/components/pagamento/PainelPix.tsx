@@ -94,7 +94,7 @@ export function PainelPix({
 
       const qrResponse = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos/${pagamento.id}/pixQrCode`,
-        { credentials: "include" },
+        {},
       );
       const qrData = await qrResponse.json();
 

@@ -88,11 +88,10 @@ export function FormJogo({
       const method = isEdit ? "PATCH" : "POST";
 
       const res = await fetch(endpoint, {
-        credentials: "include",
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+});
 
       if (!res.ok) {
         throw new Error();

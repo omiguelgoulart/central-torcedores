@@ -98,7 +98,7 @@ export default function JogoIngressosDetalhePage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API}/admin/jogo/${jogoId}/full`, { credentials: "include" });
+        const res = await fetch(`${API}/admin/jogo/${jogoId}/full`, {});
         if (!res.ok) {
           throw new Error("Erro ao buscar dados do jogo");
         }

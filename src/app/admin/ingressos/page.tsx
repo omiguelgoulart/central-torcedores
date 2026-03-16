@@ -62,9 +62,7 @@ export default function JogosIngressosPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API}/admin/jogo`, {
-          credentials: "include",
-        });
+        const res = await fetch(`${API}/admin/jogo`, {});
         if (!res.ok) {
           throw new Error("Erro ao buscar jogos");
         }
@@ -79,7 +77,7 @@ export default function JogosIngressosPage() {
             try {
               const ingressosRes = await fetch(
                 `${API}/admin/ingresso?jogoId=${jogo.id}&page=1&pageSize=1000`,
-                { credentials: "include" },
+                {},
               );
 
               if (ingressosRes.ok) {

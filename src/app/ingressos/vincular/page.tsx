@@ -59,12 +59,11 @@ function VincularIngressoContent() {
       setIsLoading(true);
 
       const response = await fetch(`${API}/usuario/cpf/${cpfLimpo}`, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
+    headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }
+});
 
       const data = await response.json();
 

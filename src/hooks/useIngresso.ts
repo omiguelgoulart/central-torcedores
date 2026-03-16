@@ -74,9 +74,7 @@ export const useIngresso = create<UseIngressoState>((set) => ({
 
       const resp = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/ingressos/${id}`,
-        {
-          credentials: "include",
-        }
+        {}
       );
 
       const data = await resp.json();

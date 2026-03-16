@@ -15,7 +15,6 @@ export default function PlanosPage() {
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/planos`,
-          { credentials: "include" },
         );
         if (!response.ok) throw new Error("Erro ao buscar planos");
 

@@ -43,11 +43,10 @@ export default function PageTorcedores() {
         setErro(null);
 
         const resposta = await fetch(`${API}/usuario`, {
-          credentials: "include",
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-        });
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store"
+});
 
         if (!resposta.ok) {
           console.error("Falha no GET /usuario");

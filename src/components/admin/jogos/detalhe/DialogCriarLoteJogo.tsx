@@ -113,7 +113,7 @@ export function DialogCriarLoteJogo({
       const loteId = body.loteId as string;
 
       // Buscar lote completo para atualizar lista sem recarregar
-      const resLote = await fetch(`${API}/admin/lote/${loteId}`, { credentials: "include" });
+      const resLote = await fetch(`${API}/admin/lote/${loteId}`, {});
       const lote: JogoLote = await resLote.json();
 
       onCreated(lote);

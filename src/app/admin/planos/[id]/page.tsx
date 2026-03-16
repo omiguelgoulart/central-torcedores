@@ -57,7 +57,7 @@ export default function BeneficiosDoPlanoPage() {
 
   const carregarPlano = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/planos/${planoId}`, { credentials: "include" });
+      const res = await fetch(`${API}/planos/${planoId}`, {});
       if (!res.ok) return;
       const data = (await res.json()) as PlanoDetalheApi;
       setPlano(data);
@@ -71,7 +71,7 @@ export default function BeneficiosDoPlanoPage() {
       setCarregando(true);
       setErro(null);
 
-      const res = await fetch(`${API}/beneficio?planoId=${planoId}`, { credentials: "include" });
+      const res = await fetch(`${API}/beneficio?planoId=${planoId}`, {});
       if (!res.ok) {
         console.error("Falha no GET /beneficio");
         setBeneficios([]);

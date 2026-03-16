@@ -32,9 +32,8 @@ function AssinaturaContent() {
         setErrorMsg(null)
 
         const res = await fetch(`${API}/planos/${encodeURIComponent(planoId as string)}`, {
-          credentials: "include",
-          cache: "no-store",
-        })
+    cache: "no-store"
+})
 
         if (!res.ok) {
           throw new Error("Erro ao buscar plano")

@@ -59,7 +59,7 @@ export function DialogCriarSetorJogo({
         setErro(null);
         setCarregou(false);
 
-        const res = await fetch(`${API}/admin/setor`, { credentials: "include" });
+        const res = await fetch(`${API}/admin/setor`, {});
         if (!res.ok) throw new Error();
 
         const data: SetorBase[] = await res.json();

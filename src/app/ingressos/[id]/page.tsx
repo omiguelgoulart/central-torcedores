@@ -49,13 +49,12 @@ export default function IngressoDetalhePage() {
         setError(null);
 
         const res = await fetch(`${API}/admin/ingresso/${ingressoId}`, {
-          credentials: "include",
-          signal: controller.signal,
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
+    signal: controller.signal,
+    headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }
+});
 
         if (!res.ok) {
           if (res.status === 404) {
