@@ -41,7 +41,6 @@ export default function HomePage() {
   const [jogos, setJogos] = useState<JogoHome[]>([]);
   const [planos, setPlanos] = useState<PlanoHome[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState(false);
 
   useEffect(() => {
     const carregar = async () => {
@@ -92,9 +91,8 @@ export default function HomePage() {
 
         setJogos(jogosFuturosOrdenados);
         setPlanos(planosFormatados);
-      } catch (e) {
-        console.error("Erro ao carregar home:", e);
-        setErro(true);
+      } catch { 
+        console.error("Erro ao carregar dados da home");
       } finally {
         setCarregando(false);
       }
@@ -128,18 +126,7 @@ export default function HomePage() {
     return <HomeLoadingSkeleton />;
   }
 
-  if (erro) {
-    return (
-      <div className="container mx-auto max-w-5xl py-20 text-center space-y-4">
-        <p className="text-muted-foreground">
-          Não foi possível carregar os dados. Verifique sua conexão.
-        </p>
-        <Button onClick={() => window.location.reload()}>
-          Tentar novamente
-        </Button>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
