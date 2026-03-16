@@ -19,7 +19,6 @@ type AuthState = {
   loading: boolean;
   login: (email: string, senha: string) => Promise<void>;
   loginSilencioso: (email: string, senha: string) => Promise<boolean>;
-  fetchMe: () => Promise<void>;
   logout: () => Promise<void>;
   token?: string;
 };
@@ -86,26 +85,6 @@ export const useAuth = create<AuthState>()(
           return true;
         } catch {
           return false;
-        }
-      },
-      fetchMe: async () => {
-        set({ loading: true });
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
-            credentials: "include",
-          });
-
-          if (!res.ok) {
-            set({ usuario: null });
-            return;
-          }
-
-          const usuario = (await res.json()) as Usuario;
-          set({ usuario });
-        } catch {
-          set({ usuario: null });
-        } finally {
-          set({ loading: false });
         }
       },
       logout: async () => {
