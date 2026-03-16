@@ -15,7 +15,7 @@ type TipoPedido = "ingresso" | "plano" | "mensalidade";
 function PagamentoPageContent() {
   const router = useRouter();
   const search = useSearchParams();
-  const { usuario, fetchMe, loading } = useAuth();
+  const { usuario, loading } = useAuth();
 
   const [customerId, setCustomerId] = useState<string | null>(null);
 
@@ -52,10 +52,6 @@ function PagamentoPageContent() {
 
     return { description, subtotal, fees, total };
   }, [search, tipoPedido]);
-
-  useEffect(() => {
-    fetchMe();
-  }, [fetchMe]);
 
   useEffect(() => {
     if (!loading && !usuario) {
