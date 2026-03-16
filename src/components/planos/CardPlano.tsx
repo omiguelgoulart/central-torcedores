@@ -39,7 +39,7 @@ export function CardPlano({ plano, beneficiosOverride }: CardPlanoProps) {
       ? plano.beneficios
       : [];
 
-  const precoBRL = new Intl.NumberFormat("pt-BR", {
+   const precoBRL = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
     maximumFractionDigits: 2,

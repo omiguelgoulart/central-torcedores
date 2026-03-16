@@ -1,11 +1,20 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { LayoutGrid, Trophy, Users, DollarSign, Ticket, Settings,  ChevronRight, ChevronDown } from "lucide-react"
-import { useState } from "react"
-import Image from "next/image"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  LayoutGrid,
+  Trophy,
+  Users,
+  DollarSign,
+  Ticket,
+  Settings,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
+import { useState } from "react";
+import Image from "next/image";
 
 const navigationItems = [
   {
@@ -43,17 +52,13 @@ const navigationItems = [
     title: "Planos",
     href: "/admin/planos",
     icon: Trophy,
-    items: [
-      { title: "Planos", href: "/admin/planos" },
-    ],
+    items: [{ title: "Planos", href: "/admin/planos" }],
   },
   {
     title: "Ingressos",
     href: "/admin/ingressos",
     icon: Ticket,
-    items: [
-      { title: "Ingressos", href: "/admin/ingressos" },
-    ],
+    items: [{ title: "Ingressos", href: "/admin/ingressos" }],
   },
   {
     title: "Financeiro",
@@ -65,22 +70,20 @@ const navigationItems = [
     title: "Configurações",
     href: "/admin/configuracoes",
     icon: Settings,
-    items: [
-      { title: "Admins", href: "/admin/configuracoes/admins" },
-    ],
+    items: [{ title: "Admins", href: "/admin/configuracoes/admins" }],
   },
-]
+];
 
 interface AdminSidebarProps {
-  open: boolean
+  open: boolean;
 }
 
 export function AdminSidebar({ open }: AdminSidebarProps) {
-  const pathname = usePathname()
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const pathname = usePathname();
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   function toggleMenu(id: string) {
-    setExpanded((current) => (current === id ? null : id))
+    setExpanded((current) => (current === id ? null : id));
   }
 
   return (
@@ -93,22 +96,28 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-center h-16 border-b border-sidebar-border">
           <Link href="/admin/" className="flex items-center gap-3 px-4">
-          <Image
-            src="/brasil-logo.png"
-            alt="Central Torcedores"
-            width={35}
-            height={35}
-          />
-            {open && <span className="font-bold text-sidebar-foreground text-sm">Central Torcedores</span>}
+            <Image
+              src="/brasil-logo.png"
+              alt="Central Torcedores"
+              width={35}
+              height={35}
+              className="h-[35px] w-auto"
+            />
+            {open && (
+              <span className="font-bold text-sidebar-foreground text-sm">
+                Central Torcedores
+              </span>
+            )}
           </Link>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-2">
             {navigationItems.map((item) => {
-              const hasChildren = !!item.items?.length
-              const isParentActive = pathname.startsWith(item.href)
-              const isExpanded = expanded === item.href || (hasChildren && isParentActive)
+              const hasChildren = !!item.items?.length;
+              const isParentActive = pathname.startsWith(item.href);
+              const isExpanded =
+                expanded === item.href || (hasChildren && isParentActive);
 
               return (
                 <li key={item.href}>
@@ -127,7 +136,9 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       {open && (
                         <>
-                          <span className="text-sm flex-1 text-left">{item.title}</span>
+                          <span className="text-sm flex-1 text-left">
+                            {item.title}
+                          </span>
                           {isExpanded ? (
                             <ChevronDown className="w-4 h-4 opacity-70" />
                           ) : (
@@ -172,11 +183,11 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
                     </ul>
                   )}
                 </li>
-              )
+              );
             })}
           </ul>
         </nav>
       </div>
     </aside>
-  )
+  );
 }

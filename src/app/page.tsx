@@ -3,101 +3,48 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Calendar, CreditCard } from "lucide-react";
 
 import { ClubeFooter } from "@/components/home/ClubeFooter";
 import { FaixaDeJogos } from "@/components/home/FaixaDeJogo";
 import { HomeLoadingSkeleton } from "@/components/home/HomeLoadingSkeleton";
 import { Perguntas } from "@/components/home/Perguntas";
-import { PlanosCampanha } from "@/components/home/PlanosCampanha";
 import { Button } from "@/components/ui/button";
-import { JogoAPISchema, PlanoAPISchema } from "@/lib/schemas";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL ?? "https://central-api-jet.vercel.app";
+import usePlano from "@/hooks/usePlano";
+import useJogo from "@/hooks/useJogo";
 
-interface JogoHome {
-  id: string;
-  nome: string;
-  data: string;
-  local: string;
-  descricao: string;
-  hasLotes: boolean;
-}
+import { IPlano } from "./types/planoItf";
+import { JogoItf } from "./types/jogoItf";
+import { FaixaDePlano } from "@/components/home/FaixaDePlano";
+import Link from "next/link";
 
-interface PlanoHome {
-  id: string;
-  nome: string;
-  descricao: string;
-  valor: number;
-  periodicidade: string;
-  destaque: boolean;
-  rotuloBadge?: string;
-  beneficios: string[];
-}
 
 export default function HomePage() {
   const router = useRouter();
-
-  const [jogos, setJogos] = useState<JogoHome[]>([]);
-  const [planos, setPlanos] = useState<PlanoHome[]>([]);
   const [carregando, setCarregando] = useState(true);
 
+  const { planos, fetchPlanos } = usePlano();
+  const { jogos, fetchJogos } = useJogo();
+
+  const jogosList: JogoItf[] = jogos ?? [];
+  const planosList: IPlano[] = planos ?? [];
+
+
   useEffect(() => {
-    const carregar = async () => {
+    const carregarDados = async () => {
       try {
-        const jogosRes = await fetch(`${API}/admin/jogo`, {
-          cache: "no-store",
-        });
-        const planosRes = await fetch(`${API}/planos`, {
-          cache: "no-store",
-        });
-
-        if (!jogosRes.ok || !planosRes.ok) {
-          throw new Error("Falha ao carregar dados da home");
-        }
-
-        const jogosJson = JogoAPISchema.array().parse(await jogosRes.json());
-        const planosJson = PlanoAPISchema.array().parse(await planosRes.json());
-
-        const jogosFormatadosBase: JogoHome[] = jogosJson.map((jogo) => ({
-          id: jogo.id,
-          nome: jogo.nome,
-          data: jogo.data,
-          local: jogo.local,
-          descricao: jogo.descricao ?? "",
-          hasLotes: true,
-        }));
-
-        const agora = new Date();
-
-        const jogosFuturosOrdenados: JogoHome[] = jogosFormatadosBase
-          .filter((jogo) => new Date(jogo.data) >= agora)
-          .sort(
-            (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime(),
-          );
-
-        const planosFormatados: PlanoHome[] = planosJson.map((plano) => ({
-          id: plano.id,
-          nome: plano.nome,
-          descricao: plano.descricao ?? "",
-          valor: Number(plano.valor),
-          periodicidade: plano.periodicidade,
-          destaque: plano.isFeatured ?? false,
-          rotuloBadge: plano.badgeLabel ?? undefined,
-          beneficios: plano.beneficios?.map((b) => b.titulo) ?? [],
-        }));
-
-        setJogos(jogosFuturosOrdenados);
-        setPlanos(planosFormatados);
-      } catch { 
-        console.error("Erro ao carregar dados da home");
+        await Promise.all([fetchJogos(), fetchPlanos()]);
+      } catch (error) {
+        console.error("Erro ao carregar dados da home:", error);
       } finally {
         setCarregando(false);
       }
     };
 
-    void carregar();
-  }, []);
+    carregarDados();
+  }, [fetchJogos, fetchPlanos]);
 
   const faqs = [
     {
@@ -118,74 +65,150 @@ export default function HomePage() {
     },
   ];
 
-  const proximoJogo = jogos.at(0);
+  const proximoJogo = jogosList[0];
 
   if (carregando) {
     return <HomeLoadingSkeleton />;
   }
 
-
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1">
-        {/* HERO */}
-        <section className="relative w-full h-[320px] rounded-b-2xl overflow-hidden">
+    <>
+      <main>
+        <section className="relative h-[320px] w-full overflow-hidden rounded-b-2xl md:h-[380px]">
           <div className="absolute inset-0">
             <Image
               src="/football-stadium-crowd.jpg"
               alt="Estádio"
               fill
               className="object-cover"
+              priority
             />
           </div>
 
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/60" />
 
-          <div className="relative z-10 px-4 py-8 flex flex-col justify-end h-full space-y-3">
-            <h1 className="text-2xl font-bold text-white drop-shadow">
-              {proximoJogo?.nome ?? "Confira os próximos jogos na Baixada"}
-            </h1>
+          <div className="relative z-10 flex h-full items-end">
+            <div className="mx-auto flex w-full flex-col gap-3 px-4 py-8 md:px-6 md:py-10">
+              <h1 className="max-w-3xl text-2xl font-bold leading-tight text-white drop-shadow md:text-4xl">
+                {proximoJogo?.nome ?? "Confira os próximos jogos na Baixada"}
+              </h1>
 
-            <p className="text-sm text-white/90 drop-shadow">
-              {proximoJogo?.descricao ??
-                "Garanta seu ingresso com antecedência."}
-            </p>
+              <p className="max-w-2xl text-sm text-white/90 drop-shadow md:text-base">
+                {proximoJogo?.descricao ??
+                  "Garanta seu ingresso com antecedência."}
+              </p>
 
-            <div className="flex gap-2 mt-3">
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={() => router.push("/planos")}
-              >
-                Ver planos de sócio
-              </Button>
+              <div className="mt-2 flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  onClick={() => router.push("/planos")}
+                >
+                  Ver planos de sócio
+                </Button>
 
-              <Button size="lg" onClick={() => router.push("/partidas")}>
-                Comprar ingresso
-              </Button>
+                <Button size="lg" onClick={() => router.push("/partidas")}>
+                  Comprar ingresso
+                </Button>
+              </div>
             </div>
           </div>
         </section>
 
-        <div className="container mx-auto px-4 pt-12 space-y-14 pb-20">
-          {jogos.length > 0 && <FaixaDeJogos jogos={jogos} />}
+        <div className="mx-auto w-full space-y-14 px-4 pb-20 pt-12 md:px-6">
+          {jogosList.length > 0 && (
+            <section className="space-y-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl border border-border/60 bg-card p-2">
+                    <Calendar className="h-5 w-5" />
+                  </div>
 
-          {planos.length > 0 && (
-            <section className="space-y-6">
-              <h2 className="text-xl font-semibold">Planos de sócio</h2>
-              <PlanosCampanha planos={planos} />
+                  <div>
+                    <h2 className="text-2xl font-bold md:text-3xl">
+                      Próximos jogos
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Confira as próximas partidas e garanta seu ingresso.
+                    </p>
+                  </div>
+                </div>
+
+                <Button variant="link" asChild className="shrink-0">
+                  <Link href="/partidas">Ver todos</Link>
+                </Button>
+              </div>
+                    <ScrollArea className="w-full whitespace-nowrap rounded-2xl">
+                      <div className="flex gap-4 pb-4 pt-1">
+                      {jogosList.map((jogo) => (
+                          <div
+                            key={jogo.id}
+                            className="w-[280px] min-w-[280px] flex-shrink-0 sm:w-[300px] sm:min-w-[300px]"
+                          >
+                            <FaixaDeJogos jogos={[jogo]} />
+                          
+                          </div>
+                          ))}
+                      </div>
+                      <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+            </section>
+          )}
+
+          {planosList.length > 0 && (
+            <section className="space-y-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl border border-border/60 bg-card p-2">
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-bold md:text-3xl">
+                      Planos de Sócio
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Escolha o plano ideal e veja os benefícios disponíveis.
+                    </p>
+                  </div>
+                </div>
+                <Button variant="link" asChild className="shrink-0">
+                  <Link href="/planos">Ver todos</Link>
+                </Button>
+              </div>
+
+              <ScrollArea className="w-full whitespace-nowrap rounded-2xl">
+                <div className="flex gap-4 pb-4 pt-1">
+                  {planosList.map((plano) => (
+                    <div
+                      key={plano.id}
+                      className="w-[280px] min-w-[280px] flex-shrink-0 sm:w-[300px] sm:min-w-[300px]"
+                    >
+                      <FaixaDePlano plano={plano} />
+                    </div>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </section>
           )}
 
           <section className="space-y-6">
-            <h2 className="text-xl font-semibold">Dúvidas frequentes</h2>
+            <div>
+              <h2 className="text-2xl font-bold md:text-3xl">
+                Dúvidas frequentes
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Encontre respostas rápidas sobre ingressos, planos e acesso.
+              </p>
+            </div>
+
             <Perguntas perguntas={faqs} />
           </section>
         </div>
       </main>
 
       <ClubeFooter />
-    </div>
+    </>
   );
 }

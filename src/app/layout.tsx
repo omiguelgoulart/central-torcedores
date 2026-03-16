@@ -20,9 +20,9 @@ export const metadata: Metadata = {
 };
 
 metadata.icons = {
-  icon: "/brasil-logo.png",
-  shortcut: "/brasil-logo.png",
-  apple: "/brasil-logo.png",
+  icon: "/favicon.ico",
+  shortcut: "/favicon.ico",
+  apple: "/favicon.ico",
 };
 
 export default function RootLayout({

@@ -1,34 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { IPlano } from "@/app/types/planoItf";
 import { HeaderPlano } from "@/components/planos/HeaderPlano";
 import { CardPlano } from "@/components/planos/CardPlano";
 import { PlanosLoadingSkeleton } from "@/components/planos/PlanosLoadingSkeleton";
+import usePlano from "@/hooks/usePlano";
 
 export default function PlanosPage() {
-  const [planos, setPlanos] = useState<IPlano[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { planos, loading, fetchPlanos } = usePlano();
+  const planosList: IPlano[] = planos ?? [];
 
   useEffect(() => {
-    async function fetchPlanos() {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/planos`,
-        );
-        if (!response.ok) throw new Error("Erro ao buscar planos");
-
-        const data = (await response.json()) as IPlano[];
-        setPlanos(data);
-      } catch (err) {
-        console.error("Erro ao carregar planos:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    void fetchPlanos();
-  }, []);
+    fetchPlanos();
+  }, [fetchPlanos]);
 
   if (loading) {
     return <PlanosLoadingSkeleton />;
@@ -40,7 +25,7 @@ export default function PlanosPage() {
         <HeaderPlano />
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mt-12">
-          {planos.map((plano) => (
+          {planosList.map((plano: IPlano) => (
             <CardPlano key={plano.id} plano={plano} />
           ))}
         </div>
