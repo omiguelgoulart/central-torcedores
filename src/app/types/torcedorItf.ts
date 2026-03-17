@@ -3,12 +3,39 @@ import type { AsaasCustomerCreate } from "./asaas";
 
 export interface UsuarioItf {
   id: string;
+  matricula?: string;
   nome: string;
   email: string;
-  cpf?: string;
-  fotoUrl?: string;
-  token?: string;
+  telefone?: string | null;
+  cpf?: string | null;
+  dataNascimento?: string | null;
+  genero?: string | null;
+  fotoUrl?: string | null;
+  enderecoLogradouro?: string | null;
+  enderecoNumero?: string | null;
+  enderecoBairro?: string | null;
+  enderecoCidade?: string | null;
+  enderecoUF?: string | null;
+  enderecoCEP?: string | null;
   status?: string;
+  statusSocio?: string | null;
+  inadimplenteDesde?: string | null;
+  aceitaTermosEm?: string | null;
+  aceitaMarketing?: boolean | null;
+  aceitaMarketingEm?: string | null;
+  origemCadastro?: string | null;
+  documentoFrenteUrl?: string | null;
+  documentoVersoUrl?: string | null;
+  gatewayClienteId?: string | null;
+  faceId?: string | null;
+  emailVerificado?: boolean | null;
+  criadoEm?: string | null;
+  atualizadoEm?: string | null;
+  assinaturas?: unknown[];
+  pagamentos?: unknown[];
+  ingressos?: unknown[];
+  pedidos?: unknown[];
+  token?: string;
 };
 
 export interface TermsConsent {

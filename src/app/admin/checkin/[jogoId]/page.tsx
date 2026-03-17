@@ -3,13 +3,7 @@
 import { use, useCallback, useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 import {
   CheckinScanner,
@@ -67,7 +61,6 @@ function extractIngressoIdFromQrPayload(payload: string): string {
     if (byIngresso) return byIngresso;
     if (byId) return byId;
   } catch {
-    // não é URL, segue
   }
 
   try {
@@ -105,8 +98,6 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
       try {
         setLoadingJogo(true);
         setErroJogo(null);
-
-        console.log("Carregando dados do jogo (via ingressos):", jogoId);
         const response = await fetch(`${API}/admin/ingresso/jogo/${jogoId}`, {});
 
         if (!response.ok) {

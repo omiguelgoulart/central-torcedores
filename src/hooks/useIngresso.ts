@@ -26,7 +26,6 @@ export const useIngresso = create<UseIngressoState>((set) => ({
   ingressoAtual: null,
 
   async gerarIngresso({ jogoId, loteId = null }) {
-    // 🔴 AQUI ESTAVA O ERRO: antes estava tentando pegar `torcedor`
     const { usuario } = useAuth.getState();
 
     if (!usuario) {
@@ -46,8 +45,7 @@ export const useIngresso = create<UseIngressoState>((set) => ({
           body: JSON.stringify({
             jogoId,
             loteId,
-            // 🔗 Aqui ligamos o ingresso ao torcedor (usuario.id)
-            torcedorId: usuario.id, // se o backend já pegar do token, pode remover isso
+            torcedorId: usuario.id,
           }),
         }
       );

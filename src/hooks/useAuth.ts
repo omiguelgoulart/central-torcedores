@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "sonner";
-import { removeAuthCookie, setAuthCookie } from "@/lib/storageToken";
+import { getToken, removeAuthCookie, setAuthCookie } from "@/lib/storageToken";
 import { UsuarioItf } from "@/app/types/torcedorItf";
 
 type Usuario = UsuarioItf;
@@ -20,9 +20,10 @@ type AuthState = {
 
 export const useAuth = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       usuario: null,
       loading: false,
+      token: getToken(),
       login: async (email, senha) => {
         set({ loading: true });
         try {
@@ -47,12 +48,18 @@ export const useAuth = create<AuthState>()(
           }
 
           const rawUser = (await response.json()) as Usuario;
-          const usuario: Usuario = rawUser;
-          if (usuario.token) {
-            setAuthCookie({ token: usuario.token });
+          const token = rawUser.token ?? getToken();
+          const usuario: Usuario = {
+            ...rawUser,
+            status: rawUser.status ?? rawUser.statusSocio ?? undefined,
+            ...(token ? { token } : {}),
+          };
+
+          if (token) {
+            setAuthCookie({ token });
           }
 
-          set({ usuario });
+          set({ usuario, token });
         } catch (e: unknown) {
           const errorMessage = e instanceof Error ? e.message : "Erro ao fazer login";
           console.error("Erro no login:", e);
@@ -64,23 +71,44 @@ export const useAuth = create<AuthState>()(
       },
      
       logout: async () => {
-        set({ usuario: null });
+        set({ usuario: null, token: undefined });
         removeAuthCookie();
         toast.success("Você saiu da sua conta.");
       },
       fetchMe: async () => {
         try {
+          const currentToken = get().token ?? getToken();
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/me`, {
             credentials: "include",
+            headers: currentToken
+              ? { Authorization: `Bearer ${currentToken}` }
+              : undefined,
           });
+
+          if (response.status === 401) {
+            set({ usuario: null });
+            return;
+          }
 
           if (!response.ok) {
             throw new Error("Erro ao buscar dados do usuário");
           }
 
           const rawUser = (await response.json()) as Usuario;
-          const usuario: Usuario = rawUser;
-          set({ usuario });
+          set((state) => {
+            const token = rawUser.token ?? currentToken ?? state.token ?? getToken();
+            if (token) {
+              setAuthCookie({ token });
+            }
+
+            const usuario: Usuario = {
+              ...rawUser,
+              status: rawUser.status ?? rawUser.statusSocio ?? undefined,
+              ...(token ? { token } : {}),
+            };
+
+            return { usuario, token };
+          });
         } catch (e) {
           console.error("Erro ao buscar dados do usuário:", e);
           toast.error("Erro ao buscar dados do usuário");
@@ -90,7 +118,7 @@ export const useAuth = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (s: AuthState) => ({ usuario: s.usuario }),
+      partialize: (s: AuthState) => ({ usuario: s.usuario, token: s.token }),
     }
   )
 );

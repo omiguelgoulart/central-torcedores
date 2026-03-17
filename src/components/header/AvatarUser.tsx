@@ -37,7 +37,7 @@ export function UserAvatar() {
     usuario: {
       nome: string;
       email?: string;
-      fotoUrl?: string;
+      fotoUrl: string;
       status?: string;
     } | null;
     fetchMe?: () => Promise<void>;
@@ -47,17 +47,8 @@ export function UserAvatar() {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
-    const run = async () => {
-      if (!usuario && typeof fetchMe === "function") {
-        try {
-          await fetchMe();
-        } catch {}
-      }
-      setBooting(false);
-    };
-    run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchMe?.().finally(() => setBooting(false));
+  }, [ fetchMe ]);
 
   if (booting && !usuario) {
     return (
@@ -97,7 +88,7 @@ export function UserAvatar() {
         >
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={usuario?.fotoUrl || "/placeholder.svg"}
+              src={usuario.fotoUrl || "/placeholder.svg"}
               alt="avatar"
             />
             <AvatarFallback className="bg-zinc-700 text-white">
@@ -111,7 +102,6 @@ export function UserAvatar() {
         side="right"
         className="flex h-full w-[280px] sm:w-[300px] flex-col justify-between border-none bg-zinc-950 p-0 text-white"
       >
-        {/* Parte superior: menu */}
         <div className="flex flex-col">
           <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
             <Avatar className="h-10 w-10">
@@ -150,7 +140,6 @@ export function UserAvatar() {
           </nav>
         </div>
 
-        {/* Parte inferior: botão de logout */}
         <div className="p-4 border-t border-zinc-800">
           <Button
             variant="secondary"
