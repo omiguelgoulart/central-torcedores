@@ -1,7 +1,16 @@
 import type { UF, ISODateString } from "./commons";
 import type { AsaasCustomerCreate } from "./asaas";
 
-// LGPD – estrutura de consentimentos enviada no cadastro
+export interface UsuarioItf {
+  id: string;
+  nome: string;
+  email: string;
+  cpf?: string;
+  fotoUrl?: string;
+  token?: string;
+  status?: string;
+};
+
 export interface TermsConsent {
   accepted: boolean;
   policyVersion: string;
@@ -19,13 +28,12 @@ export interface Consents {
   marketing: MarketingConsent;
 }
 
-// Payload mínimo para criar Torcedor (cadastro)
 export interface TorcedorCreateDTO {
   nome: string;
   email: string;
-  senha: string; // em trânsito; no backend virar hash
+  senha: string;
   telefone: string;
-  cpf: string; // 11 dígitos
+  cpf: string; 
   enderecoLogradouro: string;
   enderecoNumero: string;
   enderecoBairro: string;
@@ -34,11 +42,9 @@ export interface TorcedorCreateDTO {
   enderecoCEP: string;
   consents: Consents;
 
-  // opcional: já enviar bloco para criação do cliente no Asaas
   asaasCustomer?: AsaasCustomerCreate;
 }
 
-// Resposta comum após criar Torcedor
 export interface TorcedorCreateResponse {
   id: string;
   email: string;
@@ -46,15 +52,11 @@ export interface TorcedorCreateResponse {
   gatewayClienteId?: string | null;
 }
 
-// Tipos usados pelo React Hook Form neste cadastro
 export interface RegisterFormValues {
-  // conta/acesso
   nome: string;
   email: string;
   senha: string;
   confirmarSenha: string;
-
-  // identificação/endereço (Asaas)
   cpf: string;
   telefone: string;
   enderecoCEP: string;

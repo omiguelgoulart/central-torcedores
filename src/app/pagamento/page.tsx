@@ -25,7 +25,6 @@ function PagamentoPageContent() {
   const planoId = search.get("planoId") ?? undefined;
   const recorrencia = search.get("recorrencia") ?? undefined;
 
-  // 🔴 pegar jogoId e loteId da URL
   const jogoId = search.get("jogoId") ?? undefined;
   const loteId = search.get("loteId") ?? undefined;
 

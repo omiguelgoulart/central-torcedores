@@ -37,7 +37,7 @@ export function UserAvatar() {
     usuario: {
       nome: string;
       email?: string;
-      avatar?: string;
+      fotoUrl?: string;
       status?: string;
     } | null;
     fetchMe?: () => Promise<void>;
@@ -97,7 +97,7 @@ export function UserAvatar() {
         >
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={usuario?.avatar || "/placeholder.svg"}
+              src={usuario?.fotoUrl || "/placeholder.svg"}
               alt="avatar"
             />
             <AvatarFallback className="bg-zinc-700 text-white">
@@ -116,7 +116,7 @@ export function UserAvatar() {
           <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
             <Avatar className="h-10 w-10">
               <AvatarImage
-                src={usuario?.avatar || "/placeholder.svg"}
+                src={usuario?.fotoUrl || "/placeholder.svg"}
                 alt="avatar"
               />
               <AvatarFallback className="bg-zinc-700 text-white">

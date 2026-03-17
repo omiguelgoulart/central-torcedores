@@ -3,23 +3,18 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "sonner";
 import { removeAuthCookie, setAuthCookie } from "@/lib/storageToken";
+import { UsuarioItf } from "@/app/types/torcedorItf";
 
-type Usuario = {
-  id: string;
-  nome: string;
-  email: string;
-  cpf?: string;
-  avatar?: string;
-  token?: string;
-  status?: string;
-};
+type Usuario = UsuarioItf;
+
+
 
 type AuthState = {
-  usuario: Usuario | null;
+  usuario: UsuarioItf | null;
   loading: boolean;
   login: (email: string, senha: string) => Promise<void>;
-  loginSilencioso: (email: string, senha: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  fetchMe?: () => Promise<void>;
   token?: string;
 };
 
@@ -53,8 +48,9 @@ export const useAuth = create<AuthState>()(
 
           const rawUser = (await response.json()) as Usuario;
           const usuario: Usuario = rawUser;
-
-          setAuthCookie(usuario);
+          if (usuario.token) {
+            setAuthCookie({ token: usuario.token });
+          }
 
           set({ usuario });
         } catch (e: unknown) {
@@ -66,37 +62,35 @@ export const useAuth = create<AuthState>()(
           set({ loading: false });
         }
       },
-      loginSilencioso: async (email, senha) => {
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-            credentials: "include",
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, senha }),
-          });
-
-          if (!response.ok) return false;
-
-          const usuario = (await response.json()) as Usuario;
-
-          setAuthCookie(usuario);
-
-          set({ usuario });
-          return true;
-        } catch {
-          return false;
-        }
-      },
+     
       logout: async () => {
         set({ usuario: null });
         removeAuthCookie();
         toast.success("Você saiu da sua conta.");
       },
+      fetchMe: async () => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuario/me`, {
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            throw new Error("Erro ao buscar dados do usuário");
+          }
+
+          const rawUser = (await response.json()) as Usuario;
+          const usuario: Usuario = rawUser;
+          set({ usuario });
+        } catch (e) {
+          console.error("Erro ao buscar dados do usuário:", e);
+          toast.error("Erro ao buscar dados do usuário");
+        }
+      },
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (s) => ({ usuario: s.usuario }),
+      partialize: (s: AuthState) => ({ usuario: s.usuario }),
     }
   )
 );
