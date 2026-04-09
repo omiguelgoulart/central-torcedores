@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapaEstadio, SetorCompleto } from "./MapaEstadio";
+import { MapaEstadio } from "./MapaEstadio";
 import { CardSetor } from "./CardSetor";
 export type ValorLote = {
   id: string;
@@ -43,7 +43,7 @@ interface ExibicaoMapaSetorProps {
 const titulo = "Visual do Estádio Bento Freitas";
 
 export function ExibicaoMapaSetor({ jogoId, valores }: ExibicaoMapaSetorProps) {
-  const [selecionado, setSelecionado] = useState<SetorCompleto | null>(null);
+  const [selecionado, setSelecionado] = useState<ValorSetor | null>(null);
 
   const setoresAbertos = useMemo(() => {
     return valores.filter((setor) => setor.aberto === true);
@@ -62,8 +62,8 @@ export function ExibicaoMapaSetor({ jogoId, valores }: ExibicaoMapaSetorProps) {
           <MapaEstadio
             className="w-full md:w-1/2"
             valores={setoresAbertos}
-            selecionadoId={selecionado?.id ?? null}
-            onSelect={(setor) => setSelecionado(setor as SetorCompleto)}
+            selecionadoId={selecionado?.jogoSetorId ?? null}
+            onSelect={(setor) => setSelecionado(setor)}
           />
 
           <div className="mx-auto w-full md:mx-0 md:w-1/2">

@@ -1,25 +1,23 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { cn } from "@/lib/utils"
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { ValorSetor } from "./ExibicaoMapaSetor"
+} from "@/components/ui/tooltip";
+import { ValorSetor } from "./ExibicaoMapaSetor";
 
-const RATIO = 1000 / 800
-
-export type SetorCompleto = ValorSetor
+const RATIO = 1000 / 800;
 
 type MapaEstadioProps = {
-  valores: ValorSetor[]
-  selecionadoId: string | null
-  onSelect: (setor: SetorCompleto) => void
-  className?: string
-}
+  valores: ValorSetor[];
+  selecionadoId: string | null;
+  onSelect: (setor: ValorSetor) => void;
+  className?: string;
+};
 
 export function MapaEstadio({
   valores,
@@ -34,15 +32,12 @@ export function MapaEstadio({
         className,
       )}
     >
-      <div
-        className="relative w-full"
-        style={{ aspectRatio: `${RATIO}` }}
-      >
+      <div className="relative w-full" style={{ aspectRatio: `${RATIO}` }}>
         <Image
           src="/stadium-map.png"
           alt="Mapa do Estádio Bento Freitas"
           fill
-          className="object-cover"
+          className="pointer-events-none z-0 object-cover"
           sizes="(max-width: 768px) 100vw, 60vw"
           priority
         />
@@ -52,9 +47,9 @@ export function MapaEstadio({
             const menorPreco =
               setor.lotes.length > 0
                 ? Math.min(...setor.lotes.map((lote) => lote.preco))
-                : setor.preco
+                : setor.preco;
 
-            const estaSelecionado = selecionadoId === setor.jogoSetorId
+            const estaSelecionado = selecionadoId === setor.jogoSetorId;
 
             return (
               <Tooltip key={setor.jogoSetorId}>
@@ -64,7 +59,7 @@ export function MapaEstadio({
                     aria-label={`Selecionar ${setor.nome}`}
                     onClick={() => onSelect(setor)}
                     className={cn(
-                      "absolute rounded-md outline-none transition-all",
+                      "absolute z-20 cursor-pointer rounded-md outline-none transition-all",
                       estaSelecionado
                         ? "bg-primary/10 ring-2 ring-primary/60"
                         : "hover:bg-primary/10",
@@ -94,10 +89,10 @@ export function MapaEstadio({
                   </p>
                 </TooltipContent>
               </Tooltip>
-            )
+            );
           })}
         </TooltipProvider>
       </div>
     </div>
-  )
+  );
 }

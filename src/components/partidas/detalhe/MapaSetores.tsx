@@ -51,7 +51,7 @@ export function MapaSetores({ partidaId, setores }: MapaSetoresProps) {
                 src="/stadium-map.png"
                 alt="Mapa do Estádio Bento Freitas"
                 fill
-                className="object-cover"
+                className="pointer-events-none z-0 object-cover"
                 sizes="(max-width: 768px) 100vw, 60vw"
                 priority
               />
@@ -64,7 +64,7 @@ export function MapaSetores({ partidaId, setores }: MapaSetoresProps) {
                         type="button"
                         aria-label={`Selecionar ${setor.nome}`}
                         onClick={() => setSelecionado(setor)}
-                        className={`absolute rounded-md outline-none transition-all ${
+                        className={`absolute z-20 cursor-pointer rounded-md outline-none transition-all ${
                           selecionado?.jogoSetorId === setor.jogoSetorId
                             ? "bg-primary/10 ring-2 ring-primary/60"
                             : "hover:bg-primary/10"
