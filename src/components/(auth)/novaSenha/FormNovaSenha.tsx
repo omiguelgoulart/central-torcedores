@@ -13,8 +13,6 @@ import { Loader2, CheckCircle2 } from "lucide-react";
 import { validaSenha, regrasSenhaStatus } from "@/lib/validaSenha";
 import { useAuth } from "@/hooks/useAuth";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
-
 const schema = z
   .object({
     novaSenha: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
@@ -33,7 +31,7 @@ export function FormRedefinirSenha() {
   const token = searchParams.get("token");
 
   const [sucesso, setSucesso] = useState(false);
-  const { loginSilencioso } = useAuth();
+  const { loginSilencioso, resetPassword } = useAuth();
 
   const {
     register,
@@ -79,34 +77,12 @@ export function FormRedefinirSenha() {
     }
 
     try {
-      const res = await fetch(`${API}/auth/reset-password`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token,
-          novaSenha: data.novaSenha,
-        }),
-      });
-
-      const body = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        const msg =
-          body?.error ??
-          body?.message ??
-          "Erro ao redefinir senha. Tente novamente.";
-
-        toast.error(msg);
-        return;
-      }
+      const result = await resetPassword(token, data.novaSenha);
 
       setSucesso(true);
-      toast.success(body?.message ?? "Senha redefinida com sucesso!");
+      toast.success(result.message ?? "Senha redefinida com sucesso!");
 
-      const email = body?.email;
+      const email = result.email;
       if (email) {
         const logou = await loginSilencioso(email, data.novaSenha);
         if (logou) {
@@ -118,8 +94,12 @@ export function FormRedefinirSenha() {
       setTimeout(() => {
         router.replace("/login");
       }, 1200);
-    } catch {
-      toast.error("Erro de conexão. Tente novamente.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Erro de conexão. Tente novamente.";
+      toast.error(message);
     }
   }
 

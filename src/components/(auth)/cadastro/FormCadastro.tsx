@@ -93,7 +93,7 @@ function ErrorMessage({ error }: ErrorMessageProps) {
 
 export function FormCadastro() {
   const router = useRouter();
-  const { loginSilencioso } = useAuth();
+  const { loginSilencioso, registerUser, lookupCep } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -152,22 +152,7 @@ export function FormCadastro() {
     setBuscandoCep(true);
 
     try {
-      const response = await fetch(
-        `https://viacep.com.br/ws/${cepLimpo}/json/`,
-        { signal: controller.signal },
-      );
-      const data: {
-        erro?: boolean;
-        logradouro?: string;
-        bairro?: string;
-        localidade?: string;
-        uf?: string;
-      } = await response.json();
-
-      if (data.erro) {
-        toast.error("CEP não encontrado");
-        return;
-      }
+      const data = await lookupCep(cepLimpo, controller.signal);
 
       setValue("enderecoLogradouro", data.logradouro || "", {
         shouldValidate: true,
@@ -189,7 +174,8 @@ export function FormCadastro() {
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
       console.error(e);
-      toast.error("Erro ao buscar CEP");
+      const message = e instanceof Error ? e.message : "Erro ao buscar CEP";
+      toast.error(message);
     } finally {
       setBuscandoCep(false);
     }
@@ -211,32 +197,7 @@ export function FormCadastro() {
         aceitaTermosEm: new Date().toISOString(),
       };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/usuario`,
-        {
-          credentials: "include",
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      const body: {
-        message?: string;
-        error?: string;
-        errors?: Array<{ message?: string }>;
-      } | null = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const message =
-          body?.message ||
-          body?.error ||
-          (Array.isArray(body?.errors) ? body.errors[0]?.message : null) ||
-          "Erro ao cadastrar";
-
-        toast.error(message);
-        return;
-      }
+      await registerUser(payload);
 
       toast.success("Cadastro realizado!");
 
@@ -244,7 +205,9 @@ export function FormCadastro() {
       router.push(logou ? "/" : "/login");
     } catch (error) {
       console.error(error);
-      toast.error("Erro inesperado ao cadastrar");
+      const message =
+        error instanceof Error ? error.message : "Erro inesperado ao cadastrar";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
