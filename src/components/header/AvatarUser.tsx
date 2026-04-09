@@ -14,6 +14,8 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetTitle,
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
@@ -27,36 +29,31 @@ type ItemMenu = {
 
 const itensMenu: ItemMenu[] = [
   { href: "/torcedor/perfil", rotulo: "Meu Perfil", icone: IconUsuario },
-  { href: "/torcedor/minhaAssociacao", rotulo: "Minha Associação", icone: IdCard },
+  {
+    href: "/torcedor/minhaAssociacao",
+    rotulo: "Minha Associação",
+    icone: IdCard,
+  },
   { href: "/torcedor/meusIngressos", rotulo: "Meus Ingressos", icone: Ticket },
   { href: "/torcedor/ajuda", rotulo: "Ajuda", icone: HelpCircle },
 ];
 
 export function UserAvatar() {
-  const { usuario, fetchMe, logout } = useAuth() as {
-    usuario: {
-      nome: string;
-      email?: string;
-      fotoUrl: string;
-      status?: string;
-    } | null;
-    fetchMe?: () => Promise<void>;
-    logout: () => void;
-  };
+  const { torcedor, fetchMe, logout } = useAuth();
 
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
     fetchMe?.().finally(() => setBooting(false));
-  }, [ fetchMe ]);
+  }, [fetchMe]);
 
-  if (booting && !usuario) {
+  if (booting && !torcedor) {
     return (
       <div className="h-8 w-[160px] animate-pulse rounded-md bg-muted/50" />
     );
   }
 
-  if (!usuario) {
+  if (!torcedor) {
     return (
       <div className="flex items-center gap-3">
         <Button variant="ghost" asChild>
@@ -70,7 +67,7 @@ export function UserAvatar() {
   }
 
   const iniciais =
-    usuario.nome
+    torcedor.nome
       ?.trim()
       .split(/\s+/)
       .map((n) => n[0] ?? "")
@@ -88,7 +85,7 @@ export function UserAvatar() {
         >
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={usuario.fotoUrl || "/placeholder.svg"}
+              src={torcedor.fotoUrl || "/placeholder.svg"}
               alt="avatar"
             />
             <AvatarFallback className="bg-zinc-700 text-white">
@@ -102,11 +99,15 @@ export function UserAvatar() {
         side="right"
         className="flex h-full w-[280px] sm:w-[300px] flex-col justify-between border-none bg-zinc-950 p-0 text-white"
       >
+        <SheetTitle className="sr-only">Menu do usuario</SheetTitle>
+        <SheetDescription className="sr-only">
+          Navegue para perfil, associacao, ingressos, ajuda ou sair da conta.
+        </SheetDescription>
         <div className="flex flex-col">
           <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
             <Avatar className="h-10 w-10">
               <AvatarImage
-                src={usuario?.fotoUrl || "/placeholder.svg"}
+                src={torcedor?.fotoUrl || "/placeholder.svg"}
                 alt="avatar"
               />
               <AvatarFallback className="bg-zinc-700 text-white">
@@ -115,11 +116,11 @@ export function UserAvatar() {
             </Avatar>
             <div className="min-w-0">
               <p className="truncate font-semibold text-white">
-                {usuario?.nome}
+                {torcedor?.nome}
               </p>
-              {usuario?.email && (
+              {torcedor?.email && (
                 <p className="truncate text-sm text-zinc-400">
-                  {usuario.email}
+                  {torcedor.email}
                 </p>
               )}
             </div>

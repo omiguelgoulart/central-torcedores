@@ -1,12 +1,3 @@
-// app/types/pagamentoItf.ts
-
-export type PaymentStatus =
-  | "PAID"
-  | "APPROVED"
-  | "DECLINED"
-  | "EXPIRED"
-  | "ERROR"
-  | "PENDING";
 
 export interface ResumoPedido {
   description: string;
@@ -58,6 +49,16 @@ export interface PagamentoResponse {
   raw?: unknown;
 }
 
+export type PaymentStatus =
+  | "PAID"
+  | "APPROVED"
+  | "PENDING"
+  | "EXPIRED"
+  | "DECLINED"
+  | "ERROR"
+  | "CONFIRMED"
+  | "RECEIVED";
+
 
 export type PagamentoResumo = {
   id: string;
@@ -76,3 +77,33 @@ export type PagamentoResumo = {
     setor: string;
   };
 };
+
+export type StatusPagamento =
+  | "PENDENTE"
+  | "PROCESSANDO"
+  | "APROVADO"
+  | "RECUSADO"
+  | "CANCELADO"
+  | "REEMBOLSADO";
+
+export type MetodoPagamento =
+  | "CARTAO_CREDITO"
+  | "CARTAO_DEBITO"
+  | "PIX"
+  | "BOLETO";
+
+export interface PagamentoItf {
+  id: string;
+  torcedorId: string;
+  valor: number;
+  status: StatusPagamento;
+  dataVencimento: Date;
+  pagoEm?: Date | null;
+  referencia?: string | null;
+  metodo: MetodoPagamento;
+  descricao?: string | null;
+  faturaId?: string | null;
+  gatewayPaymentId?: string | null;
+  criadoEm: Date;
+  atualizadoEm: Date;
+}

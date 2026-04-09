@@ -1,4 +1,4 @@
-export type StatusTorcedor =  | "ATIVO"  | "INADIMPLENTE"  | "CANCELADO"  | "INATIVO";
+export type StatusTorcedor = | "ATIVO" | "INADIMPLENTE" | "CANCELADO" | "INATIVO";
 
 export type TorcedorPerfilResponse = {
   id: string;
@@ -22,7 +22,8 @@ export type TorcedorPerfilResponse = {
   atualizadoEm: string | null;
 
   assinaturas: unknown[];
-  pagamentos: unknown[];
+  pagamentosSocio: unknown[];
+  pagamentos?: unknown[];
   ingressos: unknown[];
   pedidos: unknown[];
 };

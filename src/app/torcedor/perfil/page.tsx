@@ -90,7 +90,7 @@ function PerfilField(props: {
 }
 
 export default function PerfilPage() {
-  const { usuario } = useAuth();
+  const { torcedor: authTorcedor } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export default function PerfilPage() {
   useEffect(() => {
     async function fetchPerfil() {
       try {
-        const idFromAuth = usuario?.id;
+        const idFromAuth = authTorcedor?.id;
         const idFromCookie = getTorcedorIdFromCookies();
         const torcedorId = idFromAuth || idFromCookie;
 
@@ -131,7 +131,7 @@ export default function PerfilPage() {
     }
 
     fetchPerfil();
-  }, [usuario?.id]);
+  }, [authTorcedor?.id]);
 
   if (loading) {
     return (

@@ -9,6 +9,7 @@ type JogoState = {
     loading: boolean;
     error: string | null;
     fetchJogos: () => Promise<void>;
+    fetchJogosById: (id: string) => Promise<JogoItf | null>;
 };
 
 const useJogo = create<JogoState>((set) => ({
@@ -18,7 +19,7 @@ const useJogo = create<JogoState>((set) => ({
     fetchJogos: async () => {
         set({ loading: true, error: null });
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/jogo`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jogo`, {
                 cache: "no-store",
             });
             if (!response.ok) {
@@ -50,6 +51,24 @@ const useJogo = create<JogoState>((set) => ({
             set({ loading: false });
         }
     },
+
+    fetchJogosById: async (id: string) => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jogo/${encodeURIComponent(id)}`, {
+                cache: "no-store",
+            });
+            if (!response.ok) {
+                throw new Error("Erro ao buscar jogo por ID");
+            }
+            const jogo = (await response.json()) as JogoItf;
+            return jogo;
+        } catch (err) {
+            console.error(`Erro ao carregar jogo com ID ${id}:`, err);
+            toast.error("Erro ao carregar detalhes do jogo");
+            return null;
+        }    
+    },
+    
 }));
 
 export default useJogo;

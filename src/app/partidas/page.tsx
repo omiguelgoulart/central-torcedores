@@ -1,92 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useMemo } from "react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ListaJogos } from "@/components/partidas/ListaJogos";
 import { PartidasLoadingSkeleton } from "@/components/partidas/PartidasLoadingSkeleton";
-import type { Jogo } from "@/components/partidas/CardJogo";
-import { Button } from "@/components/ui/button";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import useJogo from "@/hooks/useJogo";
+import { JogoItf } from "@/app/types/jogoItf";
 
 export default function PartidasPage() {
-  const [jogos, setJogos] = useState<Jogo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const { jogos, loading, error, fetchJogos } = useJogo();
 
   useEffect(() => {
-    async function carregar() {
-      try {
-        setLoading(true);
+    fetchJogos();
+  }, [fetchJogos]);
 
-        const res = await fetch(`${API}/admin/jogo?page=${page}&limit=10`, {
-    cache: "no-store"
-});
+  const jogosLista = useMemo<JogoItf[]>(() => {
+    if (!jogos) return [];
 
-        if (!res.ok) throw new Error("Erro ao buscar jogos");
-
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setJogos(data);
-          setTotalPages(1);
-          return;
-        }
-
-        setJogos(Array.isArray(data?.jogos) ? data.jogos : []);
-        setTotalPages(Number.isFinite(data?.totalPages) ? data.totalPages : 1);
-      } catch (error) {
-        console.error("Erro ao carregar jogos:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    carregar();
-  }, [page]);
+    const agora = new Date();
+    return jogos.filter((jogo) => new Date(jogo.data) >= agora);
+  }, [jogos]);
 
   return (
     <main className="min-h-screen flex flex-col">
       <section
-        className="w-full h-58 bg-cover bg-center relative"
+        className="relative h-58 w-full bg-cover bg-center"
         style={{ backgroundImage: "url('/torcida.jpeg')" }}
       />
 
       <section className="p-4">
         {loading ? (
           <PartidasLoadingSkeleton />
+        ) : error ? (
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            {error}
+          </div>
         ) : (
           <div className="mt-6">
-            <Card className="mx-auto border-none bg-transparent shadow-none">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold">
-                  Próximas Partidas
-                </CardTitle>
-                <div className="flex justify-center gap-4 mt-6">
-                  <Button
-                    variant="outline"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    Anterior
-                  </Button>
-                  <span className="self-center text-sm text-muted-foreground">
-                    Página {page} de {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Próxima
-                  </Button>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <ListaJogos jogos={jogos} />
-              </CardContent>
-            </Card>
+            <h1 className="text-2xl font-bold mb-4">Próximas Partidas</h1>
+            <ScrollArea className="w-full whitespace-nowrap pb-2">
+              <ListaJogos jogos={jogosLista} />
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
         )}
       </section>

@@ -10,60 +10,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CardSetor } from "./CardSetor";
+import { ValorSetor } from "./ExibicaoMapaSetor";
 
-// 🏟️ Setores (ajuste os boxes conforme sua imagem)
-const setores = [
-  {
-    id: "jk",
-    nome: "Arquibancada JK (Juscelino)",
-    preco: 50,
-    disponibilidade: 150,
-    box: { left: 18, top: 17, width: 60, height: 12 }, // topo
-  },
-  {
-    id: "social",
-    nome: "Arquibancada Social",
-    preco: 80,
-    disponibilidade: 90,
-    box: { left: 18, top: 72, width: 60, height: 10 }, // baixo
-  },
-  {
-    id: "cativas",
-    nome: "Cadeiras Cativas",
-    preco: 120,
-    disponibilidade: 30,
-    box: { left: 60.5, top: 82, width: 18, height: 8 }, // faixa abaixo
-  },
-  {
-    id: "norte",
-    nome: "Arquibancada Norte",
-    preco: 40,
-    disponibilidade: 100,
-    box: { left: 12, top: 30, width: 10, height: 45 }, // esquerda
-  },
-  {
-    id: "norte-visitante",
-    nome: "Arquibancada Norte",
-    preco: 40,
-    disponibilidade: 100,
-    box: { left: 12, top: 30, width: 10, height: 45 }, // esquerda
-  },
-  {
-    id: "sul",
-    nome: "Arquibancada Sul",
-    preco: 40,
-    disponibilidade: 100,
-    box: { left: 75, top: 32, width: 10, height: 45 }, // direita
-  },
-] as const;
-
-// proporção real da imagem
 const RATIO = 1000 / 800;
 
-type SetorMapa = (typeof setores)[number];
+interface MapaSetoresProps {
+  partidaId: string;
+  setores: ValorSetor[];
+}
 
-export function MapaSetores({ partidaId }: { partidaId: string }) {
-  const [selecionado, setSelecionado] = useState<SetorMapa | null>(null);
+export function MapaSetores({ partidaId, setores }: MapaSetoresProps) {
+  const [selecionado, setSelecionado] = useState<ValorSetor | null>(null);
+
+  const setoresAbertos = setores.filter((setor) => setor.aberto !== false);
 
   return (
     <section className="space-y-6">
@@ -76,10 +35,9 @@ export function MapaSetores({ partidaId }: { partidaId: string }) {
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="grid md:grid-cols-[1.4fr_1fr] gap-6 items-start">
-          {/* 🗺️ MAPA */}
+        <CardContent className="grid gap-6 items-start md:grid-cols-[1.4fr_1fr]">
           <div
-            className={`relative rounded-xl overflow-hidden border bg-muted/40 mx-auto md:mx-0 transition-all duration-300 ${
+            className={`relative mx-auto overflow-hidden rounded-xl border bg-muted/40 transition-all duration-300 md:mx-0 ${
               selecionado
                 ? "md:ml-0"
                 : "md:col-span-2 md:flex md:justify-center"
@@ -98,40 +56,40 @@ export function MapaSetores({ partidaId }: { partidaId: string }) {
                 priority
               />
 
-              {/* hotspots clicáveis */}
               <TooltipProvider delayDuration={100}>
-                {setores.map((s) => (
-                  <Tooltip key={s.id}>
+                {setoresAbertos.map((setor) => (
+                  <Tooltip key={setor.jogoSetorId}>
                     <TooltipTrigger asChild>
                       <button
-                        aria-label={`Selecionar ${s.nome}`}
-                        onClick={() => setSelecionado(s)}
-                        className={`absolute rounded-md transition-all outline-none
-                          ${
-                            selecionado?.id === s.id
-                              ? "ring-2 ring-primary/60 bg-primary/10"
-                              : "hover:bg-primary/10"
-                          }`}
+                        type="button"
+                        aria-label={`Selecionar ${setor.nome}`}
+                        onClick={() => setSelecionado(setor)}
+                        className={`absolute rounded-md outline-none transition-all ${
+                          selecionado?.jogoSetorId === setor.jogoSetorId
+                            ? "bg-primary/10 ring-2 ring-primary/60"
+                            : "hover:bg-primary/10"
+                        }`}
                         style={{
-                          left: `${s.box.left}%`,
-                          top: `${s.box.top}%`,
-                          width: `${s.box.width}%`,
-                          height: `${s.box.height}%`,
+                          left: `${setor.box.left}%`,
+                          top: `${setor.box.top}%`,
+                          width: `${setor.box.width}%`,
+                          height: `${setor.box.height}%`,
                         }}
                       />
                     </TooltipTrigger>
+
                     <TooltipContent
                       side="top"
                       align="center"
                       className="px-3 py-1.5"
                     >
-                      <p className="font-medium text-sm">{s.nome}</p>
+                      <p className="text-sm font-medium">{setor.nome}</p>
                       <p className="text-xs text-muted-foreground">
-                        {s.preco.toLocaleString("pt-BR", {
+                        {setor.preco.toLocaleString("pt-BR", {
                           style: "currency",
                           currency: "BRL",
                         })}{" "}
-                        · {s.disponibilidade} lugares
+                        · {setor.disponibilidade} lugares
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -140,26 +98,17 @@ export function MapaSetores({ partidaId }: { partidaId: string }) {
             </div>
           </div>
 
-          {/* ✅ CARD CONFIRMAÇÃO */}
           <div
             className={`transition-all duration-300 ${
               selecionado
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-2 pointer-events-none"
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-2 opacity-0"
             }`}
           >
             {selecionado ? (
               <CardSetor
                 jogoId={partidaId}
-                setor={{
-                  // mapeia o mock pro formato esperado pelo CardSetor
-                  jogoSetorId: selecionado.id,
-                  setorId: selecionado.id,
-                  nome: selecionado.nome,
-                  preco: selecionado.preco,
-                  disponibilidade: selecionado.disponibilidade,
-                  loteId: "", // mock: sem lote real aqui
-                }}
+                setor={selecionado}
                 onCancel={() => setSelecionado(null)}
               />
             ) : null}

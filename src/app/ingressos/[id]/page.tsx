@@ -3,7 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -24,6 +30,14 @@ const statusConfig = {
   CANCELADO: {
     label: "Cancelado",
     className: "bg-red-500 text-white hover:bg-red-600",
+  },
+  EXPIRADO: {
+    label: "Expirado",
+    className: "bg-amber-500 text-white hover:bg-amber-600",
+  },
+  ESTORNADO: {
+    label: "Estornado",
+    className: "bg-slate-500 text-white hover:bg-slate-600",
   },
 } as const;
 
@@ -49,12 +63,12 @@ export default function IngressoDetalhePage() {
         setError(null);
 
         const res = await fetch(`${API}/admin/ingresso/${ingressoId}`, {
-    signal: controller.signal,
-    headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    }
-});
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
 
         if (!res.ok) {
           if (res.status === 404) {
@@ -62,10 +76,13 @@ export default function IngressoDetalhePage() {
             setIngresso(null);
             return;
           }
-          const data = (await res.json().catch(() => null)) as
-            | { error?: string; message?: string }
-            | null;
-          setError(data?.error ?? data?.message ?? "Erro ao carregar ingresso.");
+          const data = (await res.json().catch(() => null)) as {
+            error?: string;
+            message?: string;
+          } | null;
+          setError(
+            data?.error ?? data?.message ?? "Erro ao carregar ingresso.",
+          );
           setIngresso(null);
           return;
         }
@@ -89,29 +106,29 @@ export default function IngressoDetalhePage() {
   }, [ingressoId, token]);
 
   const status = ingresso
-    ? statusConfig[ingresso.status] ?? statusConfig.VALIDO
+    ? (statusConfig[ingresso.status] ?? statusConfig.VALIDO)
     : null;
   const jogo = ingresso?.jogo;
   const lote = ingresso?.lote;
   const nome = ingresso?.jogo?.nome || "Ingresso";
 
   const dataFormatada = useMemo(() => {
-    if (!jogo?.dataHora) return "Data indisponível";
-    return new Date(jogo.dataHora).toLocaleDateString("pt-BR", {
+    if (!jogo?.data) return "Data indisponível";
+    return new Date(jogo.data).toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "long",
       year: "numeric",
       weekday: "long",
     });
-  }, [jogo?.dataHora]);
+  }, [jogo?.data]);
 
   const horaFormatada = useMemo(() => {
-    if (!jogo?.dataHora) return "Hora indisponível";
-    return new Date(jogo.dataHora).toLocaleTimeString("pt-BR", {
+    if (!jogo?.data) return "Hora indisponível";
+    return new Date(jogo.data).toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  }, [jogo?.dataHora]);
+  }, [jogo?.data]);
 
   const valorFormatado = useMemo(() => {
     if (!ingresso?.valor) return "R$ 0,00";
@@ -152,7 +169,9 @@ export default function IngressoDetalhePage() {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">Carregando ingresso...</p>
+          <p className="text-sm text-muted-foreground">
+            Carregando ingresso...
+          </p>
         </div>
       </main>
     );
@@ -222,11 +241,9 @@ export default function IngressoDetalhePage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Estádio
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-1">Local</p>
                     <p className="text-base md:text-lg font-semibold text-foreground">
-                      {jogo?.estadio || "Não informado"}
+                      {jogo?.local || "Não informado"}
                     </p>
                   </div>
                 </div>
@@ -236,28 +253,18 @@ export default function IngressoDetalhePage() {
               <div className="space-y-4 pb-6 border-b border-border">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Setor</p>
-                    <p className="text-base md:text-lg font-semibold text-foreground">
-                      {lote?.setor || "Não informado"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Portaria
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-1">Lote</p>
                     <p className="text-base md:text-lg font-semibold text-foreground">
                       {lote?.nome || "Não informado"}
                     </p>
                   </div>
-                </div>
-                {lote?.descricao && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Instrução de Acesso
+                    <p className="text-sm text-muted-foreground mb-1">Tipo</p>
+                    <p className="text-base md:text-lg font-semibold text-foreground">
+                      {lote?.tipo || "Não informado"}
                     </p>
-                    <p className="text-foreground">{lote.descricao}</p>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Valor */}

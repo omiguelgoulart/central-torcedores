@@ -14,7 +14,7 @@ import {
   ApiAssinatura,
   AssociacaoData,
   UsuarioResponse,
-} from "@/app/types/associacao";
+} from "@/app/types/assinaturaItf";
 
 type AuthCookieUser = {
   id?: string;
@@ -41,11 +41,13 @@ function getTorcedorIdFromCookies(): string | null {
 }
 
 function selecionarAssinaturaPrincipal(
-  assinaturas: ApiAssinatura[]
+  assinaturas: ApiAssinatura[],
 ): ApiAssinatura | null {
   if (!assinaturas.length) return null;
 
-  const assinaturaAtiva = assinaturas.find((assinatura) => assinatura.status === "ATIVA");
+  const assinaturaAtiva = assinaturas.find(
+    (assinatura) => assinatura.status === "ATIVA",
+  );
   if (assinaturaAtiva) return assinaturaAtiva;
 
   return [...assinaturas].sort((a, b) => {
@@ -89,7 +91,7 @@ function mapearParcelas(assinatura: ApiAssinatura | null): ParcelaRegistro[] {
 
 function montarAssociacao(
   data: UsuarioResponse,
-  assinatura: ApiAssinatura | null
+  assinatura: ApiAssinatura | null,
 ): AssociacaoData {
   const plano = assinatura?.plano ?? null;
 
@@ -97,17 +99,17 @@ function montarAssociacao(
     assinatura?.status === "ATIVA"
       ? "ATIVA"
       : assinatura?.status === "CANCELADA"
-      ? "CANCELADA"
-      : assinatura
-      ? "PENDENTE"
-      : "SEM_PLANO";
+        ? "CANCELADA"
+        : assinatura
+          ? "PENDENTE"
+          : "SEM_PLANO";
 
   const valor =
     assinatura?.valorAtual != null
       ? Number(assinatura.valorAtual)
       : plano?.valor != null
-      ? Number(plano.valor)
-      : null;
+        ? Number(plano.valor)
+        : null;
 
   return {
     planoId: plano?.id ?? null,
@@ -125,17 +127,15 @@ function montarAssociacao(
   };
 }
 
-async function buscarAssociacaoDoTorcedor(
-  torcedorId: string
-): Promise<{
+async function buscarAssociacaoDoTorcedor(torcedorId: string): Promise<{
   associacao: AssociacaoData;
   parcelas: ParcelaRegistro[];
 }> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
     {
-    cache: "no-store"
-}
+      cache: "no-store",
+    },
   );
 
   if (!response.ok) {
@@ -143,7 +143,9 @@ async function buscarAssociacaoDoTorcedor(
   }
 
   const data = (await response.json()) as UsuarioResponse;
-  const assinaturaSelecionada = selecionarAssinaturaPrincipal(data.assinaturas ?? []);
+  const assinaturaSelecionada = selecionarAssinaturaPrincipal(
+    data.assinaturas ?? [],
+  );
 
   return {
     associacao: montarAssociacao(data, assinaturaSelecionada),

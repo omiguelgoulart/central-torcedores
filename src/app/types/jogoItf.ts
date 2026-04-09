@@ -1,14 +1,15 @@
 import { AdminItf } from "./adminItf";
+import { ingressoItf } from "./ingressoItf";
 
 export interface JogoItf {
     id: string;
     nome: string;
-    data: string; // ISO date string
+    data: string;
     local: string;
     descricao?: string;
 
     lotes: LoteItf[];
-    ingressos: IngressoItf[];
+    ingressos: ingressoItf[];
     setores: JogoSetorItf[];
 
     criadoPorId?: string;
@@ -16,8 +17,8 @@ export interface JogoItf {
     criadoPor?: AdminItf;
     atualizadoPor?: AdminItf;
 
-    criadoEm: string; // ISO date string
-    atualizadoEm: string; // ISO date string
+    criadoEm: string;
+    atualizadoEm: string;
 }
 
 export interface LoteItf {
@@ -33,20 +34,6 @@ export interface LoteItf {
     jogoSetorId: string;
     criadoEm: string;
     atualizadoEm: string;
-}
-
-export interface IngressoItf {
-    id: string;
-    torcedorId: string;
-    jogoId: string;
-    loteId: string;
-    qrCode: string;
-    valor: string;
-    status: string;
-    criadoEm: string;
-    usadoEm: string | null;
-    atualizadoEm: string;
-    pagamentoId: string | null;
 }
 
 export interface JogoSetorItf {
@@ -67,6 +54,6 @@ export interface SetorItf {
     slug: string;
     nome: string;
     capacidade: number;
-    criadoEm: string; // ISO date string
-    atualizadoEm: string; // ISO date string
+    criadoEm: string;
+    atualizadoEm: string;
 }

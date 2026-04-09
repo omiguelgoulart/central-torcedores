@@ -15,7 +15,7 @@ type TipoPedido = "ingresso" | "plano" | "mensalidade";
 function PagamentoPageContent() {
   const router = useRouter();
   const search = useSearchParams();
-  const { usuario, loading } = useAuth();
+  const { torcedor, loading } = useAuth();
 
   const [customerId, setCustomerId] = useState<string | null>(null);
 
@@ -53,13 +53,13 @@ function PagamentoPageContent() {
   }, [search, tipoPedido]);
 
   useEffect(() => {
-    if (!loading && !usuario) {
+    if (!loading && !torcedor) {
       toast.warning("Você precisa estar logado para continuar o pagamento.");
       const timer = setTimeout(() => router.push("/login"), 2000);
       return () => clearTimeout(timer);
     }
     return;
-  }, [loading, usuario, router]);
+  }, [loading, torcedor, router]);
 
   if (loading) {
     return (
@@ -69,7 +69,7 @@ function PagamentoPageContent() {
     );
   }
 
-  if (!usuario) {
+  if (!torcedor) {
     return (
       <div className="container mx-auto max-w-5xl py-16 px-4 text-center">
         <p className="text-muted-foreground">
@@ -83,8 +83,8 @@ function PagamentoPageContent() {
   if (!customerId) {
     return (
       <CadastroCustomerIdForm
-        defaultName={usuario.nome}
-        defaultEmail={usuario.email}
+        defaultName={torcedor.nome}
+        defaultEmail={torcedor.email}
         onCustomerCreated={(id) => {
           setCustomerId(id);
         }}
@@ -96,8 +96,8 @@ function PagamentoPageContent() {
     tipoPedido === "ingresso"
       ? "Pagamento de Ingresso"
       : tipoPedido === "plano"
-      ? "Pagamento de Plano Sócio"
-      : "Pagamento de Mensalidade";
+        ? "Pagamento de Plano Sócio"
+        : "Pagamento de Mensalidade";
 
   return (
     <div className="p-4">
@@ -123,7 +123,7 @@ function PagamentoPageContent() {
             orderTotal={pedido.total}
             orderType={tipoPedido}
             planoId={planoId}
-            torcedorId={usuario.id}
+            torcedorId={torcedor.id}
             jogoId={jogoId}
             loteId={loteId}
           />

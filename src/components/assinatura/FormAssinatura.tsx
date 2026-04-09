@@ -51,7 +51,7 @@ export function FormAssinatura({
   defaultRecorrencia,
 }: FormAssinaturaProps) {
   const router = useRouter();
-  const { usuario } = useAuth();
+  const { torcedor } = useAuth();
 
   const [recorrencia, setRecorrencia] =
     useState<Periodicidade>(defaultRecorrencia);
@@ -72,7 +72,7 @@ export function FormAssinatura({
         currency: "BRL",
         maximumFractionDigits: 2,
       }).format(valorCiclo),
-    [valorCiclo]
+    [valorCiclo],
   );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -89,7 +89,7 @@ export function FormAssinatura({
       return;
     }
 
-    if (!usuario?.id) {
+    if (!torcedor?.id) {
       setErrorMsg("Não foi possível identificar seu usuário.");
       return;
     }
@@ -101,7 +101,7 @@ export function FormAssinatura({
     const params = new URLSearchParams({
       tipo: "plano",
       planoId,
-      clienteId: usuario.id,
+      clienteId: torcedor.id,
       recorrencia,
       description, // URLSearchParams já faz o encode
       subtotal: String(valorCiclo),
@@ -117,8 +117,8 @@ export function FormAssinatura({
       <CardHeader>
         <CardTitle>Escolha a recorrência</CardTitle>
         <CardDescription>
-          Defina como deseja ser cobrado pelo plano{" "}
-          <strong>{planoNome}</strong>.
+          Defina como deseja ser cobrado pelo plano <strong>{planoNome}</strong>
+          .
         </CardDescription>
       </CardHeader>
 

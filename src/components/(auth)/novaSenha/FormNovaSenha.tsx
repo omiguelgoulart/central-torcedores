@@ -18,7 +18,7 @@ const API = process.env.NEXT_PUBLIC_API_URL;
 const schema = z
   .object({
     novaSenha: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
-    confirmarSenha: z.string(),
+    confirmarSenha: z.string().min(1, "Confirme sua senha"),
   })
   .refine((data) => data.novaSenha === data.confirmarSenha, {
     message: "As senhas não coincidem",
@@ -41,10 +41,20 @@ export function FormRedefinirSenha() {
     formState: { errors, isSubmitting },
     setError,
     watch,
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      novaSenha: "",
+      confirmarSenha: "",
+    },
+  });
 
   const novaSenha = watch("novaSenha");
-  const status = useMemo(() => regrasSenhaStatus(novaSenha ?? ""), [novaSenha]);
+
+  const status = useMemo(() => {
+    return regrasSenhaStatus(novaSenha ?? "");
+  }, [novaSenha]);
+
   const checklist = [
     { ok: status.temMin, label: "Mínimo de 8 caracteres" },
     { ok: status.temMinusc, label: "1 letra minúscula" },
@@ -54,46 +64,60 @@ export function FormRedefinirSenha() {
   ];
 
   async function onSubmit(data: FormData) {
-    const errosValidacao = validaSenha(data.novaSenha);
-    if (errosValidacao.length > 0) {
-      setError("novaSenha", {
-        message: errosValidacao[0].replace("Erro... ", ""),
-      });
-      return;
-    }
-
     if (!token) {
       toast.error("Token de recuperação não encontrado.");
       return;
     }
 
+    const errosValidacao = validaSenha(data.novaSenha);
+    if (errosValidacao.length > 0) {
+      setError("novaSenha", {
+        type: "manual",
+        message: errosValidacao[0].replace("Erro... ", ""),
+      });
+      return;
+    }
+
     try {
-      const res = await fetch(`${API}/auth/redefinir-senha`, {
-        credentials: "include",
+      const res = await fetch(`${API}/auth/reset-password`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, novaSenha: data.novaSenha }),
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          novaSenha: data.novaSenha,
+        }),
       });
 
       const body = await res.json().catch(() => null);
 
       if (!res.ok) {
-        const msg = body?.error ?? "Erro ao redefinir senha. Tente novamente.";
+        const msg =
+          body?.error ??
+          body?.message ??
+          "Erro ao redefinir senha. Tente novamente.";
+
         toast.error(msg);
         return;
       }
 
       setSucesso(true);
-      toast.success("Senha redefinida com sucesso!");
+      toast.success(body?.message ?? "Senha redefinida com sucesso!");
 
       const email = body?.email;
       if (email) {
         const logou = await loginSilencioso(email, data.novaSenha);
         if (logou) {
-          router.push("/");
+          router.replace("/");
           return;
         }
       }
+
+      setTimeout(() => {
+        router.replace("/login");
+      }, 1200);
     } catch {
       toast.error("Erro de conexão. Tente novamente.");
     }
@@ -101,11 +125,16 @@ export function FormRedefinirSenha() {
 
   if (!token) {
     return (
-      <div className="text-center space-y-4">
+      <div className="space-y-4 text-center">
         <p className="text-sm text-destructive">
           Link inválido. O token de recuperação não foi encontrado na URL.
         </p>
-        <Button variant="outline" onClick={() => router.push("/recuperaSenha")}>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push("/recuperaSenha")}
+        >
           Solicitar novo link
         </Button>
       </div>
@@ -114,11 +143,12 @@ export function FormRedefinirSenha() {
 
   if (sucesso) {
     return (
-      <div className="text-center space-y-4">
-        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+      <div className="space-y-4 text-center">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
         <p className="text-muted-foreground">
           Sua senha foi redefinida com sucesso!
         </p>
+
         <Button className="w-full" onClick={() => router.push("/login")}>
           Ir para o login
         </Button>
@@ -128,7 +158,7 @@ export function FormRedefinirSenha() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="">
+      <div>
         <Input
           id="novaSenha"
           type="password"
@@ -136,24 +166,25 @@ export function FormRedefinirSenha() {
           className="w-full"
           {...register("novaSenha")}
         />
+
         {errors.novaSenha && (
-          <p className="text-sm text-destructive mt-1">
+          <p className="mt-1 text-sm text-destructive">
             {errors.novaSenha.message}
           </p>
         )}
 
-          {novaSenha && (
-            <ul className="text-xs space-y-1 mt-1">
-              {checklist.map((c) => (
-                <li
-            key={c.label}
-            className={c.ok ? "text-green-600" : "text-muted-foreground"}
-                >
-            {c.ok ? "✓" : "•"} {c.label}
-                </li>
-              ))}
-            </ul>
-          )}
+        {novaSenha && (
+          <ul className="mt-2 space-y-1 text-xs">
+            {checklist.map((item) => (
+              <li
+                key={item.label}
+                className={item.ok ? "text-green-600" : "text-muted-foreground"}
+              >
+                {item.ok ? "✓" : "•"} {item.label}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div>
@@ -164,8 +195,9 @@ export function FormRedefinirSenha() {
           className="w-full"
           {...register("confirmarSenha")}
         />
+
         {errors.confirmarSenha && (
-          <p className="text-sm text-destructive mt-1">
+          <p className="mt-1 text-sm text-destructive">
             {errors.confirmarSenha.message}
           </p>
         )}
@@ -174,7 +206,7 @@ export function FormRedefinirSenha() {
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Redefinindo...
           </>
         ) : (

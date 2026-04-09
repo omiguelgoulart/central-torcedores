@@ -199,6 +199,7 @@ export function FormCadastro() {
     setLoading(true);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmarSenha: _, ...rest } = data;
 
       const payload = {

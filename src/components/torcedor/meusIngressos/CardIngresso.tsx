@@ -35,14 +35,16 @@ const statusConfig: Record<
   VALIDO: { label: "VÁLIDO", badgeClass: "bg-emerald-100 text-emerald-700" },
   USADO: { label: "USADO", badgeClass: "bg-blue-100 text-blue-700" },
   CANCELADO: { label: "CANCELADO", badgeClass: "bg-red-100 text-red-700" },
+  EXPIRADO: { label: "EXPIRADO", badgeClass: "bg-amber-100 text-amber-700" },
+  ESTORNADO: { label: "ESTORNADO", badgeClass: "bg-slate-100 text-slate-700" },
 };
 
 export function CardIngresso({ ingresso }: CardIngressoProps) {
   const statusInfo = statusConfig[ingresso.status];
-  const tituloJogo = `${ingresso.jogo.nome}`;
+  const tituloJogo = `${ingresso.jogo?.nome ?? "Jogo indisponível"}`;
 
   return (
-    <Card >
+    <Card>
       <CardContent className="px-5 py-4">
         <div className="flex flex-row items-center gap-4">
           {/* Esquerda – jogo */}
@@ -51,31 +53,28 @@ export function CardIngresso({ ingresso }: CardIngressoProps) {
               {tituloJogo}
             </p>
             <p className="text-xs text-muted-foreground">
-              Jogo: {formatarDataHora(ingresso.jogo.dataHora)}
+              Jogo: {formatarDataHora(ingresso.jogo?.data)}
             </p>
           </div>
 
           <div className="flex flex-col gap-2 items-centrer justify-center">
             <div className="flex justify-end ">
-            <Badge className={` ${statusInfo.badgeClass}`}>
-             {statusInfo.label}
-            </Badge>
-
+              <Badge className={` ${statusInfo.badgeClass}`}>
+                {statusInfo.label}
+              </Badge>
             </div>
 
-          
-
-          <div className="flex flex-col items-end justify-between gap-2 min-w-[140px]">
-            <div className="flex items-baseline gap-3">
-              <p className="text-xs text-muted-foreground uppercase">Total</p>
-              <p className="text-base font-semibold text-foreground">
-                {formatarValor(ingresso.valor)}
-              </p>
-            </div>
-            <div className="flex gap-2 text-xs text-muted-foreground">
-              <CalendarDays className="h-4 w-4" />
-              <span>Compra: {formatarDataHora(ingresso.criadoEm)}</span>
-            </div>
+            <div className="flex flex-col items-end justify-between gap-2 min-w-[140px]">
+              <div className="flex items-baseline gap-3">
+                <p className="text-xs text-muted-foreground uppercase">Total</p>
+                <p className="text-base font-semibold text-foreground">
+                  {formatarValor(ingresso.valor)}
+                </p>
+              </div>
+              <div className="flex gap-2 text-xs text-muted-foreground">
+                <CalendarDays className="h-4 w-4" />
+                <span>Compra: {formatarDataHora(ingresso.criadoEm)}</span>
+              </div>
             </div>
           </div>
         </div>

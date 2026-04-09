@@ -85,7 +85,7 @@ export default function PageDashboard() {
           fetch(`${API}/pagamento`, {}),
           fetch(`${API}/assinatura`, {}),
           fetch(`${API}/fatura`, {}),
-          fetch(`${API}/admin/ingresso?page=1&pageSize=1`, {}),
+          fetch(`${API}/ingresso?page=1&pageSize=1`, {}),
         ]);
 
         // Pagamentos

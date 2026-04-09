@@ -26,9 +26,9 @@ export const useIngresso = create<UseIngressoState>((set) => ({
   ingressoAtual: null,
 
   async gerarIngresso({ jogoId, loteId = null }) {
-    const { usuario } = useAuth.getState();
+    const { torcedor } = useAuth.getState();
 
-    if (!usuario) {
+    if (!torcedor) {
       toast.error("Você precisa estar logado para gerar um ingresso.");
       return null;
     }
@@ -45,7 +45,7 @@ export const useIngresso = create<UseIngressoState>((set) => ({
           body: JSON.stringify({
             jogoId,
             loteId,
-            torcedorId: usuario.id,
+            torcedorId: torcedor.id,
           }),
         }
       );

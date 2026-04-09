@@ -29,7 +29,7 @@
 
      async function onSubmit(data: FormData) {
        try {
-         const res = await fetch(`${API}/auth/recuperar-senha`, {
+         const res = await fetch(`${API}/auth/forgot-password`, {
            credentials: "include",
            method: "POST",
            headers: { "Content-Type": "application/json" },

@@ -25,7 +25,7 @@ export function ListaJogos({ jogos }: ListaJogosProps) {
   }
 
   return (
-    <div className=" gap-4  flex overflow-x-auto pb-2 md:justify-between ">
+    <div className=" gap-4  flex pb-2 md:justify-between ">
       {jogosFuturos.map((jogo) => (
         <div
           key={jogo.id}

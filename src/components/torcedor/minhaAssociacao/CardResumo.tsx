@@ -1,8 +1,14 @@
 "use client";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AssociacaoData } from "@/app/types/associacao";
+import { AssociacaoData } from "@/app/types/assinaturaItf";
 
 interface CardResumoProps {
   associacao: AssociacaoData;
@@ -28,9 +34,7 @@ export function CardResumo({ associacao }: CardResumoProps) {
   }
 
   const valorFormatado =
-    associacao.valor != null
-      ? `R$ ${associacao.valor.toFixed(2)}`
-      : "--";
+    associacao.valor != null ? `R$ ${associacao.valor.toFixed(2)}` : "--";
 
   return (
     <Card>

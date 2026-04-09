@@ -1,7 +1,13 @@
 "use client";
 
 // components/layout/NavSheet.tsx
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 
@@ -22,6 +28,10 @@ export function NavSheet() {
       </SheetTrigger>
 
       <SheetContent side="left" className="w-64">
+        <SheetTitle className="sr-only">Menu principal</SheetTitle>
+        <SheetDescription className="sr-only">
+          Lista de links para navegar pelas secoes do site.
+        </SheetDescription>
         <nav className="mt-8 flex flex-col gap-2">
           {navItems.map((item) => (
             <NavLinkItem key={item.href} item={item} onClick={close} />

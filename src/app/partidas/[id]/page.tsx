@@ -1,117 +1,178 @@
-import { notFound } from "next/navigation"
-import { ExibicaoMapaSetor } from "@/components/partidas/detalhe/ExibicaoMapaSetor"
-import { PartidaHeader } from "@/components/partidas/detalhe/HeaderPartida"
+"use client";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import {
+  ExibicaoMapaSetor,
+  ValorSetor,
+} from "@/components/partidas/detalhe/ExibicaoMapaSetor";
+import { PartidaHeader } from "@/components/partidas/detalhe/HeaderPartida";
+import { JogoItf } from "@/app/types/jogoItf";
+import useJogo from "@/hooks/useJogo";
 
-export const revalidate = 0
+type PageProps = {
+  params: {
+    id: string;
+  };
+};
 
-type IngressoApi = {
-  id: string
-}
+type BoxMapa = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
 
-type JogoSetorLoteApi = {
-  id: string
-  precoUnitario: number | string
-  ingressos: IngressoApi[]
-}
+const BOXES_POR_SLUG: Record<string, BoxMapa> = {
+  jk: { left: 18, top: 17, width: 60, height: 12 },
+  social: { left: 18, top: 72, width: 60, height: 10 },
+  cativas: { left: 60.5, top: 82, width: 18, height: 8 },
+  norte: { left: 12, top: 30, width: 10, height: 45 },
+  "norte-visitante": { left: 12, top: 30, width: 10, height: 45 },
+  sul: { left: 75, top: 32, width: 10, height: 45 },
+};
 
-type JogoSetorApi = {
-  id: string
-  capacidade: number
-  setor: {
-    id: string
-    slug: string
-    nome: string
+function getBoxPorSlug(slug?: string): BoxMapa {
+  const defaultBox: BoxMapa = { left: 0, top: 0, width: 0, height: 0 };
+
+  if (!slug) {
+    return defaultBox;
   }
-  lotes: JogoSetorLoteApi[]
+
+  const box = BOXES_POR_SLUG[slug as keyof typeof BOXES_POR_SLUG];
+  return box ?? defaultBox;
 }
 
-type PartidaApi = {
-  id: string
-  nome: string
-  data: string
-  local: string
-  mandante?: string | null
-  visitante?: string | null
-  setores: JogoSetorApi[]
-}
+export default function PartidaDetalhePage({ params }: PageProps) {
+  const routeParams = useParams<{ id?: string | string[] }>();
 
-type PartidaDetalhePageProps = {
-  params: Promise<{
-    id: string
-  }>
-}
+  const id =
+    typeof routeParams?.id === "string"
+      ? routeParams.id
+      : Array.isArray(routeParams?.id)
+        ? routeParams.id[0]
+        : params?.id;
 
-export default async function PartidaDetalhePage({
-  params,
-}: PartidaDetalhePageProps) {
-  const { id } = await params
+  const { fetchJogosById } = useJogo();
+  const [jogo, setJogo] = useState<JogoItf | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  let partidaApi: PartidaApi
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      setError("ID da partida não informado na rota.");
+      setJogo(null);
+      return;
+    }
 
-  try {
-    const partidaRes = await fetch(
-      `${API}/admin/jogo/${encodeURIComponent(id)}/jogo`,
-      {
-    cache: "no-store"
-},
-    )
+    let ativo = true;
 
-    if (!partidaRes.ok) {
-      if (partidaRes.status === 404) {
-        notFound()
+    const fetchJogo = async () => {
+      setLoading(true);
+      setError(null);
+
+      const jogoPorId = await fetchJogosById(id);
+
+      if (!ativo) return;
+
+      if (!jogoPorId) {
+        setError("Não foi possível carregar a partida.");
+        setJogo(null);
+      } else {
+        setJogo(jogoPorId);
       }
-      throw new Error("Falha ao buscar partida")
-    }
 
-    partidaApi = (await partidaRes.json()) as PartidaApi
-  } catch (error) {
-    console.error("Erro ao carregar partida:", error)
-    notFound()
+      setLoading(false);
+    };
+
+    fetchJogo();
+
+    return () => {
+      ativo = false;
+    };
+  }, [id, fetchJogosById]);
+
+  const valores = useMemo<ValorSetor[]>(() => {
+    if (!jogo) return [];
+
+    return (jogo.setores ?? []).map((jogoSetor) => {
+      const lotesDoSetor = (jogo.lotes ?? []).filter(
+        (lote) => lote.jogoSetorId === jogoSetor.id,
+      );
+
+      const lotes = lotesDoSetor.map((lote) => {
+        const quantidade = lote.quantidade ?? jogoSetor.capacidade;
+        const preco =
+          typeof lote.precoUnitario === "string"
+            ? parseFloat(lote.precoUnitario)
+            : Number(lote.precoUnitario ?? 0);
+
+        return {
+          id: lote.id,
+          nome: lote.nome,
+          preco: Number.isFinite(preco) ? preco : 0,
+          quantidade,
+          disponibilidade: quantidade,
+          tipo: lote.tipo,
+          inicioVendas: lote.inicioVendas ?? null,
+          fimVendas: lote.fimVendas ?? null,
+          limitePorCPF: lote.limitePorCPF ?? null,
+        };
+      });
+
+      const menorPreco =
+        lotes.length > 0 ? Math.min(...lotes.map((lote) => lote.preco)) : 0;
+
+      const primeiroLote = lotes[0];
+      const slug = jogoSetor.setor?.slug ?? jogoSetor.id;
+
+      return {
+        id: slug,
+        nome: jogoSetor.setor?.nome ?? "Setor",
+        preco: Number.isFinite(menorPreco) ? menorPreco : 0,
+        capacidade: jogoSetor.capacidade,
+        disponibilidade: jogoSetor.capacidade,
+        setorId: jogoSetor.setorId,
+        jogoSetorId: jogoSetor.id,
+        loteId: primeiroLote?.id ?? "",
+        aberto: jogoSetor.aberto,
+        box: getBoxPorSlug(jogoSetor.setor?.slug),
+        lotes,
+      };
+    });
+  }, [jogo]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <p className="text-sm text-muted-foreground">Carregando partida...</p>
+      </div>
+    );
   }
 
-  const partida = {
-    id: partidaApi.id,
-    nome: partidaApi.nome,
-    data: partidaApi.data,
-    local: partidaApi.local,
+  if (error || !jogo) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <p className="text-sm text-muted-foreground">
+          {error ?? "Partida não encontrada."}
+        </p>
+      </div>
+    );
   }
-
-  const setoresApi = Array.isArray(partidaApi.setores)
-    ? partidaApi.setores
-    : []
-
-  const valores = setoresApi.map((jogoSetor) => {
-    const primeiroLote = jogoSetor.lotes[0]
-
-    const precoRaw = primeiroLote?.precoUnitario ?? 0
-    const precoLote =
-      typeof precoRaw === "string" ? Number(precoRaw) : precoRaw
-
-    const vendidos = jogoSetor.lotes.reduce(
-      (total, lote) => total + lote.ingressos.length,
-      0,
-    )
-
-    const disponibilidade = jogoSetor.capacidade - vendidos
-
-    return {
-      id: jogoSetor.setor.slug,
-      nome: jogoSetor.setor.nome,
-      preco: Number.isFinite(precoLote) ? precoLote : 0,
-      disponibilidade: disponibilidade > 0 ? disponibilidade : 0,
-
-      setorId: jogoSetor.setor.id,
-      jogoSetorId: jogoSetor.id,
-      loteId: primeiroLote?.id ?? "",
-    }
-  })
 
   return (
     <div className="container mx-auto space-y-8 px-4 py-8">
-      <PartidaHeader partida={partida} />
-      <ExibicaoMapaSetor jogoId={partida.id} valores={valores} />
+      <PartidaHeader
+        partida={{
+          id: jogo.id,
+          nome: jogo.nome,
+          data: jogo.data,
+          local: jogo.local,
+        }}
+      />
+
+      <ExibicaoMapaSetor jogoId={jogo.id} valores={valores} />
     </div>
-  )
+  );
 }

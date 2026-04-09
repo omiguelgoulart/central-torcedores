@@ -2,17 +2,24 @@
 
 import { useEffect, useState } from "react";
 
-
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
-import { StatusTorcedor, TorcedorUI, AssinaturaUI, PagamentoUI, IngressoUI, TorcedorPerfilResponse, AssinaturaApi, PagamentoApi, IngressoApi } from "@/components/admin/torcedores/types";
+import {
+  StatusTorcedor,
+  TorcedorUI,
+  AssinaturaUI,
+  PagamentoUI,
+  IngressoUI,
+  TorcedorPerfilResponse,
+  AssinaturaApi,
+  PagamentoApi,
+  IngressoApi,
+} from "@/components/admin/torcedores/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
-
 
 function formatarDataBr(valor: string | null): string {
   if (!valor) return "Não informado";
@@ -56,10 +63,10 @@ export default function PageTorcedorDetalhe({ params }: PageProps) {
         const { id } = await params;
 
         const resposta = await fetch(`${API}/usuario/id/${id}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store"
-});
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
 
         if (!resposta.ok) {
           setErro("Não foi possível carregar os dados do torcedor.");
@@ -116,7 +123,9 @@ export default function PageTorcedorDetalhe({ params }: PageProps) {
         }));
         setAssinaturas(assinaturasUI);
 
-        const pagamentosApi = (dados.pagamentos ?? []) as PagamentoApi[];
+        const pagamentosApi = (dados.pagamentosSocio ??
+          dados.pagamentos ??
+          []) as PagamentoApi[];
         const pagamentosUI: PagamentoUI[] = pagamentosApi.map((p) => {
           const valorNumero = p.valor ?? p.valorBruto ?? 0;
           const data = p.pagoEm ?? p.criadoEm ?? null;

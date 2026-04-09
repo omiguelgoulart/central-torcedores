@@ -1,108 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+
 import { ingressoItf } from "@/app/types/ingressoItf";
 import { Chevron } from "@/components/torcedor/meusIngressos/ChevronIngresso";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { CardIngresso } from "@/components/torcedor/meusIngressos/CardIngresso";
-import Link from "next/link";
 import {
   AbaIngresso,
   TabsIngresso,
 } from "@/components/torcedor/meusIngressos/TabsIngressos";
-import Cookies from "js-cookie";
-
-type AuthCookieUser = {
-  id?: string;
-};
-
-type AuthCookie = {
-  id?: string;
-  nome?: string;
-  email?: string;
-  cpf?: string;
-  token?: string;
-  user?: AuthCookieUser;
-};
-
-function getTorcedorIdFromCookies(): string | null {
-  const direto = Cookies.get("usuarioId");
-  if (direto) {
-    return direto;
-  }
-
-  const auth = Cookies.get("auth");
-  if (!auth) return null;
-
-  try {
-    const parsed = JSON.parse(auth) as AuthCookie;
-    const id = parsed.user?.id ?? parsed.id ?? null;
-    return id ?? null;
-  } catch (err) {
-    console.error("Erro ao parsear cookie auth:", err);
-    return null;
-  }
-}
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function IngressosPage() {
-  const [loading, setLoading] = useState(true);
+  const [loadingPagina, setLoadingPagina] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [ingressos, setIngressos] = useState<ingressoItf[]>([]);
   const [abaAtiva, setAbaAtiva] = useState<AbaIngresso>("PROXIMOS");
 
+  const { torcedor, fetchMe } = useAuth();
+
   useEffect(() => {
-    async function fetchIngressos() {
+    async function carregarUsuario() {
       try {
-        const torcedorId = getTorcedorIdFromCookies();
-
-        if (!torcedorId) {
-          setErro("Usuário não encontrado.");
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
-          {},
-        );
-
-        if (!response.ok) {
-          throw new Error("Erro ao buscar usuário");
-        }
-
-        const data = await response.json();
-
-        setIngressos(data.ingressos ?? []);
+        setLoadingPagina(true);
+        setErro(null);
+        await fetchMe();
       } catch (error) {
         console.error(error);
         setErro("Erro ao carregar ingressos.");
       } finally {
-        setLoading(false);
+        setLoadingPagina(false);
       }
     }
 
-    fetchIngressos();
-  }, []);
+    carregarUsuario();
+  }, [fetchMe]);
 
-  const agora = new Date();
+  const ingressos = useMemo<ingressoItf[]>(() => {
+    return torcedor?.ingressos ?? [];
+  }, [torcedor]);
 
-  const proximos = ingressos.filter((ing) => {
-    const dataJogo = ing.jogo?.dataHora ? new Date(ing.jogo.dataHora) : null;
-    const isValido = ing.status === "VALIDO";
+  const proximos = useMemo(() => {
+    const agora = new Date();
+    return ingressos.filter((ing) => {
+      const dataJogo = ing.jogo?.data ? new Date(ing.jogo.data) : null;
+      const isValido = ing.status === "VALIDO";
 
-    if (!dataJogo) return isValido;
+      if (!dataJogo) return isValido;
 
-    return isValido && dataJogo >= agora;
-  });
+      return isValido && dataJogo >= agora;
+    });
+  }, [ingressos]);
 
-  const anteriores = ingressos.filter(
-    (ing) => !proximos.some((p) => p.id === ing.id),
-  );
+  const anteriores = useMemo(() => {
+    return ingressos.filter((ing) => !proximos.some((p) => p.id === ing.id));
+  }, [ingressos, proximos]);
 
   const listaVisivel = abaAtiva === "PROXIMOS" ? proximos : anteriores;
   const naoTemIngresso = ingressos.length === 0;
 
-  if (loading) {
+  if (loadingPagina) {
     return (
       <main className="min-h-screen px-4 py-8">
         <p className="text-center text-muted-foreground">

@@ -1,4 +1,6 @@
-export type StatusIngresso = "VALIDO" | "USADO" | "CANCELADO";
+import { JogoItf, LoteItf } from "./jogoItf";
+
+export type StatusIngresso = "VALIDO" | "USADO" | "CANCELADO" | "EXPIRADO" | "ESTORNADO";
 
 export interface ingressoItf {
   id: string;
@@ -8,22 +10,12 @@ export interface ingressoItf {
   qrCode: string;
   valor: string;
   status: StatusIngresso;
-  criadoEm: string; 
+  criadoEm: string;
   usadoEm: string | null;
   atualizadoEm: string;
   pagamentoId: string | null;
 
-  jogo: {
-    id: string;
-    nome: string;
-    dataHora: string;     
-    estadio: string;
-  };
+  jogo: JogoItf | null;
 
-  lote: {
-    id: string;
-    nome: string;
-    setor: string;
-    descricao?: string | null;
-  } | null;
+  lote: LoteItf | null;
 }
