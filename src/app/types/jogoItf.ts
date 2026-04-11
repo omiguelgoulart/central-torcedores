@@ -23,17 +23,17 @@ export interface JogoItf {
 
 export interface LoteItf {
     id: string;
-    nome: string;
-    tipo: string;
-    quantidade: number;
-    precoUnitario: string;
-    inicioVendas: string;
+    nome?: string;
+    tipo?: string;
+    quantidade?: number;
+    precoUnitario: string | number;
+    inicioVendas?: string;
     fimVendas: string | null;
     limitePorCPF: number | null;
-    jogoId: string;
-    jogoSetorId: string;
-    criadoEm: string;
-    atualizadoEm: string;
+    jogoId?: string;
+    jogoSetorId?: string;
+    criadoEm?: string;
+    atualizadoEm?: string;
 }
 
 export interface JogoSetorItf {
@@ -45,8 +45,8 @@ export interface JogoSetorItf {
     tipo: string;
     criadoEm: string;
     atualizadoEm: string;
-    setor?:SetorItf;
-    jogo?:JogoItf;
+    setor?: SetorItf;
+    jogo?: JogoItf;
 }
 
 export interface SetorItf {

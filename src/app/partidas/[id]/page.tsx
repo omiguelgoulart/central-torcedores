@@ -110,11 +110,11 @@ export default function PartidaDetalhePage({ params }: PageProps) {
 
         return {
           id: lote.id,
-          nome: lote.nome,
+          nome: lote.nome ?? "Lote",
           preco: Number.isFinite(preco) ? preco : 0,
           quantidade,
           disponibilidade: quantidade,
-          tipo: lote.tipo,
+          tipo: lote.tipo ?? "GERAL",
           inicioVendas: lote.inicioVendas ?? null,
           fimVendas: lote.fimVendas ?? null,
           limitePorCPF: lote.limitePorCPF ?? null,
