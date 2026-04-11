@@ -25,7 +25,7 @@ export default function HomePage() {
   const [carregando, setCarregando] = useState(true);
 
   const { planos, fetchPlanos } = usePlano();
-  const { jogos, fetchJogos } = useJogo();
+  const { jogos, fetchProximosJogos } = useJogo();
 
   const jogosList: JogoItf[] = jogos ?? [];
   const planosList: IPlano[] = planos ?? [];
@@ -33,7 +33,7 @@ export default function HomePage() {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        await Promise.all([fetchJogos(), fetchPlanos()]);
+        await Promise.all([fetchProximosJogos(), fetchPlanos()]);
       } catch (error) {
         console.error("Erro ao carregar dados da home:", error);
       } finally {
@@ -42,7 +42,7 @@ export default function HomePage() {
     };
 
     carregarDados();
-  }, [fetchJogos, fetchPlanos]);
+  }, [fetchProximosJogos, fetchPlanos]);
 
   const faqs = [
     {
