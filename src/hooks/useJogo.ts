@@ -68,12 +68,11 @@ const useJogo = create<JogoState>((set) => ({
         }
     },
 
-    fetchProximosJogos: async (limit = 5) => {
+    fetchProximosJogos: async () => {
         set({ loading: true, error: null });
         try {
-            const params = new URLSearchParams({ limit: String(limit) });
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/jogo/proximos?${params}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/jogo/proximos`,
                 { cache: "no-store" },
             );
             if (!response.ok) throw new Error("Erro ao buscar próximos jogos");
