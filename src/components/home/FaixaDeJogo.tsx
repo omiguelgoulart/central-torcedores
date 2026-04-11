@@ -44,7 +44,7 @@ export function FaixaDeJogos({ jogo }: FaixaDeJogosProps) {
         <CardTitle className="line-clamp-2 text-xl font-bold leading-snug">
           {jogo.nome}
         </CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
+        <CardDescription className="text-sm text-muted-foreground line-clamp-2">
           {jogo.descricao}
         </CardDescription>
       </CardHeader>
