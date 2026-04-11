@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ValorSetor } from "./ExibicaoMapaSetor";
+import { getBoxMapa } from "./mapaBoxes";
 
 const RATIO = 1000 / 800;
 
@@ -43,13 +44,19 @@ export function MapaEstadio({
         />
 
         <TooltipProvider delayDuration={100}>
-          {valores.map((setor) => {
+          {valores.map((setor, index) => {
             const menorPreco =
               setor.lotes.length > 0
                 ? Math.min(...setor.lotes.map((lote) => lote.preco))
                 : setor.preco;
 
             const estaSelecionado = selecionadoId === setor.jogoSetorId;
+            const box = getBoxMapa(
+              setor.nome,
+              index,
+              valores.length,
+              setor.box,
+            );
 
             return (
               <Tooltip key={setor.jogoSetorId}>
@@ -65,10 +72,10 @@ export function MapaEstadio({
                         : "hover:bg-primary/10",
                     )}
                     style={{
-                      left: `${setor.box.left}%`,
-                      top: `${setor.box.top}%`,
-                      width: `${setor.box.width}%`,
-                      height: `${setor.box.height}%`,
+                      left: `${box.left}%`,
+                      top: `${box.top}%`,
+                      width: `${box.width}%`,
+                      height: `${box.height}%`,
                     }}
                   />
                 </TooltipTrigger>

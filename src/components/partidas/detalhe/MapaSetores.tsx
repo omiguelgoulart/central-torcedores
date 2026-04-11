@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { CardSetor } from "./CardSetor";
 import { ValorSetor } from "./ExibicaoMapaSetor";
+import { getBoxMapa } from "./mapaBoxes";
 
 const RATIO = 1000 / 800;
 
@@ -57,43 +58,52 @@ export function MapaSetores({ partidaId, setores }: MapaSetoresProps) {
               />
 
               <TooltipProvider delayDuration={100}>
-                {setoresAbertos.map((setor) => (
-                  <Tooltip key={setor.jogoSetorId}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label={`Selecionar ${setor.nome}`}
-                        onClick={() => setSelecionado(setor)}
-                        className={`absolute z-20 cursor-pointer rounded-md outline-none transition-all ${
-                          selecionado?.jogoSetorId === setor.jogoSetorId
-                            ? "bg-primary/10 ring-2 ring-primary/60"
-                            : "hover:bg-primary/10"
-                        }`}
-                        style={{
-                          left: `${setor.box.left}%`,
-                          top: `${setor.box.top}%`,
-                          width: `${setor.box.width}%`,
-                          height: `${setor.box.height}%`,
-                        }}
-                      />
-                    </TooltipTrigger>
+                {setoresAbertos.map((setor, index) => {
+                  const box = getBoxMapa(
+                    setor.nome,
+                    index,
+                    setoresAbertos.length,
+                    setor.box,
+                  );
 
-                    <TooltipContent
-                      side="top"
-                      align="center"
-                      className="px-3 py-1.5"
-                    >
-                      <p className="text-sm font-medium">{setor.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {setor.preco.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}{" "}
-                        · {setor.disponibilidade} lugares
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
+                  return (
+                    <Tooltip key={setor.jogoSetorId}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Selecionar ${setor.nome}`}
+                          onClick={() => setSelecionado(setor)}
+                          className={`absolute z-20 cursor-pointer rounded-md outline-none transition-all ${
+                            selecionado?.jogoSetorId === setor.jogoSetorId
+                              ? "bg-primary/10 ring-2 ring-primary/60"
+                              : "hover:bg-primary/10"
+                          }`}
+                          style={{
+                            left: `${box.left}%`,
+                            top: `${box.top}%`,
+                            width: `${box.width}%`,
+                            height: `${box.height}%`,
+                          }}
+                        />
+                      </TooltipTrigger>
+
+                      <TooltipContent
+                        side="top"
+                        align="center"
+                        className="px-3 py-1.5"
+                      >
+                        <p className="text-sm font-medium">{setor.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {setor.preco.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}{" "}
+                          · {setor.disponibilidade} lugares
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
               </TooltipProvider>
             </div>
           </div>

@@ -26,7 +26,7 @@ export type ValorSetor = {
   jogoSetorId: string;
   loteId: string;
   aberto: boolean;
-  box: {
+  box?: {
     left: number;
     top: number;
     width: number;

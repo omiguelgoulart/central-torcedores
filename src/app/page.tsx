@@ -20,7 +20,6 @@ import { JogoItf } from "./types/jogoItf";
 import { FaixaDePlano } from "@/components/home/FaixaDePlano";
 import Link from "next/link";
 
-
 export default function HomePage() {
   const router = useRouter();
   const [carregando, setCarregando] = useState(true);
@@ -30,7 +29,6 @@ export default function HomePage() {
 
   const jogosList: JogoItf[] = jogos ?? [];
   const planosList: IPlano[] = planos ?? [];
-
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -138,20 +136,19 @@ export default function HomePage() {
                   <Link href="/partidas">Ver todos</Link>
                 </Button>
               </div>
-                    <ScrollArea className="w-full whitespace-nowrap rounded-2xl">
-                      <div className="flex gap-4 pb-4 pt-1">
-                      {jogosList.map((jogo) => (
-                          <div
-                            key={jogo.id}
-                            className="w-[280px] min-w-[280px] flex-shrink-0 sm:w-[300px] sm:min-w-[300px]"
-                          >
-                            <FaixaDeJogos jogos={[jogo]} />
-                          
-                          </div>
-                          ))}
-                      </div>
-                      <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
+              <ScrollArea className="w-full whitespace-nowrap rounded-2xl">
+                <div className="flex gap-4 pb-4 pt-1">
+                  {jogosList.map((jogo) => (
+                    <div
+                      key={jogo.id}
+                      className="w-[280px] min-w-[280px] flex-shrink-0 sm:w-[300px] sm:min-w-[300px]"
+                    >
+                      <FaixaDeJogos jogo={jogo} />
+                    </div>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </section>
           )}
 
