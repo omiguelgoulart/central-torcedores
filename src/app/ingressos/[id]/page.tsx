@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ingressoItf } from "@/app/types/ingressoItf";
 import { useAuth } from "@/hooks/useAuth";
+import { useIngresso } from "@/hooks/useIngresso";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -46,65 +47,16 @@ export default function IngressoDetalhePage() {
   const params = useParams();
   const router = useRouter();
   const { token } = useAuth();
+  const { ingressoAtual, carregando, erro, buscarIngresso } = useIngresso();
 
   const ingressoId = params.id as string;
-
-  const [ingresso, setIngresso] = useState<ingressoItf | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const ingresso = ingressoAtual;
 
   useEffect(() => {
     if (!ingressoId) return;
 
-    const controller = new AbortController();
-
-    async function loadIngresso() {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const res = await fetch(`${API}/admin/ingresso/${ingressoId}`, {
-          signal: controller.signal,
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!res.ok) {
-          if (res.status === 404) {
-            setError("Ingresso não encontrado.");
-            setIngresso(null);
-            return;
-          }
-          const data = (await res.json().catch(() => null)) as {
-            error?: string;
-            message?: string;
-          } | null;
-          setError(
-            data?.error ?? data?.message ?? "Erro ao carregar ingresso.",
-          );
-          setIngresso(null);
-          return;
-        }
-
-        const data = (await res.json()) as ingressoItf;
-        setIngresso(data);
-      } catch (e) {
-        if ((e as Error).name === "AbortError") return;
-        setError("Erro ao carregar ingresso.");
-        setIngresso(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void loadIngresso();
-
-    return () => {
-      controller.abort();
-    };
-  }, [ingressoId, token]);
+    void buscarIngresso(ingressoId, token ?? undefined);
+  }, [ingressoId, token, buscarIngresso]);
 
   const status = ingresso
     ? (statusConfig[ingresso.status] ?? statusConfig.VALIDO)
@@ -163,10 +115,10 @@ export default function IngressoDetalhePage() {
       return ingresso.qrCode;
     }
 
-    return `${API}/admin/ingresso/${ingresso.id}/qrcode.png`;
+    return `${API}/ingresso/${ingresso.id}/qrcode.png`;
   }, [ingresso]);
 
-  if (isLoading) {
+  if (carregando) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-2">
@@ -178,12 +130,12 @@ export default function IngressoDetalhePage() {
     );
   }
 
-  if (error || !ingresso) {
+  if (erro || !ingresso) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-3">
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            {error ?? "Ingresso não encontrado"}
+            {erro ?? "Ingresso não encontrado"}
           </h1>
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />

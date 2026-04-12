@@ -15,21 +15,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, XCircle, CheckCircle2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
-
-type TorcedorResumo = {
-  id: string;
-  nome: string;
-  email: string;
-  cpf?: string | null;
-};
+import { useIngresso } from "@/hooks/useIngresso";
 
 function VincularIngressoContent() {
   const router = useRouter();
   const search = useSearchParams();
-  const { token } = useAuth();
+  const {
+    torcedorAtual,
+    carregando,
+    erro,
+    buscarTorcedorByCpf,
+    criarIngressoComPagamento,
+    resetarErro,
+  } = useIngresso();
 
   // dados vindos da página de pagamento
   const pagamentoId = search.get("pagamentoId");
@@ -38,132 +36,57 @@ function VincularIngressoContent() {
   const valor = search.get("valor");
 
   const [cpf, setCpf] = useState("");
-  const [torcedor, setTorcedor] = useState<TorcedorResumo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [ingressoGerado, setIngressoGerado] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  async function parseResponseBody(response: Response): Promise<unknown> {
-    const contentType = response.headers.get("content-type") ?? "";
-    if (contentType.includes("application/json")) {
-      return response.json();
-    }
-    const text = await response.text();
-    return { message: text || `Resposta inesperada (${response.status})` };
-  }
-
-  async function buscarTorcedor() {
-    setErrorMessage(null);
-    setTorcedor(null);
+  async function handleBuscarTorcedor() {
+    resetarErro();
 
     const cpfLimpo = cpf.replace(/\D/g, "");
 
     if (!cpfLimpo) {
-      setErrorMessage("Informe um CPF válido.");
+      alert("Informe um CPF válido.");
       return;
     }
 
-    try {
-      setIsLoading(true);
-
-      const response = await fetch(`${API}/usuario/cpf/${cpfLimpo}`, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      const data = await parseResponseBody(response);
-
-      if (!response.ok) {
-        const msg =
-          (data as { error?: string; message?: string })?.error ||
-          (data as { error?: string; message?: string })?.message ||
-          "Torcedor não encontrado.";
-        setErrorMessage(msg);
-        return;
-      }
-
-      setTorcedor(data as TorcedorResumo);
-    } catch {
-      setErrorMessage("Erro ao buscar torcedor.");
-    } finally {
-      setIsLoading(false);
-    }
+    await buscarTorcedorByCpf(cpfLimpo);
   }
 
-  async function gerarIngresso() {
+  async function handleGerarIngresso() {
     if (ingressoGerado) {
-      setErrorMessage("O ingresso já foi gerado para este pagamento.");
       return;
     }
 
-    if (!torcedor) {
-      setErrorMessage("Selecione um torcedor antes.");
+    if (!torcedorAtual) {
+      alert("Selecione um torcedor antes.");
       return;
     }
 
-    if (!jogoId || !valor) {
-      setErrorMessage("Dados do ingresso inválidos. Volte e tente novamente.");
+    if (!jogoId || !valor || !pagamentoId) {
+      alert("Dados do ingresso inválidos. Volte e tente novamente.");
       return;
     }
 
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    const payload = {
+    const resultado = await criarIngressoComPagamento({
       jogoId,
       loteId,
-      valor,
-      torcedorId: torcedor.id,
+      valor: Number(valor),
+      torcedorId: torcedorAtual.id,
       pagamentoId,
-    };
+    });
 
-    try {
-      console.log("Payload para criar ingresso:", payload);
-
-      const response = await fetch(`${API}/admin/ingresso`, {
-        credentials: "include",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.status === 409) {
-        setErrorMessage("Este pagamento já possui um ingresso gerado.");
-        return;
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setErrorMessage(
-          data?.error ?? data?.message ?? "Erro ao gerar ingresso.",
-        );
-        return;
-      }
-
-      const ingressoId = data?.ingressoId ?? data?.ingresso?.id;
-
+    if (resultado) {
       setSuccessMessage("Ingresso criado com sucesso!");
       setIngressoGerado(true);
 
       setTimeout(() => {
+        const ingressoId = resultado?.ingressoId;
         if (ingressoId) {
           router.push(`/ingressos/${ingressoId}`);
         } else {
           router.push("/meus-ingressos");
         }
       }, 1200);
-    } catch {
-      setErrorMessage("Erro ao criar ingresso.");
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -178,10 +101,10 @@ function VincularIngressoContent() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {errorMessage && (
+          {erro && (
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
-              <AlertDescription>{errorMessage}</AlertDescription>
+              <AlertDescription>{erro}</AlertDescription>
             </Alert>
           )}
 
@@ -219,10 +142,10 @@ function VincularIngressoContent() {
 
             <Button
               className="w-full"
-              onClick={buscarTorcedor}
-              disabled={isLoading || ingressoGerado}
+              onClick={handleBuscarTorcedor}
+              disabled={carregando || ingressoGerado}
             >
-              {isLoading ? (
+              {carregando ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Buscando...
@@ -233,25 +156,25 @@ function VincularIngressoContent() {
             </Button>
           </div>
 
-          {torcedor && (
+          {torcedorAtual && (
             <div className="border p-4 rounded-lg space-y-1">
               <p>
-                <strong>ID:</strong> {torcedor.id}
+                <strong>ID:</strong> {torcedorAtual.id}
               </p>
               <p>
-                <strong>Nome:</strong> {torcedor.nome}
+                <strong>Nome:</strong> {torcedorAtual.nome}
               </p>
               <p>
-                <strong>Email:</strong> {torcedor.email}
+                <strong>Email:</strong> {torcedorAtual.email}
               </p>
               <p>
-                <strong>CPF:</strong> {torcedor.cpf}
+                <strong>CPF:</strong> {torcedorAtual.cpf}
               </p>
 
               <Button
                 className="w-full mt-3"
-                onClick={gerarIngresso}
-                disabled={isLoading || ingressoGerado}
+                onClick={handleGerarIngresso}
+                disabled={carregando || ingressoGerado}
               >
                 {ingressoGerado ? "Ingresso já gerado" : "Gerar Ingresso"}
               </Button>
