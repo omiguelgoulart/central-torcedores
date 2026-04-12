@@ -35,6 +35,7 @@ import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { toast } from "sonner";
 import { PAYMENT_STATUS } from "@/lib/constants";
 import { mapStatusToUiStatus } from "@/lib/payment-utils";
+import { useAsaas } from "@/hooks/useAsaas";
 
 const cardSchema = z.object({
   cardType: z.enum(["credit", "debit"] as const),
@@ -118,6 +119,7 @@ export function CardPanel({
   dueDate,
   onPaymentCreated,
 }: CardPanelProps) {
+  const { criarPagamento } = useAsaas();
   const [previewCartao, setPreviewCartao] = useState<{
     holderName: string;
     number: string;
@@ -220,19 +222,9 @@ export function CardPanel({
           creditCardToken: tokenData.creditCardToken,
         };
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
-          {
-            credentials: "include",
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          },
-        );
+        const resposta = await criarPagamento(body);
 
-        const resposta = await response.json().catch(() => null);
-
-        if (!response.ok || !resposta) {
+        if (!resposta) {
           toast.error("Falha ao processar pagamento com cartão");
           onPaymentCreated({
             metodo: "CARTAO",

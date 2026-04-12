@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { BoletoLinks } from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { mapStatusToUiStatus } from "@/lib/payment-utils";
+import { useAsaas } from "@/hooks/useAsaas";
 
 interface PainelBoletoProps {
   customerId: string;
@@ -30,6 +31,7 @@ export function PainelBoleto({
   descricao,
   onPaymentCreated,
 }: PainelBoletoProps) {
+  const { criarPagamento } = useAsaas();
   const [loading, setLoading] = useState(false);
   const [boletoLinks, setBoletoLinks] = useState<BoletoLinks | null>(null);
 
@@ -46,24 +48,7 @@ export function PainelBoleto({
         tipo: "BOLETO" as const,
       };
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
-        {
-          credentials: "include",
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-
-      const data = (await res
-        .json()
-        .catch(() => null)) as PagamentoApiResponse | null;
-
-      if (!res.ok || !data) {
-        toast.error("Falha ao gerar boleto");
-        return;
-      }
+      const data = (await criarPagamento(body)) as PagamentoApiResponse;
 
       setBoletoLinks({
         bankSlipUrl: String(data.bankSlipUrl ?? ""),

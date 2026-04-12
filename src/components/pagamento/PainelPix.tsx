@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { mapStatusToUiStatus } from "@/lib/payment-utils";
+import { useAsaas } from "@/hooks/useAsaas";
 
 type PixQrLocal = {
   encodedImage?: string;
@@ -28,6 +29,7 @@ export function PainelPix({
   descricao,
   onPaymentCreated,
 }: PainelPixProps) {
+  const { criarPagamento, obterQrCodePix } = useAsaas();
   const [loading, setLoading] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [pixQr, setPixQr] = useState<PixQrLocal | null>(null);
@@ -41,42 +43,6 @@ export function PainelPix({
       throw new Error("Valor do pagamento inválido.");
     }
     return num;
-  }
-
-  async function parseResponseBody(response: Response): Promise<unknown> {
-    const contentType = response.headers.get("content-type") ?? "";
-    if (contentType.includes("application/json")) {
-      return response.json();
-    }
-    const text = await response.text();
-    return { message: text || `Resposta inesperada (${response.status})` };
-  }
-
-  async function fetchPixQr(paymentId: string) {
-    const base = `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos/${paymentId}`;
-    const endpoints = [`${base}/pixQrCode`, `${base}/qrcode`];
-
-    let lastError: Error | null = null;
-    for (const url of endpoints) {
-      const qrResponse = await fetch(url);
-      const qrData = await parseResponseBody(qrResponse);
-
-      if (qrResponse.ok) {
-        return qrData as PixQrLocal;
-      }
-
-      const msgBackend =
-        (qrData as { error?: string; message?: string })?.error ||
-        (qrData as { error?: string; message?: string })?.message ||
-        "Erro ao obter QR Code PIX. Tente novamente.";
-      lastError = new Error(msgBackend);
-
-      if (qrResponse.status !== 404) {
-        throw lastError;
-      }
-    }
-
-    throw lastError ?? new Error("Erro ao obter QR Code PIX. Tente novamente.");
   }
 
   async function handleGerarPix() {
@@ -98,26 +64,7 @@ export function PainelPix({
         dueDate,
       };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos`,
-        {
-          credentials: "include",
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-
-      const pagamento = await parseResponseBody(response);
-
-      if (!response.ok) {
-        console.error("Erro ao criar pagamento PIX:", pagamento);
-        const msgBackend =
-          (pagamento as { error?: string; message?: string })?.error ||
-          (pagamento as { error?: string; message?: string })?.message ||
-          "Erro ao criar pagamento PIX. Tente novamente.";
-        throw new Error(msgBackend);
-      }
+      const pagamento = await criarPagamento(body);
 
       const pagamentoId = (pagamento as { id?: string }).id;
       if (!pagamentoId) {
@@ -129,11 +76,13 @@ export function PainelPix({
       onPaymentCreated({
         metodo: "PIX",
         paymentId: pagamentoId,
-        statusInicial: mapStatusToUiStatus(String((pagamento as { status?: string }).status ?? "")),
+        statusInicial: mapStatusToUiStatus(
+          String((pagamento as { status?: string }).status ?? ""),
+        ),
         valor: 0,
       });
 
-      const qrData = await fetchPixQr(pagamentoId);
+      const qrData = await obterQrCodePix(pagamentoId);
 
       setPixQr({
         encodedImage: qrData.encodedImage,

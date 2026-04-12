@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useAsaas } from "@/hooks/useAsaas";
 
 interface CadastroCustomerIdFormProps {
   defaultName?: string;
@@ -21,6 +22,7 @@ interface CadastroCustomerIdFormProps {
 }
 
 export function CadastroCustomerIdForm({ defaultName, defaultEmail, onCustomerCreated }: CadastroCustomerIdFormProps) {
+  const { criarCliente } = useAsaas();
   const [nome, setNome] = useState(defaultName ?? "");
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [cpf, setCpf] = useState("");
@@ -45,23 +47,12 @@ export function CadastroCustomerIdForm({ defaultName, defaultEmail, onCustomerCr
 
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/asaas/clientes`, {
-        credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: nome.trim(),
-          email: email.trim(),
-          cpfCnpj: cpf.replace(/\D/g, ""), 
-        }),
+      const data = await criarCliente({
+        nome: nome.trim(),
+        email: email.trim(),
+        cpfCnpj: cpf.replace(/\D/g, ""),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Erro ao criar cliente");
-      }
-
-      const data = await res.json();
       const customerId = data?.id ?? data?.customerId ?? data?.clienteId;
       if (!customerId) {
         throw new Error("ID do cliente não retornado pelo servidor");
