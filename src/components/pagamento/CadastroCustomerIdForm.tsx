@@ -21,7 +21,11 @@ interface CadastroCustomerIdFormProps {
   onCustomerCreated?: (customerId: string) => void;
 }
 
-export function CadastroCustomerIdForm({ defaultName, defaultEmail, onCustomerCreated }: CadastroCustomerIdFormProps) {
+export function CadastroCustomerIdForm({
+  defaultName,
+  defaultEmail,
+  onCustomerCreated,
+}: CadastroCustomerIdFormProps) {
   const { criarCliente } = useAsaas();
   const [nome, setNome] = useState(defaultName ?? "");
   const [email, setEmail] = useState(defaultEmail ?? "");
@@ -114,11 +118,7 @@ export function CadastroCustomerIdForm({ defaultName, defaultEmail, onCustomerCr
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full mt-4"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full mt-4" disabled={loading}>
               {loading ? "Criando cadastro..." : "Criar cadastro e continuar"}
             </Button>
           </form>
