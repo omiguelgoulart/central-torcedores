@@ -32,6 +32,7 @@ import type {
   CardBrand,
 } from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
+import type { CriarPagamentoAsaasInput } from "@/hooks/useAsaas";
 import { toast } from "sonner";
 import { PAYMENT_STATUS } from "@/lib/constants";
 import { mapStatusToUiStatus } from "@/lib/payment-utils";
@@ -170,7 +171,8 @@ export function CardPanel({
       try {
         setLoading(true);
 
-        const tipo = data.cardType === "credit" ? "CREDIT_CARD" : "DEBIT_CARD";
+        const tipo: CriarPagamentoAsaasInput["tipo"] =
+          data.cardType === "credit" ? "CREDIT_CARD" : "DEBIT_CARD";
 
         const tokenResponse = await fetch(
           "https://www.asaas.com/api/v3/creditCard/tokenize",
@@ -213,7 +215,7 @@ export function CardPanel({
           return;
         }
 
-        const body = {
+        const body: CriarPagamentoAsaasInput = {
           customerId,
           valor,
           descricao,
@@ -235,12 +237,14 @@ export function CardPanel({
         }
 
         const uiStatus = mapStatusToUiStatus(resposta.status ?? "");
+        const valorResposta =
+          typeof resposta.valor === "number" ? resposta.valor : 0;
 
         onPaymentCreated({
           metodo: "CARTAO",
           paymentId: resposta.id,
           statusInicial: uiStatus,
-          valor: resposta.valor || 0,
+          valor: valorResposta,
         });
 
         toast.success(
@@ -259,7 +263,7 @@ export function CardPanel({
         setLoading(false);
       }
     },
-    [customerId, valor, descricao, dueDate, onPaymentCreated],
+    [customerId, valor, descricao, dueDate, onPaymentCreated, criarPagamento],
   );
 
   return (
