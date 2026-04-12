@@ -62,17 +62,14 @@ function VincularIngressoContent() {
       return;
     }
 
-    if (!jogoId || !valor || !pagamentoId) {
+    if (!loteId) {
       alert("Dados do ingresso inválidos. Volte e tente novamente.");
       return;
     }
 
     const resultado = await criarIngressoComPagamento({
-      jogoId,
       loteId,
-      valor: Number(valor),
-      torcedorId: torcedorAtual.id,
-      pagamentoId,
+      pagamentoId: pagamentoId || undefined,
     });
 
     if (resultado) {

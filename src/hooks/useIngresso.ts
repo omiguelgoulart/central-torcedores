@@ -29,12 +29,9 @@ interface UseIngressoState {
   buscarTorcedorByCpf: (cpf: string) => Promise<TorcedorResumo | null>;
 
   criarIngressoComPagamento: (params: {
-    jogoId: string;
-    loteId?: string;
-    valor: string | number;
-    torcedorId: string;
-    pagamentoId: string;
-  }) => Promise<{ ingressoId: string } | null>;
+    loteId: string;
+    pagamentoId?: string;
+  }) => Promise<{ ingressoId: string; pedidoId: string; qrCode: string } | null>;
 
   resetarErro: () => void;
 }
@@ -164,14 +161,19 @@ export const useIngresso = create<UseIngressoState>((set) => ({
     try {
       set({ carregando: true, erro: null });
 
-      const resp = await fetch(`${API}/ingresso`, {
+      const payload = {
+        loteId: params.loteId,
+        ...(params.pagamentoId ? { pagamentoId: params.pagamentoId } : {}),
+      };
+
+      const resp = await fetch(`${API}/ingresso/pagamento/criar`, {
         credentials: "include",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(params),
+        body: JSON.stringify(payload),
       });
 
       if (resp.status === 409) {
@@ -192,7 +194,11 @@ export const useIngresso = create<UseIngressoState>((set) => ({
 
       set({ carregando: false });
       toast.success("Ingresso criado com sucesso!");
-      return { ingressoId };
+      return {
+        ingressoId,
+        pedidoId: data?.pedidoId,
+        qrCode: data?.qrCode
+      };
     } catch (error) {
       const msg = (error as Error).message || "Erro ao criar ingresso.";
       console.error("Erro ao criar ingresso:", error);
