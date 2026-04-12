@@ -44,6 +44,15 @@ function VincularIngressoContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  async function parseResponseBody(response: Response): Promise<unknown> {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      return response.json();
+    }
+    const text = await response.text();
+    return { message: text || `Resposta inesperada (${response.status})` };
+  }
+
   async function buscarTorcedor() {
     setErrorMessage(null);
     setTorcedor(null);
@@ -59,20 +68,25 @@ function VincularIngressoContent() {
       setIsLoading(true);
 
       const response = await fetch(`${API}/usuario/cpf/${cpfLimpo}`, {
-    headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    }
-});
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
 
-      const data = await response.json();
+      const data = await parseResponseBody(response);
 
       if (!response.ok) {
-        setErrorMessage(data?.error ?? "Torcedor não encontrado.");
+        const msg =
+          (data as { error?: string; message?: string })?.error ||
+          (data as { error?: string; message?: string })?.message ||
+          "Torcedor não encontrado.";
+        setErrorMessage(msg);
         return;
       }
 
-      setTorcedor(data);
+      setTorcedor(data as TorcedorResumo);
     } catch {
       setErrorMessage("Erro ao buscar torcedor.");
     } finally {
