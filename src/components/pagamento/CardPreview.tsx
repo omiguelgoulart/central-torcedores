@@ -12,6 +12,44 @@ interface CardPreviewProps {
   brand: CardBrand;
 }
 
+function getBrandGradient(brand: CardBrand): string {
+  switch (brand) {
+    case "visa":
+      return "from-blue-600 to-blue-800";
+    case "mastercard":
+      return "from-red-600 to-orange-600";
+    case "elo":
+      return "from-yellow-500 to-yellow-700";
+    case "amex":
+      return "from-blue-500 to-blue-700";
+    case "hipercard":
+      return "from-red-700 to-red-900";
+    case "unknown":
+      return "from-slate-600 to-slate-800";
+    default:
+      return "from-slate-600 to-slate-800";
+  }
+}
+
+function getBrandLogo(brand: CardBrand): string | null {
+  switch (brand) {
+    case "visa":
+      return "/visa.svg";
+    case "mastercard":
+      return "/mastercard.svg";
+    case "elo":
+      return "/elo.svg";
+    case "amex":
+      return "/amex.svg";
+    case "hipercard":
+      return "/hipercard.svg";
+    case "unknown":
+      return null;
+    default:
+      return null;
+  }
+}
+
 export function CardPreview({
   holderName,
   number,
@@ -21,40 +59,22 @@ export function CardPreview({
   const numeroExibicao = number || "•••• •••• •••• ••••";
   const nomeExibicao = holderName || "NOME NO CARTÃO";
   const validadeExibicao = expiry || "MM/AA";
-
-  // cor cartao
-  const coresBandeira: Record<CardBrand, string> = {
-    visa: "from-blue-600 to-blue-800",
-    mastercard: "from-red-600 to-orange-600",
-    elo: "from-yellow-500 to-yellow-700",
-    amex: "from-blue-500 to-blue-700",
-    hipercard: "from-red-700 to-red-900",
-    unknown: "from-slate-600 to-slate-800",
-  };
-
-  // logo bandeira
-  const logosBandeira: Record<CardBrand, string | null> = {
-    visa: "/visa.svg",
-    mastercard: "/mastercard.svg",
-    elo: "/elo.svg",
-    amex: "/amex.svg",
-    hipercard: "/hipercard.svg",
-    unknown: null,
-  };
+  const gradienteBandeira = getBrandGradient(brand);
+  const logoBandeira = getBrandLogo(brand);
 
   return (
     <div
-      className={`relative w-full aspect-[1.586/1] rounded-xl bg-gradient-to-br ${coresBandeira[brand]} p-6 text-white shadow-xl transition-all duration-300`}
+      className={`relative w-full aspect-[1.586/1] rounded-xl bg-gradient-to-br ${gradienteBandeira} p-6 text-white shadow-xl transition-all duration-300`}
     >
       {/* Chip do cartão */}
       <div className="absolute top-6 left-6 w-12 h-10 rounded bg-gradient-to-br from-yellow-200 to-yellow-400 opacity-80" />
 
       {/* Logo da bandeira */}
       <div className="absolute top-6 right-6">
-        {logosBandeira[brand] ? (
+        {logoBandeira ? (
           <div className="bg-white/90 rounded">
             <Image
-              src={logosBandeira[brand]!}
+              src={logoBandeira}
               alt={getCardBrandName(brand)}
               width={56}
               height={24}

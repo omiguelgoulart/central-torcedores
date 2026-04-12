@@ -20,7 +20,23 @@ import { useAuth } from "@/hooks/useAuth";
 
 type StatusSocio = "ATIVO" | "INADIMPLENTE" | "CANCELADO" | null;
 
-type StatusSocioKey = "ATIVO" | "INADIMPLENTE" | "CANCELADO" | "DESCONHECIDO";
+type StatusBadgeMeta = {
+  label: string;
+  variant: "default" | "destructive" | "outline";
+};
+
+function getStatusBadgeMeta(status: StatusSocio): StatusBadgeMeta {
+  switch (status) {
+    case "ATIVO":
+      return { label: "Sócio ativo", variant: "default" };
+    case "INADIMPLENTE":
+      return { label: "Inadimplente", variant: "destructive" };
+    case "CANCELADO":
+      return { label: "Associação cancelada", variant: "outline" };
+    default:
+      return { label: "Sem status", variant: "outline" };
+  }
+}
 
 type TorcedorPerfilResponse = {
   id: string;
@@ -149,24 +165,7 @@ export default function PerfilPage() {
     );
   }
 
-  const statusLabel: Record<StatusSocioKey, string> = {
-    ATIVO: "Sócio ativo",
-    INADIMPLENTE: "Inadimplente",
-    CANCELADO: "Associação cancelada",
-    DESCONHECIDO: "Sem status",
-  };
-
-  const statusVariant: Record<
-    StatusSocioKey,
-    "default" | "destructive" | "outline"
-  > = {
-    ATIVO: "default",
-    INADIMPLENTE: "destructive",
-    CANCELADO: "outline",
-    DESCONHECIDO: "outline",
-  };
-
-  const statusKey: StatusSocioKey = torcedor.statusSocio ?? "DESCONHECIDO";
+  const statusBadgeMeta = getStatusBadgeMeta(torcedor.statusSocio ?? null);
 
   async function handleUploadFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -319,8 +318,8 @@ export default function PerfilPage() {
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <Badge variant={statusVariant[statusKey]}>
-              {statusLabel[statusKey]}
+            <Badge variant={statusBadgeMeta.variant}>
+              {statusBadgeMeta.label}
             </Badge>
             {torcedor.matricula && (
               <p className="text-xs text-muted-foreground">

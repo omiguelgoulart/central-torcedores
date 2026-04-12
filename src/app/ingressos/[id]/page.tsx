@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 
 import {
   Card,
@@ -281,12 +282,13 @@ export default function IngressoDetalhePage() {
                   Código de Acesso
                 </p>
                 <div className="bg-muted p-6 md:p-8 rounded-lg">
-                  <img
+                  <Image
                     src={qrSrc}
                     alt="QR Code do ingresso"
                     width={250}
                     height={250}
                     className="rounded w-48 h-48 md:w-64 md:h-64"
+                    unoptimized
                   />
                 </div>
                 <p className="text-xs text-muted-foreground text-center">

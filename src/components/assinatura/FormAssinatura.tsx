@@ -30,19 +30,35 @@ interface FormAssinaturaProps {
   defaultRecorrencia: Periodicidade;
 }
 
-const recorrenciaLabel: Record<Periodicidade, string> = {
-  MENSAL: "Mensal",
-  TRIMESTRAL: "Trimestral",
-  SEMESTRAL: "Semestral",
-  ANUAL: "Anual",
-};
+function getRecorrenciaLabel(recorrencia: Periodicidade): string {
+  switch (recorrencia) {
+    case "MENSAL":
+      return "Mensal";
+    case "TRIMESTRAL":
+      return "Trimestral";
+    case "SEMESTRAL":
+      return "Semestral";
+    case "ANUAL":
+      return "Anual";
+    default:
+      return "Mensal";
+  }
+}
 
-const multiplicadorRecorrencia: Record<Periodicidade, number> = {
-  MENSAL: 1,
-  TRIMESTRAL: 3,
-  SEMESTRAL: 6,
-  ANUAL: 12,
-};
+function getMultiplicadorRecorrencia(recorrencia: Periodicidade): number {
+  switch (recorrencia) {
+    case "MENSAL":
+      return 1;
+    case "TRIMESTRAL":
+      return 3;
+    case "SEMESTRAL":
+      return 6;
+    case "ANUAL":
+      return 12;
+    default:
+      return 1;
+  }
+}
 
 export function FormAssinatura({
   planoId,
@@ -61,7 +77,7 @@ export function FormAssinatura({
 
   // valor por ciclo conforme recorrência
   const valorCiclo = useMemo(() => {
-    const fator = multiplicadorRecorrencia[recorrencia] ?? 1;
+    const fator = getMultiplicadorRecorrencia(recorrencia);
     return valor * fator;
   }, [valor, recorrencia]);
 
@@ -96,7 +112,7 @@ export function FormAssinatura({
 
     setIsSubmitting(true);
 
-    const description = `Plano Sócio - ${planoNome} (${recorrenciaLabel[recorrencia]})`;
+    const description = `Plano Sócio - ${planoNome} (${getRecorrenciaLabel(recorrencia)})`;
 
     const params = new URLSearchParams({
       tipo: "plano",
@@ -133,7 +149,7 @@ export function FormAssinatura({
           {/* Valor */}
           <div>
             <p className="text-sm text-muted-foreground">
-              Valor por ciclo ({recorrenciaLabel[recorrencia]}):
+              Valor por ciclo ({getRecorrenciaLabel(recorrencia)}):
             </p>
             <p className="text-2xl font-semibold">{precoBRL}</p>
           </div>

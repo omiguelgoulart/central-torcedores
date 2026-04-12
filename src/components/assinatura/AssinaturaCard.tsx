@@ -29,12 +29,20 @@ interface AssinaturaCardProps {
   defaultRecorrencia: Periodicidade;
 }
 
-const recorrenciaLabel: Record<Periodicidade, string> = {
-  MENSAL: "Mensal",
-  TRIMESTRAL: "Trimestral",
-  SEMESTRAL: "Semestral",
-  ANUAL: "Anual",
-};
+function getRecorrenciaLabel(recorrencia: Periodicidade): string {
+  switch (recorrencia) {
+    case "MENSAL":
+      return "Mensal";
+    case "TRIMESTRAL":
+      return "Trimestral";
+    case "SEMESTRAL":
+      return "Semestral";
+    case "ANUAL":
+      return "Anual";
+    default:
+      return "Mensal";
+  }
+}
 
 export function AssinaturaCard({
   planoId,
@@ -57,7 +65,7 @@ export function AssinaturaCard({
       tipo: "plano",
       planoId,
       recorrencia,
-      description: `Plano ${planoNome} (${recorrenciaLabel[recorrencia]})`,
+      description: `Plano ${planoNome} (${getRecorrenciaLabel(recorrencia)})`,
       subtotal: String(valor),
       fees: "0",
       total: String(valor),

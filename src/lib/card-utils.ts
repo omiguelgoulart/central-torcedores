@@ -27,14 +27,20 @@ export function detectCardBrand(cardNumber: string): CardBrand {
 
 // Retorna o nome da bandeira para exibição
 export function getCardBrandName(brand: CardBrand): string {
-  const names: Record<string, string> = {
-    visa: "Visa",
-    mastercard: "Mastercard",
-    elo: "Elo",
-    amex: "American Express",
-    hipercard: "Hipercard",
-    discover: "Discover",
-    unknown: "",
+  switch (brand) {
+    case "visa":
+      return "Visa"
+    case "mastercard":
+      return "Mastercard"
+    case "elo":
+      return "Elo"
+    case "amex":
+      return "American Express"
+    case "hipercard":
+      return "Hipercard"
+    case "unknown":
+      return ""
+    default:
+      return ""
   }
-  return names[brand] ?? ""
 }
