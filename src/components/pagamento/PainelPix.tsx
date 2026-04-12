@@ -43,6 +43,42 @@ export function PainelPix({
     return num;
   }
 
+  async function parseResponseBody(response: Response): Promise<unknown> {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      return response.json();
+    }
+    const text = await response.text();
+    return { message: text || `Resposta inesperada (${response.status})` };
+  }
+
+  async function fetchPixQr(paymentId: string) {
+    const base = `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos/${paymentId}`;
+    const endpoints = [`${base}/pixQrCode`, `${base}/qrcode`];
+
+    let lastError: Error | null = null;
+    for (const url of endpoints) {
+      const qrResponse = await fetch(url);
+      const qrData = await parseResponseBody(qrResponse);
+
+      if (qrResponse.ok) {
+        return qrData as PixQrLocal;
+      }
+
+      const msgBackend =
+        (qrData as { error?: string; message?: string })?.error ||
+        (qrData as { error?: string; message?: string })?.message ||
+        "Erro ao obter QR Code PIX. Tente novamente.";
+      lastError = new Error(msgBackend);
+
+      if (qrResponse.status !== 404) {
+        throw lastError;
+      }
+    }
+
+    throw lastError ?? new Error("Erro ao obter QR Code PIX. Tente novamente.");
+  }
+
   async function handleGerarPix() {
     try {
       setLoading(true);
@@ -72,40 +108,32 @@ export function PainelPix({
         },
       );
 
-      const pagamento = await response.json();
+      const pagamento = await parseResponseBody(response);
 
       if (!response.ok) {
         console.error("Erro ao criar pagamento PIX:", pagamento);
         const msgBackend =
-          pagamento?.error ||
-          pagamento?.message ||
+          (pagamento as { error?: string; message?: string })?.error ||
+          (pagamento as { error?: string; message?: string })?.message ||
           "Erro ao criar pagamento PIX. Tente novamente.";
         throw new Error(msgBackend);
       }
 
-      setPaymentId(pagamento.id);
+      const pagamentoId = (pagamento as { id?: string }).id;
+      if (!pagamentoId) {
+        throw new Error("Resposta de pagamento invalida: id nao retornado.");
+      }
+
+      setPaymentId(pagamentoId);
 
       onPaymentCreated({
         metodo: "PIX",
-        paymentId: pagamento.id,
-        statusInicial: mapStatusToUiStatus(String(pagamento.status ?? "")),
+        paymentId: pagamentoId,
+        statusInicial: mapStatusToUiStatus(String((pagamento as { status?: string }).status ?? "")),
         valor: 0,
       });
 
-      const qrResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/asaas/pagamentos/${pagamento.id}/pixQrCode`,
-        {},
-      );
-      const qrData = await qrResponse.json();
-
-      if (!qrResponse.ok) {
-        console.error("Erro ao obter QR Code PIX:", qrData);
-        const msgBackend =
-          qrData?.error ||
-          qrData?.message ||
-          "Erro ao obter QR Code PIX. Tente novamente.";
-        throw new Error(msgBackend);
-      }
+      const qrData = await fetchPixQr(pagamentoId);
 
       setPixQr({
         encodedImage: qrData.encodedImage,
