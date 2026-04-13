@@ -34,7 +34,9 @@ type TorcedorComPedidos = {
   }>;
 };
 
-function normalizarIngressos(torcedor?: TorcedorComPedidos | null): ingressoItf[] {
+function normalizarIngressos(
+  torcedor?: TorcedorComPedidos | null,
+): ingressoItf[] {
   const ingressosDiretos = torcedor?.ingressos ?? [];
 
   if (ingressosDiretos.length > 0) {
@@ -51,28 +53,29 @@ function normalizarIngressos(torcedor?: TorcedorComPedidos | null): ingressoItf[
 
   const pedidos = torcedor?.pedidos ?? [];
 
-  return pedidos.flatMap((pedido) =>
-    (pedido.itens ?? [])
-      .map((item) => {
-        if (!item.ingresso) return null;
+  return pedidos.flatMap(
+    (pedido) =>
+      (pedido.itens ?? [])
+        .map((item) => {
+          if (!item.ingresso) return null;
 
-        return {
-          id: item.ingresso.id,
-          torcedorId: pedido.torcedorId ?? null,
-          jogoId: item.lote?.jogoId ?? item.lote?.jogo?.id ?? "",
-          loteId: item.loteId ?? item.lote?.id ?? null,
-          qrCode: item.ingresso.qrCode,
-          valor: String(item.valorUnitario ?? 0),
-          status: item.ingresso.status,
-          criadoEm: item.ingresso.criadoEm,
-          usadoEm: item.ingresso.usadoEm ?? null,
-          atualizadoEm: item.ingresso.atualizadoEm,
-          pagamentoId: pedido.pagamento?.externalId ?? null,
-          jogo: item.lote?.jogo ?? null,
-          lote: item.lote ?? null,
-        } as ingressoItf;
-      })
-      .filter(Boolean) as ingressoItf[]
+          return {
+            id: item.ingresso.id,
+            torcedorId: pedido.torcedorId ?? null,
+            jogoId: item.lote?.jogoId ?? item.lote?.jogo?.id ?? "",
+            loteId: item.loteId ?? item.lote?.id ?? null,
+            qrCode: item.ingresso.qrCode,
+            valor: String(item.valorUnitario ?? 0),
+            status: item.ingresso.status,
+            criadoEm: item.ingresso.criadoEm,
+            usadoEm: item.ingresso.usadoEm ?? null,
+            atualizadoEm: item.ingresso.atualizadoEm,
+            pagamentoId: pedido.pagamento?.externalId ?? null,
+            jogo: item.lote?.jogo ?? null,
+            lote: item.lote ?? null,
+          } as ingressoItf;
+        })
+        .filter(Boolean) as ingressoItf[],
   );
 }
 
@@ -101,7 +104,9 @@ export default function IngressosPage() {
   }, [fetchMe]);
 
   const ingressos = useMemo<ingressoItf[]>(() => {
-    const normalizados = normalizarIngressos(torcedor as TorcedorComPedidos | null);
+    const normalizados = normalizarIngressos(
+      torcedor as TorcedorComPedidos | null,
+    );
 
     return [...normalizados].sort((a, b) => {
       const dataA = a.jogo?.data ? new Date(a.jogo.data).getTime() : 0;

@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { ingressoItf } from "@/app/types/ingressoItf";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+
 interface IngressoCardProps {
   ingresso: ingressoItf;
   isLink?: boolean;
@@ -41,6 +43,11 @@ export function IngressoCard({ ingresso, isLink = false }: IngressoCardProps) {
   const status = statusConfig[ingresso.status];
   const jogo = ingresso.jogo;
   const lote = ingresso.lote;
+  const qrSrc =
+    ingresso.qrCode?.startsWith("http") ||
+    ingresso.qrCode?.startsWith("data:image")
+      ? ingresso.qrCode
+      : `${API}/ingresso/${ingresso.id}/qrcode.png`;
 
   const dataFormatada = jogo?.data
     ? new Date(jogo.data).toLocaleDateString("pt-BR", {
@@ -116,7 +123,7 @@ export function IngressoCard({ ingresso, isLink = false }: IngressoCardProps) {
         <div className="flex justify-center">
           <div className="bg-muted p-3 rounded-md">
             <Image
-              src={ingresso.qrCode || "/placeholder.svg"}
+              src={qrSrc || "/placeholder.svg"}
               alt="QR Code do ingresso"
               width={120}
               height={120}
