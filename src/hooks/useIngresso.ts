@@ -38,6 +38,50 @@ interface UseIngressoState {
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
+function normalizarIngressoPayload(payload: unknown): ingressoItf {
+  const data = payload as {
+    id?: string;
+    torcedorId?: string | null;
+    jogoId?: string;
+    loteId?: string | null;
+    qrCode?: string;
+    valor?: string | number;
+    status?: ingressoItf["status"];
+    criadoEm?: string;
+    usadoEm?: string | null;
+    atualizadoEm?: string;
+    pagamentoId?: string | null;
+    jogo?: ingressoItf["jogo"];
+    lote?: ingressoItf["lote"];
+    itemPedido?: {
+      loteId?: string;
+      valorUnitario?: string | number;
+      lote?: ingressoItf["lote"] & { jogo?: ingressoItf["jogo"] };
+      pedido?: { torcedorId?: string; pagamento?: { externalId?: string } };
+    };
+  };
+
+  const itemPedido = data.itemPedido;
+  const lote = data.lote ?? itemPedido?.lote ?? null;
+  const jogo = data.jogo ?? itemPedido?.lote?.jogo ?? null;
+
+  return {
+    id: data.id ?? "",
+    torcedorId: data.torcedorId ?? itemPedido?.pedido?.torcedorId ?? null,
+    jogoId: data.jogoId ?? (jogo?.id ?? ""),
+    loteId: data.loteId ?? itemPedido?.loteId ?? lote?.id ?? null,
+    qrCode: data.qrCode ?? "",
+    valor: String(data.valor ?? itemPedido?.valorUnitario ?? "0"),
+    status: data.status ?? "VALIDO",
+    criadoEm: data.criadoEm ?? new Date().toISOString(),
+    usadoEm: data.usadoEm ?? null,
+    atualizadoEm: data.atualizadoEm ?? new Date().toISOString(),
+    pagamentoId: data.pagamentoId ?? itemPedido?.pedido?.pagamento?.externalId ?? null,
+    jogo,
+    lote,
+  };
+}
+
 export const useIngresso = create<UseIngressoState>((set) => ({
   carregando: false,
   erro: null,
@@ -91,6 +135,7 @@ export const useIngresso = create<UseIngressoState>((set) => ({
       set({ carregando: true, erro: null });
 
       const resp = await fetch(`${API}/ingresso/${id}`, {
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -106,8 +151,9 @@ export const useIngresso = create<UseIngressoState>((set) => ({
         throw new Error(data.error || data.message || "Erro ao buscar ingresso");
       }
 
-      set({ ingressoAtual: data, carregando: false });
-      return data;
+      const ingressoNormalizado = normalizarIngressoPayload(data);
+      set({ ingressoAtual: ingressoNormalizado, carregando: false });
+      return ingressoNormalizado;
     } catch (error) {
       const msg = (error as Error).message || "Erro ao buscar ingresso";
       console.error("Erro ao buscar ingresso:", error);
