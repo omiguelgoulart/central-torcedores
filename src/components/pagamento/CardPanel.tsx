@@ -174,24 +174,25 @@ export function CardPanel({
         const tipo: CriarPagamentoAsaasInput["tipo"] =
           data.cardType === "credit" ? "CREDIT_CARD" : "DEBIT_CARD";
 
+        // Chamar backend proxy em vez de Asaas diretamente (evita CORS)
         const tokenResponse = await fetch(
-          "https://www.asaas.com/api/v3/creditCard/tokenize",
+          `${process.env.NEXT_PUBLIC_API_URL}/asaas/creditCard/tokenize`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              access_token: process.env.NEXT_PUBLIC_ASAAS_PUBLIC_KEY!,
             },
+            credentials: "include",
             body: JSON.stringify({
-              customer: customerId,
-              creditCard: {
+              customerId,
+              cartao: {
                 holderName: data.holderName,
                 number: data.number.replace(/\s/g, ""),
                 expiryMonth: data.expiryMonth,
                 expiryYear: expiryYear4,
                 ccv: data.ccv,
               },
-              creditCardHolderInfo: {
+              portador: {
                 name: data.name,
                 email: data.email,
                 cpfCnpj: data.cpfCnpj.replace(/\D/g, ""),
@@ -206,7 +207,7 @@ export function CardPanel({
         const tokenData = await tokenResponse.json().catch(() => null);
 
         if (!tokenResponse.ok || !tokenData?.creditCardToken) {
-          toast.error("Falha ao tokenizar cartão. Verifique os dados.");
+          toast.error("Falha ao tokenizar cartão. Verifique os dados e tente novamente.");
           onPaymentCreated({
             metodo: "CARTAO",
             statusInicial: PAYMENT_STATUS.ERROR,
