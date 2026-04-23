@@ -3,13 +3,17 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { toast } from "sonner";
+import Cookies from "js-cookie";
 import { getToken, removeAuthCookie, setAuthCookie } from "@/lib/storageToken";
+import { AdminItf } from "@/app/types/adminItf";
 import { TorcedorITf } from "@/app/types/torcedoItfr";
 
 type AuthState = {
   torcedor: TorcedorITf | null;
+  admin: AdminItf | null;
   loading: boolean;
   login: (email: string, senha: string) => Promise<void>;
+  loginAdmin: (email: string, senha: string) => Promise<void>;
   loginSilencioso: (email: string, senha: string) => Promise<boolean>;
   registerUser: (payload: RegisterUserPayload) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -50,8 +54,69 @@ export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
       torcedor: null,
+      admin: null,
       loading: false,
       token: getToken(),
+
+      loginAdmin: async (email, senha) => {
+        set({ loading: true });
+
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/admin/login`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, senha }),
+            }
+          );
+
+          if (!response.ok) {
+            const errorData: unknown = await response.json().catch(() => ({}));
+            let msg = "Login ou senha incorretos";
+
+            if (
+              typeof errorData === "object" &&
+              errorData !== null &&
+              "erro" in errorData
+            ) {
+              const maybeErro = (errorData as { erro?: unknown }).erro;
+              if (typeof maybeErro === "string" && maybeErro.trim()) {
+                msg = maybeErro;
+              }
+            }
+
+            throw new Error(msg);
+          }
+
+          const data = (await response.json()) as {
+            token: string;
+            admin: AdminItf;
+          };
+
+          setAuthCookie({ token: data.token });
+
+          const cookieOpts = {
+            expires: 7,
+            sameSite: "strict" as const,
+            secure: process.env.NODE_ENV === "production",
+          };
+          Cookies.set("adminToken", data.token, cookieOpts);
+          if (data.admin.role) Cookies.set("adminRole", String(data.admin.role), cookieOpts);
+          if (data.admin.nome) Cookies.set("adminName", data.admin.nome, cookieOpts);
+
+          set({ admin: data.admin, token: data.token });
+        } catch (e: unknown) {
+          const errorMessage =
+            e instanceof Error ? e.message : "Erro ao fazer login";
+
+          console.error("Erro no login admin:", e);
+          toast.error(errorMessage);
+          throw e;
+        } finally {
+          set({ loading: false });
+        }
+      },
 
       login: async (email, senha) => {
         set({ loading: true });
@@ -224,8 +289,11 @@ export const useAuth = create<AuthState>()(
       },
 
       logout: async () => {
-        set({ torcedor: null, token: undefined });
+        set({ torcedor: null, admin: null, token: undefined });
         removeAuthCookie();
+        Cookies.remove("adminToken");
+        Cookies.remove("adminRole");
+        Cookies.remove("adminName");
         toast.success("Você saiu da sua conta.");
       },
 
@@ -289,6 +357,7 @@ export const useAuth = create<AuthState>()(
       storage: createJSONStorage(() => sessionStorage),
       partialize: (s: AuthState) => ({
         torcedor: s.torcedor,
+        admin: s.admin,
         token: s.token,
       }),
     }

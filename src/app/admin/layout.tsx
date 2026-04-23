@@ -3,7 +3,8 @@
 import { AdminHeader } from "@/components/admin/HeaderAdmin";
 import { AdminSidebar } from "@/components/admin/Sidebar";
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
+import { Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -24,7 +25,7 @@ export default function AdminLayout({
   const isLoginPage = pathname === "/admin/login";
   const isCheckinRoute = pathname.startsWith("/admin/checkin");
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const token = Cookies.get("adminToken");
 
     if (!token) {
@@ -45,7 +46,7 @@ export default function AdminLayout({
   if (isAuthenticated === null) {
     return (
       <main className="flex items-center justify-center h-screen">
-        Carregando...
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </main>
     );
   }

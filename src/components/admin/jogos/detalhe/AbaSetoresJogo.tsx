@@ -15,8 +15,7 @@ import { Trash2 } from "lucide-react";
 import type { JogoSetor } from "@/app/admin/jogos/[id]/page";
 import { DialogCriarSetorJogo } from "./DialogCriarSetorJogo";
 import { DialogEditarSetorJogo } from "./DialogEditarJogo";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminJogoSetor } from "@/hooks/useAdminJogoSetor";
 
 export type AbaSetoresJogoProps = {
   jogoId: string;
@@ -29,6 +28,8 @@ export function AbaSetoresJogo({
   setores,
   onSetoresChange,
 }: AbaSetoresJogoProps) {
+  const { deleteJogoSetor } = useAdminJogoSetor();
+
   async function handleDelete(id: string) {
     const confirmar = window.confirm(
       "Tem certeza que deseja remover este setor do jogo?"
@@ -36,11 +37,7 @@ export function AbaSetoresJogo({
     if (!confirmar) return;
 
     try {
-      const res = await fetch(`${API}/admin/jogoSetor/${id}`, {
-        credentials: "include",
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error();
+      await deleteJogoSetor(id);
       onSetoresChange(setores.filter((s) => s.id !== id));
     } catch {
       alert("Não foi possível remover o setor.");
@@ -83,19 +80,10 @@ export function AbaSetoresJogo({
               </TableHeader>
               <TableBody>
                 {setores.map((s) => (
-                  <TableRow
-                    key={s.id}
-                    className="hover:bg-muted/40 text-sm"
-                  >
-                    <TableCell className="py-3">
-                      {s.setor.nome}
-                    </TableCell>
-                    <TableCell className="py-3 text-xs">
-                      {s.tipo}
-                    </TableCell>
-                    <TableCell className="py-3">
-                      {s.capacidade}
-                    </TableCell>
+                  <TableRow key={s.id} className="hover:bg-muted/40 text-sm">
+                    <TableCell className="py-3">{s.setor.nome}</TableCell>
+                    <TableCell className="py-3 text-xs">{s.tipo}</TableCell>
+                    <TableCell className="py-3">{s.capacidade}</TableCell>
                     <TableCell className="py-3">
                       <Badge variant={s.aberto ? "default" : "secondary"}>
                         {s.aberto ? "Aberto" : "Fechado"}

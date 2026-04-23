@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Edit2 } from "lucide-react";
 import type { JogoLote } from "./DialogCriarLoteJogo";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminLote } from "@/hooks/useAdminLote";
 
 type DialogEditarLoteJogoProps = {
   lote: JogoLote;
@@ -36,9 +35,7 @@ export function DialogEditarLoteJogo({
   const [nome, setNome] = useState(lote.nome);
   const [tipo, setTipo] = useState<JogoLote["tipo"]>(lote.tipo);
   const [quantidade, setQuantidade] = useState(String(lote.quantidade));
-  const [precoUnitario, setPrecoUnitario] = useState(
-    String(lote.precoUnitario)
-  );
+  const [precoUnitario, setPrecoUnitario] = useState(String(lote.precoUnitario));
   const [inicioVendas, setInicioVendas] = useState(lote.inicioVendas ?? "");
   const [fimVendas, setFimVendas] = useState(lote.fimVendas ?? "");
   const [limitePorCPF, setLimitePorCPF] = useState(
@@ -46,6 +43,7 @@ export function DialogEditarLoteJogo({
   );
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { updateLote } = useAdminLote();
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -79,18 +77,7 @@ export function DialogEditarLoteJogo({
         jogoSetorId: lote.jogoSetorId,
       };
 
-      const res = await fetch(`${API}/admin/lote/${lote.id}`, {
-        credentials: "include",
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        console.error("Erro ao atualizar lote:", body);
-        throw new Error();
-      }
+      await updateLote(lote.id, payload);
 
       const atualizado: JogoLote = {
         ...lote,
@@ -134,7 +121,10 @@ export function DialogEditarLoteJogo({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-medium">Tipo</label>
-              <Select value={tipo} onValueChange={(v) => setTipo(v as JogoLote["tipo"])}>
+              <Select
+                value={tipo}
+                onValueChange={(v) => setTipo(v as JogoLote["tipo"])}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -158,9 +148,7 @@ export function DialogEditarLoteJogo({
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">
-                Preço unitário (R$)
-              </label>
+              <label className="text-sm font-medium">Preço unitário (R$)</label>
               <Input
                 type="number"
                 min={0}

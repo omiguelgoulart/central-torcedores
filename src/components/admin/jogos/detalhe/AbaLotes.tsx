@@ -15,8 +15,7 @@ import { Trash2 } from "lucide-react";
 import { DialogEditarLoteJogo } from "./DialogEditarLoteJogo";
 import { DialogCriarLoteJogo, JogoLote } from "./DialogCriarLoteJogo";
 import type { JogoSetor } from "@/app/admin/jogos/[id]/page";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminLote } from "@/hooks/useAdminLote";
 
 type AbaLotesJogoProps = {
   jogoId: string;
@@ -31,6 +30,8 @@ export function AbaLotesJogo({
   setores,
   onLotesChange,
 }: AbaLotesJogoProps) {
+  const { deleteLote } = useAdminLote();
+
   async function handleDelete(id: string) {
     const confirmar = window.confirm(
       "Tem certeza que deseja remover este lote?"
@@ -38,11 +39,7 @@ export function AbaLotesJogo({
     if (!confirmar) return;
 
     try {
-      const res = await fetch(`${API}/admin/jogo-lote/${id}`, {
-        credentials: "include",
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error();
+      await deleteLote(id);
       onLotesChange(lotes.filter((l) => l.id !== id));
     } catch {
       alert("Não foi possível remover o lote.");
@@ -86,21 +83,18 @@ export function AbaLotesJogo({
                   <TableRow key={lote.id} className="hover:bg-muted/40 text-sm">
                     <TableCell className="py-3">{lote.nome}</TableCell>
                     <TableCell className="py-3">
-                      {lote.precoUnitario.toLocaleString("pt-BR", {
+                      {Number(lote.precoUnitario).toLocaleString("pt-BR", {
                         style: "currency",
                         currency: "BRL",
                       })}
                     </TableCell>
                     <TableCell className="py-3 text-xs">
                       {lote.inicioVendas && lote.fimVendas
-                        ? `${formatarData(
-                            lote.inicioVendas
-                          )} até ${formatarData(lote.fimVendas)}`
+                        ? `${formatarData(lote.inicioVendas)} até ${formatarData(lote.fimVendas)}`
                         : "Sem período definido"}
                     </TableCell>
                     <TableCell className="py-3">
                       {(() => {
-                        // calcular se o lote está ativo com base no período, se disponível
                         const now = Date.now();
                         let ativo = true;
                         if (lote.inicioVendas && lote.fimVendas) {

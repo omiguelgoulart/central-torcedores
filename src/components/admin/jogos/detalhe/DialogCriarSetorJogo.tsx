@@ -21,14 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Plus } from "lucide-react";
 import type { JogoSetor } from "@/app/admin/jogos/[id]/page";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
-
-type SetorBase = {
-  id: string;
-  nome: string;
-  capacidade: number;
-};
+import { useAdminJogoSetor, type SetorDisponivel } from "@/hooks/useAdminJogoSetor";
 
 type DialogCriarSetorJogoProps = {
   jogoId: string;
@@ -42,7 +35,7 @@ export function DialogCriarSetorJogo({
   onCreated,
 }: DialogCriarSetorJogoProps) {
   const [open, setOpen] = useState(false);
-  const [setoresDisponiveis, setSetoresDisponiveis] = useState<SetorBase[]>([]);
+  const [setoresDisponiveis, setSetoresDisponiveis] = useState<SetorDisponivel[]>([]);
   const [setorId, setSetorId] = useState("");
   const [capacidade, setCapacidade] = useState("");
   const [tipo, setTipo] = useState("ARQUIBANCADA");
@@ -50,6 +43,7 @@ export function DialogCriarSetorJogo({
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [carregou, setCarregou] = useState(false);
+  const { fetchSetores, createJogoSetor } = useAdminJogoSetor();
 
   useEffect(() => {
     if (!open) return;
@@ -59,13 +53,9 @@ export function DialogCriarSetorJogo({
         setErro(null);
         setCarregou(false);
 
-        const res = await fetch(`${API}/admin/setor`, {});
-        if (!res.ok) throw new Error();
-
-        const data: SetorBase[] = await res.json();
+        const data = await fetchSetores();
         const usados = new Set(setoresExistentes.map((s) => s.setorId));
-        const disponiveis = data.filter((s) => !usados.has(s.id));
-        setSetoresDisponiveis(disponiveis);
+        setSetoresDisponiveis(data.filter((s) => !usados.has(s.id)));
       } catch {
         setErro("Não foi possível carregar os setores.");
         setSetoresDisponiveis([]);
@@ -100,16 +90,7 @@ export function DialogCriarSetorJogo({
         tipo,
       };
 
-      const res = await fetch(`${API}/admin/jogoSetor`, {
-        credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error();
-
-      const data: JogoSetor = await res.json();
+      const data = await createJogoSetor<JogoSetor>(payload);
       onCreated(data);
       setOpen(false);
       setSetorId("");
@@ -123,14 +104,10 @@ export function DialogCriarSetorJogo({
     }
   }
 
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          size="sm"
-          className="gap-2"
-        >
+        <Button size="sm" className="gap-2">
           <Plus className="w-4 h-4" />
           Adicionar Setor
         </Button>
@@ -154,14 +131,7 @@ export function DialogCriarSetorJogo({
               <label className="text-sm font-medium">Setor</label>
               <Select
                 value={setorId}
-                onValueChange={(value) => {
-                  setSetorId(value);
-
-                  const selecionado = setoresDisponiveis.find((s) => s.id === value);
-                  if (selecionado && selecionado.capacidade) {
-                    setCapacidade(String(selecionado.capacidade));
-                  }
-                }}
+                onValueChange={(value) => setSetorId(value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um setor" />

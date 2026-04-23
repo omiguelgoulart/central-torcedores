@@ -2,19 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useParams } from "next/navigation"; // ← ADICIONE ISSO
+import { useParams } from "next/navigation";
 import { AbaIngressosJogo } from "@/components/admin/jogos/detalhe/AbaIngresso";
 import { AbaSetoresJogo } from "@/components/admin/jogos/detalhe/AbaSetoresJogo";
 import type { JogoLote } from "@/components/admin/jogos/detalhe/DialogCriarLoteJogo";
 import { AbaLotesJogo } from "@/components/admin/jogos/detalhe/AbaLotes";
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminJogo } from "@/hooks/useAdminJogo";
 
 type SetorBase = {
   id: string;
   nome: string;
-  capacidade: number;
 };
 
 export type JogoSetor = {
@@ -46,18 +44,13 @@ export type Ingresso = {
 };
 
 type Jogo = {
-  setores: JogoSetor[];
   id: string;
   nome: string;
   data: string;
   local: string;
   descricao: string | null;
-};
-
-type JogoFullResponse = Jogo & {
   setores: JogoSetor[];
   lotes: JogoLote[];
-  ingressos: Ingresso[];
 };
 
 type RouteParams = {
@@ -73,31 +66,18 @@ export default function PageDetalheJogo() {
   const [lotes, setLotes] = useState<JogoLote[]>([]);
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
   const [loading, setLoading] = useState(true);
+  const { fetchJogoById } = useAdminJogo();
 
   useEffect(() => {
     const carregar = async () => {
       try {
         setLoading(true);
-        const req = await fetch(`${API}/admin/jogo/${id}/full`, {});
+        const data = await fetchJogoById<Jogo>(id);
 
-        if (!req.ok) {
-          throw new Error("Erro ao carregar jogo");
-        }
-
-        const data: JogoFullResponse = await req.json();
-
-        setJogo({
-          id: data.id,
-          nome: data.nome,
-          data: data.data,
-          local: data.local,
-          descricao: data.descricao,
-          setores: data.setores,
-        });
-
-        setSetores(data.setores);
-        setLotes(data.lotes);
-        setIngressos(data.ingressos);
+        setJogo(data);
+        setSetores(data.setores ?? []);
+        setLotes(data.lotes ?? []);
+        setIngressos([]);
       } catch (error) {
         console.error(error);
       } finally {
@@ -119,12 +99,12 @@ export default function PageDetalheJogo() {
           { label: "Dashboard", href: "/admin" },
           { label: "Jogos", href: "/admin/jogos" },
           {
-            label: jogo?.nome ?? "Carregando...",
+            label: jogo.nome ?? "Carregando...",
             href: `/admin/jogos/${jogo.id}`,
           },
         ]}
       />
-      {/* Header */}
+
       <div>
         <h1 className="text-3xl font-bold">{jogo.nome}</h1>
         <p className="text-muted-foreground">

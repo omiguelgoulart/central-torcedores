@@ -7,25 +7,21 @@ import { FiltroJogos } from "@/components/admin/jogos/FiltroJogos";
 import { TabelaJogos } from "@/components/admin/jogos/TabelaJogo";
 import { DialogNovoJogo } from "@/components/admin/jogos/DialogNovoJogo";
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminJogo } from "@/hooks/useAdminJogo";
 
 export default function PageJogos() {
   const [termoBusca, setTermoBusca] = useState("");
   const [jogos, setJogos] = useState<Jogo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { fetchJogos } = useAdminJogo();
 
   async function carregarJogos() {
     try {
       setLoading(true);
       setError(null);
-
-      const res = await fetch(`${API}/admin/jogo`, {});
-      if (!res.ok) throw new Error();
-
-      const data: Jogo[] = await res.json();
-      setJogos(data);
+      const data = await fetchJogos<Jogo[]>();
+      setJogos(Array.isArray(data) ? data : []);
     } catch {
       setError("Não foi possível carregar os jogos.");
     } finally {

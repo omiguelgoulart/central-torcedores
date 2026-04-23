@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminJogo } from "@/hooks/useAdminJogo";
 
 export type Jogo = {
   id: string;
@@ -45,6 +44,7 @@ export function FormJogo({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { createJogo, updateJogo } = useAdminJogo();
 
   useEffect(() => {
     if (initialData) {
@@ -81,36 +81,12 @@ export function FormJogo({
 
       const isEdit = mode === "edit" && !!initialData;
 
-      const endpoint = isEdit
-        ? `${API}/admin/jogo/${initialData!.id}`
-        : `${API}/admin/jogo`;
-
-      const method = isEdit ? "PATCH" : "POST";
-
-      const res = await fetch(endpoint, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-});
-
-      if (!res.ok) {
-        throw new Error();
-      }
-
-      const data = await res.json();
-
-      if (mode === "create") {
-        const jogoResult: Jogo = {
-          id: data.jogoId,
-          ...payload,
-        };
-        onSuccess?.(jogoResult);
+      if (isEdit) {
+        await updateJogo(initialData!.id, payload);
+        onSuccess?.({ id: initialData!.id, ...payload });
       } else {
-        const jogoResult: Jogo = {
-          id: initialData!.id,
-          ...payload,
-        };
-        onSuccess?.(jogoResult);
+        const result = await createJogo(payload);
+        onSuccess?.({ id: result.jogoId, ...payload });
       }
     } catch {
       setError("Não foi possível salvar o jogo.");

@@ -3,8 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminJogo } from "@/hooks/useAdminJogo";
 
 type Props = {
   id: string;
@@ -13,6 +12,7 @@ type Props = {
 
 export function DeletaJogo({ id, onDeleted }: Props) {
   const [loading, setLoading] = useState(false);
+  const { deleteJogo } = useAdminJogo();
 
   async function handleDelete() {
     const confirmar = window.confirm("Tem certeza que deseja excluir este jogo?");
@@ -21,15 +21,7 @@ export function DeletaJogo({ id, onDeleted }: Props) {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API}/admin/jogo/${id}`, {
-        credentials: "include",
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error("Erro ao deletar jogo");
-      }
-
+      await deleteJogo(id);
       onDeleted(id);
     } catch {
       alert("Erro ao deletar jogo.");

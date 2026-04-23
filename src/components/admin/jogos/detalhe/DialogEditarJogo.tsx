@@ -21,8 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Edit2 } from "lucide-react";
 import type { JogoSetor } from "@/app/admin/jogos/[id]/page";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminJogoSetor } from "@/hooks/useAdminJogoSetor";
 
 export type DialogEditarSetorJogoProps = {
   setor: JogoSetor;
@@ -39,6 +38,7 @@ export function DialogEditarSetorJogo({
   const [aberto, setAberto] = useState(setor.aberto);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { updateJogoSetor } = useAdminJogoSetor();
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -57,16 +57,7 @@ export function DialogEditarSetorJogo({
         aberto,
       };
 
-      const res = await fetch(`${API}/admin/jogoSetor/${setor.id}`, {
-        credentials: "include",
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error();
-
-      const data: JogoSetor = await res.json();
+      const data = await updateJogoSetor<JogoSetor>(setor.id, payload);
       onUpdated(data);
       setOpen(false);
     } catch {
@@ -132,10 +123,7 @@ export function DialogEditarSetorJogo({
               onCheckedChange={setAberto}
               id={`setor-aberto-${setor.id}`}
             />
-            <label
-              htmlFor={`setor-aberto-${setor.id}`}
-              className="text-sm"
-            >
+            <label htmlFor={`setor-aberto-${setor.id}`} className="text-sm">
               Setor aberto para venda
             </label>
           </div>

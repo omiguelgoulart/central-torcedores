@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import type { JogoSetor } from "@/app/admin/jogos/[id]/page";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAdminLote } from "@/hooks/useAdminLote";
 
 export type JogoLote = {
   id: string;
@@ -38,7 +37,7 @@ export type JogoLote = {
 
 type DialogCriarLoteJogoProps = {
   jogoId: string;
-  setoresJogo: JogoSetor[]; // precisa disso pra escolher o jogoSetorId
+  setoresJogo: JogoSetor[];
   onCreated: (novo: JogoLote) => void;
 };
 
@@ -59,6 +58,7 @@ export function DialogCriarLoteJogo({
   const [jogoSetorId, setJogoSetorId] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { createLote, fetchLoteById } = useAdminLote();
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -96,29 +96,10 @@ export function DialogCriarLoteJogo({
         jogoSetorId,
       };
 
-      const res = await fetch(`${API}/admin/lote`, {
-        credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        console.error("Erro ao criar lote:", errBody);
-        throw new Error();
-      }
-
-      const body = await res.json(); // { message, loteId }
-      const loteId = body.loteId as string;
-
-      // Buscar lote completo para atualizar lista sem recarregar
-      const resLote = await fetch(`${API}/admin/lote/${loteId}`, {});
-      const lote: JogoLote = await resLote.json();
-
+      const result = await createLote(payload);
+      const lote = await fetchLoteById<JogoLote>(result.loteId);
       onCreated(lote);
 
-      // reset
       setOpen(false);
       setNome("");
       setTipo("INTEIRA");
@@ -134,7 +115,6 @@ export function DialogCriarLoteJogo({
       setLoading(false);
     }
   }
-
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -153,130 +133,125 @@ export function DialogCriarLoteJogo({
           </DialogDescription>
         </DialogHeader>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Setor do jogo</label>
+            <Select
+              value={jogoSetorId}
+              onValueChange={(v) => setJogoSetorId(v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o setor" />
+              </SelectTrigger>
+              <SelectContent>
+                {setoresJogo.map((sj) => (
+                  <SelectItem value={sj.id} key={sj.id}>
+                    {sj.setor.nome} ({sj.tipo})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Nome do lote</label>
+            <Input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex.: Lote 1 - Antecipado"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium">Setor do jogo</label>
+              <label className="text-sm font-medium">Tipo</label>
               <Select
-                value={jogoSetorId}
-                onValueChange={(v) => setJogoSetorId(v)}
+                value={tipo}
+                onValueChange={(v: "INTEIRA" | "MEIA" | "CORTESIA" | "PROMO") =>
+                  setTipo(v)
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o setor" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {setoresJogo.map((sj) => (
-                    <SelectItem
-                      value={sj.id}
-                      key={sj.id}
-                    >
-                      {sj.setor.nome} ({sj.tipo})
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="INTEIRA">Inteira</SelectItem>
+                  <SelectItem value="MEIA">Meia</SelectItem>
+                  <SelectItem value="CORTESIA">Cortesia</SelectItem>
+                  <SelectItem value="PROMO">Promoção</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">Nome do lote</label>
+              <label className="text-sm font-medium">Quantidade</label>
               <Input
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex.: Lote 1 - Antecipado"
+                type="number"
+                min={1}
+                value={quantidade}
+                onChange={(e) => setQuantidade(e.target.value)}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Tipo</label>
-                <Select
-                  value={tipo}
-                  onValueChange={(v: "INTEIRA" | "MEIA" | "CORTESIA" | "PROMO") =>
-                    setTipo(v)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INTEIRA">Inteira</SelectItem>
-                    <SelectItem value="MEIA">Meia</SelectItem>
-                    <SelectItem value="CORTESIA">Cortesia</SelectItem>
-                    <SelectItem value="PROMO">Promoção</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Preço unitário (R$)</label>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                value={precoUnitario}
+                onChange={(e) => setPrecoUnitario(e.target.value)}
+              />
+            </div>
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Quantidade</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={quantidade}
-                  onChange={(e) => setQuantidade(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium">
-                  Preço unitário (R$)
-                </label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={precoUnitario}
-                  onChange={(e) => setPrecoUnitario(e.target.value)}
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Início das vendas</label>
+              <Input
+                type="date"
+                value={inicioVendas}
+                onChange={(e) => setInicioVendas(e.target.value)}
+              />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Início das vendas</label>
-                <Input
-                  type="date"
-                  value={inicioVendas}
-                  onChange={(e) => setInicioVendas(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Fim das vendas</label>
-                <Input
-                  type="date"
-                  value={fimVendas}
-                  onChange={(e) => setFimVendas(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Limite por CPF</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={limitePorCPF}
-                  onChange={(e) => setLimitePorCPF(e.target.value)}
-                  placeholder="Opcional"
-                />
-              </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Fim das vendas</label>
+              <Input
+                type="date"
+                value={fimVendas}
+                onChange={(e) => setFimVendas(e.target.value)}
+              />
             </div>
 
-            {erro && <p className="text-sm text-destructive">{erro}</p>}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={loading}
-                onClick={() => setOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : "Salvar"}
-              </Button>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Limite por CPF</label>
+              <Input
+                type="number"
+                min={1}
+                value={limitePorCPF}
+                onChange={(e) => setLimitePorCPF(e.target.value)}
+                placeholder="Opcional"
+              />
             </div>
-          </form>
+          </div>
+
+          {erro && <p className="text-sm text-destructive">{erro}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => setOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

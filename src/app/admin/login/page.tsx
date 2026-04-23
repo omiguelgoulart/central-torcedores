@@ -5,36 +5,22 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
 
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AdminLoginForm {
   email: string;
   senha: string;
 }
 
-type AdminRoleApi = "SUPER_ADMIN" | "OPERACIONAL" | "PORTARIA" | string;
-
-type AdminLoginResponse = {
-  token: string;
-  admin?: {
-    id: string;
-    nome: string;
-    email: string;
-    role?: AdminRoleApi;
-  };
-};
-
 export default function AdminLoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { loginAdmin, loading } = useAuth();
 
   const {
     register,
@@ -43,70 +29,18 @@ export default function AdminLoginPage() {
   } = useForm<AdminLoginForm>();
 
   async function onSubmit(data: AdminLoginForm) {
-    setIsLoading(true);
     setError("");
 
     try {
-      const res = await fetch(`${API}/admin/login`, {
-        credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: data.email,
-          senha: data.senha,
-        }),
-      });
-
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as
-          | { erro?: string; error?: string }
-          | null;
-
-        throw new Error(
-          body?.erro ?? body?.error ?? "Login ou senha inválidos."
-        );
-      }
-
-      const body: AdminLoginResponse = await res.json();
-
-      if (body.token) {
-        Cookies.remove("adminToken");
-        Cookies.remove("adminRole");
-        Cookies.remove("adminName");
-
-        Cookies.set("adminToken", body.token, {
-          expires: 7,
-          sameSite: "strict",
-          secure: process.env.NODE_ENV === "production",
-        });
-
-        if (body.admin?.role) {
-          Cookies.set("adminRole", String(body.admin.role), {
-            expires: 7,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV === "production",
-          });
-        }
-
-        if (body.admin?.nome) {
-          Cookies.set("adminName", body.admin.nome, {
-            expires: 7,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV === "production",
-          });
-        }
-      }
-
+      await loginAdmin(data.email, data.senha);
       toast.success("Login realizado com sucesso!");
       router.push("/admin");
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError("Erro desconhecido ao tentar fazer login.");
       }
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -128,10 +62,9 @@ export default function AdminLoginPage() {
               type="email"
               placeholder="admin@clubexavante.com"
               {...register("email", { required: "E-mail é obrigatório" })}
-              disabled={isLoading}
+              disabled={loading}
               onChange={(e) => {
                 setError("");
-                // mantém o registro do react-hook-form
                 return register("email").onChange(e);
               }}
             />
@@ -147,7 +80,7 @@ export default function AdminLoginPage() {
               type="password"
               placeholder="********"
               {...register("senha", { required: "Senha é obrigatória" })}
-              disabled={isLoading}
+              disabled={loading}
               onChange={(e) => {
                 setError("");
                 return register("senha").onChange(e);
@@ -164,8 +97,8 @@ export default function AdminLoginPage() {
             </Alert>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Entrando..." : "Entrar"}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Entrando..." : "Entrar"}
           </Button>
         </form>
       </div>
