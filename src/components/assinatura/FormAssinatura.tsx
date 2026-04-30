@@ -11,75 +11,23 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { Periodicidade } from "@/app/types/planoItf";
 import { useAuth } from "@/hooks/useAuth";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
 interface FormAssinaturaProps {
   planoId: string;
   planoNome: string;
-  valor: number; // valor base (ex.: mensal)
-  defaultRecorrencia: Periodicidade;
+  valor: number;
 }
 
-function getRecorrenciaLabel(recorrencia: Periodicidade): string {
-  switch (recorrencia) {
-    case "MENSAL":
-      return "Mensal";
-    case "TRIMESTRAL":
-      return "Trimestral";
-    case "SEMESTRAL":
-      return "Semestral";
-    case "ANUAL":
-      return "Anual";
-    default:
-      return "Mensal";
-  }
-}
-
-function getMultiplicadorRecorrencia(recorrencia: Periodicidade): number {
-  switch (recorrencia) {
-    case "MENSAL":
-      return 1;
-    case "TRIMESTRAL":
-      return 3;
-    case "SEMESTRAL":
-      return 6;
-    case "ANUAL":
-      return 12;
-    default:
-      return 1;
-  }
-}
-
-export function FormAssinatura({
-  planoId,
-  planoNome,
-  valor,
-  defaultRecorrencia,
-}: FormAssinaturaProps) {
+export function FormAssinatura({ planoId, planoNome, valor }: FormAssinaturaProps) {
   const router = useRouter();
   const { torcedor } = useAuth();
 
-  const [recorrencia, setRecorrencia] =
-    useState<Periodicidade>(defaultRecorrencia);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // valor por ciclo conforme recorrência
-  const valorCiclo = useMemo(() => {
-    const fator = getMultiplicadorRecorrencia(recorrencia);
-    return valor * fator;
-  }, [valor, recorrencia]);
 
   const precoBRL = useMemo(
     () =>
@@ -87,8 +35,8 @@ export function FormAssinatura({
         style: "currency",
         currency: "BRL",
         maximumFractionDigits: 2,
-      }).format(valorCiclo),
-    [valorCiclo],
+      }).format(valor),
+    [valor],
   );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -100,11 +48,6 @@ export function FormAssinatura({
       return;
     }
 
-    if (!recorrencia) {
-      setErrorMsg("Escolha uma recorrência para continuar.");
-      return;
-    }
-
     if (!torcedor?.id) {
       setErrorMsg("Não foi possível identificar seu usuário.");
       return;
@@ -112,29 +55,40 @@ export function FormAssinatura({
 
     setIsSubmitting(true);
 
-    const description = `Plano Sócio - ${planoNome} (${getRecorrenciaLabel(recorrencia)})`;
+    try {
+      const response = await fetch(`${API}/assinatura`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planoId,
+          periodicidade: "ANUAL",
+          inicioEm: new Date().toISOString(),
+        }),
+      });
 
-    const params = new URLSearchParams({
-      tipo: "plano",
-      planoId,
-      clienteId: torcedor.id,
-      recorrencia,
-      description, // URLSearchParams já faz o encode
-      subtotal: String(valorCiclo),
-      fees: "0",
-      total: String(valorCiclo),
-    });
+      const data = await response.json().catch(() => null);
 
-    router.push(`/pagamento?${params.toString()}`);
+      if (!response.ok) {
+        setErrorMsg(data?.error ?? data?.message ?? "Erro ao criar assinatura.");
+        return;
+      }
+
+      router.push("/torcedor/minhaAssociacao");
+    } catch {
+      setErrorMsg("Falha ao criar assinatura. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Escolha a recorrência</CardTitle>
+        <CardTitle>Confirmar assinatura</CardTitle>
         <CardDescription>
-          Defina como deseja ser cobrado pelo plano <strong>{planoNome}</strong>
-          .
+          Plano anual <strong>{planoNome}</strong> — pague mensalmente via
+          boleto com vencimento todo dia&nbsp;15.
         </CardDescription>
       </CardHeader>
 
@@ -146,38 +100,16 @@ export function FormAssinatura({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Valor */}
           <div>
-            <p className="text-sm text-muted-foreground">
-              Valor por ciclo ({getRecorrenciaLabel(recorrencia)}):
-            </p>
+            <p className="text-sm text-muted-foreground">Valor mensal:</p>
             <p className="text-2xl font-semibold">{precoBRL}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              12 boletos gerados automaticamente • vencimento dia&nbsp;15 de cada mês
+            </p>
           </div>
 
-          {/* Seletor de recorrência */}
-          <div className="space-y-2">
-            <Label>Recorrência do pagamento</Label>
-
-            <Select
-              value={recorrencia}
-              onValueChange={(value: Periodicidade) => setRecorrencia(value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a recorrência" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="MENSAL">Mensal</SelectItem>
-                <SelectItem value="TRIMESTRAL">Trimestral</SelectItem>
-                <SelectItem value="SEMESTRAL">Semestral</SelectItem>
-                <SelectItem value="ANUAL">Anual</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Botão */}
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Redirecionando..." : "Ir para pagamento"}
+            {isSubmitting ? "Criando assinatura..." : "Confirmar assinatura"}
           </Button>
         </form>
       </CardContent>

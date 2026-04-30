@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import type { IPlano, Periodicidade } from "@/app/types/planoItf"
+import type { IPlano } from "@/app/types/planoItf"
 import { ResumoPlano } from "@/components/assinatura/ResumoPlano"
 import { FormAssinatura } from "@/components/assinatura/FormAssinatura"
 
@@ -11,9 +11,6 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
 function AssinaturaContent() {
   const search = useSearchParams()
   const planoId = search.get("planoId")
-  const defaultRecorrenciaParam = search.get(
-    "defaultRecorrencia",
-  ) as Periodicidade | null
 
   const [plano, setPlano] = useState<IPlano | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
@@ -92,7 +89,6 @@ function AssinaturaContent() {
           planoId={plano.id}
           planoNome={plano.nome}
           valor={plano.valor}
-          defaultRecorrencia={defaultRecorrenciaParam ?? plano.periodicidade}
         />
       </div>
     </div>

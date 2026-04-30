@@ -75,7 +75,7 @@ function mapearParcelas(assinatura: ApiAssinatura | null): ParcelaRegistro[] {
     } else {
       const vencimento = new Date(fatura.vencimentoEm);
       if (vencimento < hoje) {
-        status = "A_VENCER";
+        status = "VENCIDO";
       }
     }
 
@@ -85,6 +85,7 @@ function mapearParcelas(assinatura: ApiAssinatura | null): ParcelaRegistro[] {
       dataVencimento: fatura.vencimentoEm,
       valor,
       status,
+      jaTemBoleto: !!fatura.referencia,
     };
   });
 }
@@ -158,6 +159,7 @@ export default function AssociacaoPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [associacao, setAssociacao] = useState<AssociacaoData | null>(null);
   const [parcelas, setParcelas] = useState<ParcelaRegistro[]>([]);
+  const [torcedorId, setTorcedorId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     async function carregarPagina() {
@@ -165,15 +167,16 @@ export default function AssociacaoPage() {
         setLoading(true);
         setErro(null);
 
-        const torcedorId = getTorcedorIdFromCookies();
+        const idTorcedor = getTorcedorIdFromCookies();
 
-        if (!torcedorId) {
+        if (!idTorcedor) {
           setErro("Usuário não encontrado.");
           return;
         }
 
-        const resultado = await buscarAssociacaoDoTorcedor(torcedorId);
+        const resultado = await buscarAssociacaoDoTorcedor(idTorcedor);
 
+        setTorcedorId(idTorcedor);
         setAssociacao(resultado.associacao);
         setParcelas(resultado.parcelas);
       } catch (error) {
@@ -260,7 +263,7 @@ export default function AssociacaoPage() {
           </div>
         </div>
 
-        <TabelaPagamentosSocio parcelas={parcelas} />
+        <TabelaPagamentosSocio parcelas={parcelas} torcedorId={torcedorId} />
       </div>
     </div>
   );

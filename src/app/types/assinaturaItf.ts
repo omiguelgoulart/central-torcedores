@@ -34,6 +34,7 @@ export type ApiFatura = {
   vencimentoEm: string;
   valor: number | string;
   status: string;
+  referencia?: string | null;
 };
 
 export type ApiAssinatura = {
