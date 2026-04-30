@@ -13,8 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAssinatura } from "@/hooks/useAssinatura";
 
 interface FormAssinaturaProps {
   planoId: string;
@@ -25,6 +24,7 @@ interface FormAssinaturaProps {
 export function FormAssinatura({ planoId, planoNome, valor }: FormAssinaturaProps) {
   const router = useRouter();
   const { torcedor } = useAuth();
+  const { criarAssinatura } = useAssinatura();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -56,27 +56,12 @@ export function FormAssinatura({ planoId, planoNome, valor }: FormAssinaturaProp
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API}/assinatura`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planoId,
-          periodicidade: "ANUAL",
-          inicioEm: new Date().toISOString(),
-        }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        setErrorMsg(data?.error ?? data?.message ?? "Erro ao criar assinatura.");
-        return;
-      }
-
+      await criarAssinatura({ planoId });
       router.push("/torcedor/minhaAssociacao");
-    } catch {
-      setErrorMsg("Falha ao criar assinatura. Tente novamente.");
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : "Falha ao criar assinatura. Tente novamente.",
+      );
     } finally {
       setIsSubmitting(false);
     }

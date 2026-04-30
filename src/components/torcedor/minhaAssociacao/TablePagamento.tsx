@@ -20,8 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DownloadIcon, FileTextIcon, Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
+import { useAssinatura } from "@/hooks/useAssinatura";
 
 export type StatusParcela = "PAGO" | "A_VENCER" | "VENCIDO";
 
@@ -70,6 +69,7 @@ interface TabelaPagamentosSocioProps {
 }
 
 export function TabelaPagamentosSocio({ parcelas, torcedorId }: TabelaPagamentosSocioProps) {
+  const { gerarBoleto: gerarBoletoApi } = useAssinatura();
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [gerando, setGerando] = useState(false);
   const [boleto, setBoleto] = useState<BoletoGerado | null>(null);
@@ -93,28 +93,15 @@ export function TabelaPagamentosSocio({ parcelas, torcedorId }: TabelaPagamentos
     setBoleto(null);
 
     try {
-      const res = await fetch(`${API}/fatura/${selecionado}/boleto`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        toast.error(data?.error ?? "Erro ao gerar boleto.");
-        return;
-      }
-
-      setBoleto(data as BoletoGerado);
+      const data = await gerarBoletoApi(selecionado);
+      setBoleto(data);
       toast.success("Boleto gerado com sucesso!");
-    } catch {
-      toast.error("Falha ao gerar boleto.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao gerar boleto.");
     } finally {
       setGerando(false);
     }
   }
-
-  void torcedorId; // usado pelo pai para contexto; não necessário aqui diretamente
 
   return (
     <Card>
