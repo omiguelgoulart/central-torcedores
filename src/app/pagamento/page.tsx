@@ -8,7 +8,7 @@ import { AbasPagamento } from "@/components/pagamento/AbasPagamento";
 import { ResumoPedido } from "@/components/pagamento/ResumoPedido";
 import type { ResumoPedido as ResumoPedidoTipo } from "@/app/types/pagamentoItf";
 import { useAuth } from "../../hooks/useAuth";
-import { CadastroCustomerIdForm } from "@/components/pagamento/CadastroCustomerIdForm";
+import { useAsaas } from "@/hooks/useAsaas";
 
 type TipoPedido = "ingresso" | "plano" | "mensalidade";
 
@@ -16,8 +16,10 @@ function PagamentoPageContent() {
   const router = useRouter();
   const search = useSearchParams();
   const { torcedor, loading } = useAuth();
+  const { criarCliente } = useAsaas();
 
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [criandoCliente, setCriandoCliente] = useState(false);
 
   const tipoPedido: TipoPedido =
     (search.get("tipo") as TipoPedido) || "ingresso";
@@ -61,10 +63,46 @@ function PagamentoPageContent() {
     return;
   }, [loading, torcedor, router]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!torcedor || customerId || criandoCliente) return;
+
+    if (torcedor.gatewayClienteId) {
+      setCustomerId(torcedor.gatewayClienteId);
+      return;
+    }
+
+    async function criarClienteAutomatico() {
+      if (!torcedor) return;
+      setCriandoCliente(true);
+      try {
+        const data = await criarCliente({
+          nome: torcedor.nome,
+          email: torcedor.email,
+          cpfCnpj: torcedor.cpf ?? undefined,
+        });
+
+        const id = data?.id ?? data?.customerId ?? data?.clienteId;
+        if (!id) throw new Error("ID do cliente não retornado");
+
+        setCustomerId(String(id));
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Erro ao preparar pagamento.",
+        );
+      } finally {
+        setCriandoCliente(false);
+      }
+    }
+
+    void criarClienteAutomatico();
+  }, [torcedor, customerId, criandoCliente, criarCliente]);
+
+  if (loading || criandoCliente) {
     return (
       <div className="container mx-auto max-w-5xl py-16 px-4 text-center">
-        <p className="text-muted-foreground">Carregando...</p>
+        <p className="text-muted-foreground">
+          {criandoCliente ? "Preparando ambiente de pagamento..." : "Carregando..."}
+        </p>
       </div>
     );
   }
@@ -82,13 +120,9 @@ function PagamentoPageContent() {
 
   if (!customerId) {
     return (
-      <CadastroCustomerIdForm
-        defaultName={torcedor.nome}
-        defaultEmail={torcedor.email}
-        onCustomerCreated={(id) => {
-          setCustomerId(id);
-        }}
-      />
+      <div className="container mx-auto max-w-5xl py-16 px-4 text-center">
+        <p className="text-muted-foreground">Preparando pagamento...</p>
+      </div>
     );
   }
 
@@ -126,6 +160,9 @@ function PagamentoPageContent() {
             torcedorId={torcedor.id}
             jogoId={jogoId}
             loteId={loteId}
+            defaultName={torcedor.nome}
+            defaultEmail={torcedor.email}
+            defaultCpf={torcedor.cpf ?? undefined}
           />
         </div>
 

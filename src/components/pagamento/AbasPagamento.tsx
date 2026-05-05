@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { QrCodeIcon, FileTextIcon, CreditCardIcon } from "lucide-react";
@@ -37,6 +38,9 @@ type AbasPagamentoProps = {
   torcedorId?: string;
   jogoId?: string;
   loteId?: string;
+  defaultName?: string;
+  defaultEmail?: string;
+  defaultCpf?: string;
 };
 
 export function AbasPagamento({
@@ -48,7 +52,11 @@ export function AbasPagamento({
   torcedorId,
   jogoId,
   loteId,
+  defaultName,
+  defaultEmail,
+  defaultCpf,
 }: AbasPagamentoProps) {
+  const router = useRouter();
   const [dialogoAberto, setDialogoAberto] = useState(false);
   const [statusPagamento, setStatusPagamento] = useState<PaymentStatus | null>(
     null,
@@ -171,6 +179,18 @@ export function AbasPagamento({
 
     if (isPlano && isStatusPago(status)) {
       window.location.href = "/torcedor/minhaAssociacao";
+      return;
+    }
+
+    if (isStatusPago(status)) {
+      toast.success("Pagamento confirmado com sucesso!");
+      router.back();
+      return;
+    }
+
+    if (status === PAYMENT_STATUS.PENDING) {
+      toast.info("Pagamento em análise. Você será notificado quando confirmado.");
+      router.back();
       return;
     }
 
@@ -345,6 +365,9 @@ export function AbasPagamento({
                 valor={orderTotal}
                 descricao={orderDescription}
                 dueDate={new Date().toISOString().slice(0, 10)}
+                defaultName={defaultName}
+                defaultEmail={defaultEmail}
+                defaultCpf={defaultCpf}
                 onPaymentCreated={(ctx: PagamentoCriado) =>
                   setPagamentoCriado({
                     ...ctx,

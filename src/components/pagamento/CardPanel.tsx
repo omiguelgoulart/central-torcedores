@@ -15,9 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ShieldCheckIcon } from "lucide-react";
 
-import { CardPreview } from "./CardPreview";
-import { detectCardBrand } from "@/lib/card-utils";
 import {
   formatCardNumber,
   formatCVV,
@@ -29,7 +28,6 @@ import {
 import type {
   CardPaymentData,
   CardType,
-  CardBrand,
 } from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import type { CriarPagamentoAsaasInput } from "@/hooks/useAsaas";
@@ -111,6 +109,9 @@ interface CardPanelProps {
   descricao: string;
   dueDate?: string;
   onPaymentCreated: (ctx: PagamentoCriado) => void;
+  defaultName?: string;
+  defaultEmail?: string;
+  defaultCpf?: string;
 }
 
 export function CardPanel({
@@ -119,15 +120,11 @@ export function CardPanel({
   descricao,
   dueDate,
   onPaymentCreated,
+  defaultName,
+  defaultEmail,
+  defaultCpf,
 }: CardPanelProps) {
   const { criarPagamento } = useAsaas();
-  const [previewCartao, setPreviewCartao] = useState<{
-    holderName: string;
-    number: string;
-    expiry: string;
-  }>({ holderName: "", number: "", expiry: "" });
-
-  const [bandeiraCartao, setBandeiraCartao] = useState<CardBrand>("unknown");
   const [loading, setLoading] = useState(false);
 
   const {
@@ -138,7 +135,12 @@ export function CardPanel({
     watch,
   } = useForm<CardPaymentData>({
     resolver: zodResolver(cardSchema),
-    defaultValues: { cardType: "credit" },
+    defaultValues: {
+      cardType: "credit",
+      name: defaultName ?? "",
+      email: defaultEmail ?? "",
+      cpfCnpj: defaultCpf ?? "",
+    },
     mode: "onBlur",
   });
 
@@ -148,17 +150,13 @@ export function CardPanel({
     (valorDigitado: string) => {
       const formatado = formatCardNumber(valorDigitado);
       setValue("number", formatado, { shouldValidate: true });
-      setPreviewCartao((prev) => ({ ...prev, number: formatado }));
-      setBandeiraCartao(detectCardBrand(formatado));
     },
     [setValue],
   );
 
   const aoMudarHolder = useCallback(
     (valorDigitado: string) => {
-      const upper = valorDigitado.toUpperCase();
-      setValue("holderName", upper, { shouldValidate: true });
-      setPreviewCartao((prev) => ({ ...prev, holderName: upper }));
+      setValue("holderName", valorDigitado.toUpperCase(), { shouldValidate: true });
     },
     [setValue],
   );
@@ -269,13 +267,9 @@ export function CardPanel({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="mb-6">
-        <CardPreview
-          holderName={previewCartao.holderName}
-          number={previewCartao.number}
-          expiry={previewCartao.expiry}
-          brand={bandeiraCartao}
-        />
+      <div className="flex items-center gap-2 rounded-lg border border-green-700/40 bg-green-950/30 px-4 py-3 text-sm text-green-400">
+        <ShieldCheckIcon className="size-4 shrink-0" />
+        <span className="font-medium">Ambiente seguro</span>
       </div>
 
       <div className="space-y-3">
@@ -367,11 +361,6 @@ export function CardPanel({
 
                 setValue("expiryMonth", mes || "", { shouldValidate: true });
                 setValue("expiryYear", ano || "", { shouldValidate: true });
-
-                setPreviewCartao((prev) => ({
-                  ...prev,
-                  expiry: formatted,
-                }));
                 e.target.value = formatted;
               }}
             />

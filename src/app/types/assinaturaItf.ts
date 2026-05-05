@@ -55,6 +55,7 @@ export type ApiAssinatura = {
 };
 
 export type UsuarioResponse = {
+  id: string;
   nome: string;
   matricula: string;
   numeroCartao?: string | null;

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { CarteirinhaSocio } from "@/components/torcedor/minhaAssociacao/CarteirinhaSocio";
@@ -15,30 +14,7 @@ import {
   AssociacaoData,
   UsuarioResponse,
 } from "@/app/types/assinaturaItf";
-
-type AuthCookieUser = {
-  id?: string;
-};
-
-type AuthCookie = {
-  id?: string;
-  user?: AuthCookieUser;
-};
-
-function getTorcedorIdFromCookies(): string | null {
-  const usuarioId = Cookies.get("usuarioId");
-  if (usuarioId) return usuarioId;
-
-  const auth = Cookies.get("auth");
-  if (!auth) return null;
-
-  try {
-    const parsed = JSON.parse(auth) as AuthCookie;
-    return parsed.user?.id ?? parsed.id ?? null;
-  } catch {
-    return null;
-  }
-}
+import { getToken } from "@/lib/storageToken";
 
 function selecionarAssinaturaPrincipal(
   assinaturas: ApiAssinatura[],
@@ -128,14 +104,18 @@ function montarAssociacao(
   };
 }
 
-async function buscarAssociacaoDoTorcedor(torcedorId: string): Promise<{
+async function buscarAssociacaoDoTorcedor(token: string): Promise<{
   associacao: AssociacaoData;
   parcelas: ParcelaRegistro[];
+  torcedorId: string;
 }> {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/usuario/me`,
     {
       cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     },
   );
 
@@ -151,6 +131,7 @@ async function buscarAssociacaoDoTorcedor(torcedorId: string): Promise<{
   return {
     associacao: montarAssociacao(data, assinaturaSelecionada),
     parcelas: mapearParcelas(assinaturaSelecionada),
+    torcedorId: data.id,
   };
 }
 
@@ -160,6 +141,20 @@ export default function AssociacaoPage() {
   const [associacao, setAssociacao] = useState<AssociacaoData | null>(null);
   const [parcelas, setParcelas] = useState<ParcelaRegistro[]>([]);
   const [torcedorId, setTorcedorId] = useState<string | undefined>(undefined);
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+
+  function handleToggle(id: string) {
+    setSelecionadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleToggleAll(ids: string[]) {
+    setSelecionadas(new Set(ids));
+  }
 
   useEffect(() => {
     async function carregarPagina() {
@@ -167,16 +162,16 @@ export default function AssociacaoPage() {
         setLoading(true);
         setErro(null);
 
-        const idTorcedor = getTorcedorIdFromCookies();
+        const token = getToken();
 
-        if (!idTorcedor) {
-          setErro("Usuário não encontrado.");
+        if (!token) {
+          setErro("Sessão expirada. Faça login novamente.");
           return;
         }
 
-        const resultado = await buscarAssociacaoDoTorcedor(idTorcedor);
+        const resultado = await buscarAssociacaoDoTorcedor(token);
 
-        setTorcedorId(idTorcedor);
+        setTorcedorId(resultado.torcedorId);
         setAssociacao(resultado.associacao);
         setParcelas(resultado.parcelas);
       } catch (error) {
@@ -263,7 +258,13 @@ export default function AssociacaoPage() {
           </div>
         </div>
 
-        <TabelaPagamentosSocio parcelas={parcelas} torcedorId={torcedorId} />
+        <TabelaPagamentosSocio
+          parcelas={parcelas}
+          torcedorId={torcedorId}
+          selecionadas={selecionadas}
+          onToggle={handleToggle}
+          onToggleAll={handleToggleAll}
+        />
       </div>
     </div>
   );

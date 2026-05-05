@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -18,9 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DownloadIcon, FileTextIcon, Loader2Icon } from "lucide-react";
-import { toast } from "sonner";
-import { useAssinatura } from "@/hooks/useAssinatura";
+import { CreditCardIcon } from "lucide-react";
 
 export type StatusParcela = "PAGO" | "A_VENCER" | "VENCIDO";
 
@@ -57,50 +56,73 @@ function getStatusLabel(status: StatusParcela) {
   }
 }
 
-type BoletoGerado = {
-  bankSlipUrl?: string;
-  invoiceUrl?: string;
-  dueDate?: string;
-};
-
 interface TabelaPagamentosSocioProps {
   parcelas: ParcelaRegistro[];
   torcedorId?: string;
+  selecionadas: Set<string>;
+  onToggle: (id: string) => void;
+  onToggleAll: (ids: string[]) => void;
 }
 
-export function TabelaPagamentosSocio({ parcelas, torcedorId }: TabelaPagamentosSocioProps) {
-  const { gerarBoleto: gerarBoletoApi } = useAssinatura();
-  const [selecionado, setSelecionado] = useState<string | null>(null);
-  const [gerando, setGerando] = useState(false);
-  const [boleto, setBoleto] = useState<BoletoGerado | null>(null);
+export function TabelaPagamentosSocio({
+  parcelas,
+  selecionadas,
+  onToggle,
+  onToggleAll,
+}: TabelaPagamentosSocioProps) {
+  const router = useRouter();
 
-  const ordenadas = [...parcelas].sort(
-    (a, b) =>
-      new Date(a.dataVencimento).getTime() -
-      new Date(b.dataVencimento).getTime()
+  const ordenadas = useMemo(
+    () =>
+      [...parcelas].sort(
+        (a, b) =>
+          new Date(a.dataVencimento).getTime() -
+          new Date(b.dataVencimento).getTime(),
+      ),
+    [parcelas],
   );
 
-  const parcelaSelecionada = ordenadas.find((p) => p.id === selecionado);
+  const pagaveis = ordenadas.filter((p) => p.status !== "PAGO");
+  const todasSelecionadas =
+    pagaveis.length > 0 && pagaveis.every((p) => selecionadas.has(p.id));
 
-  function handleCheck(id: string) {
-    setSelecionado((prev) => (prev === id ? null : id));
-    setBoleto(null);
+  const totalSelecionado = useMemo(
+    () =>
+      ordenadas
+        .filter((p) => selecionadas.has(p.id))
+        .reduce((acc, p) => acc + p.valor, 0),
+    [ordenadas, selecionadas],
+  );
+
+  const parcelasSelecionadas = ordenadas.filter((p) => selecionadas.has(p.id));
+
+  function handleToggleAll() {
+    if (todasSelecionadas) {
+      onToggleAll([]);
+    } else {
+      onToggleAll(pagaveis.map((p) => p.id));
+    }
   }
 
-  async function gerarBoleto() {
-    if (!selecionado) return;
-    setGerando(true);
-    setBoleto(null);
+  function irParaPagamento() {
+    if (parcelasSelecionadas.length === 0) return;
 
-    try {
-      const data = await gerarBoletoApi(selecionado);
-      setBoleto(data);
-      toast.success("Boleto gerado com sucesso!");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao gerar boleto.");
-    } finally {
-      setGerando(false);
-    }
+    const descricao =
+      parcelasSelecionadas.length === 1
+        ? `Parcela ${parcelasSelecionadas[0].numeroParcela}`
+        : `${parcelasSelecionadas.length} parcelas selecionadas`;
+
+    const faturaIds = parcelasSelecionadas.map((p) => p.id).join(",");
+
+    const params = new URLSearchParams({
+      tipo: "mensalidade",
+      description: descricao,
+      total: totalSelecionado.toFixed(2),
+      subtotal: totalSelecionado.toFixed(2),
+      faturaIds,
+    });
+
+    router.push(`/pagamento?${params.toString()}`);
   }
 
   return (
@@ -120,7 +142,15 @@ export function TabelaPagamentosSocio({ parcelas, torcedorId }: TabelaPagamentos
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="w-10">
+                      {pagaveis.length > 0 && (
+                        <Checkbox
+                          checked={todasSelecionadas}
+                          onCheckedChange={handleToggleAll}
+                          aria-label="Selecionar todas"
+                        />
+                      )}
+                    </TableHead>
                     <TableHead>Parcela</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Vencimento</TableHead>
@@ -129,19 +159,20 @@ export function TabelaPagamentosSocio({ parcelas, torcedorId }: TabelaPagamentos
                 </TableHeader>
                 <TableBody>
                   {ordenadas.map((p) => {
-                    const podeGerar = p.status !== "PAGO";
+                    const podeSelecionar = p.status !== "PAGO";
+                    const selecionada = selecionadas.has(p.id);
                     return (
                       <TableRow
                         key={p.id}
-                        className={selecionado === p.id ? "bg-muted/50" : ""}
-                        onClick={() => podeGerar && handleCheck(p.id)}
-                        style={{ cursor: podeGerar ? "pointer" : "default" }}
+                        className={selecionada ? "bg-muted/50" : ""}
+                        onClick={() => podeSelecionar && onToggle(p.id)}
+                        style={{ cursor: podeSelecionar ? "pointer" : "default" }}
                       >
                         <TableCell>
-                          {podeGerar && (
+                          {podeSelecionar && (
                             <Checkbox
-                              checked={selecionado === p.id}
-                              onCheckedChange={() => handleCheck(p.id)}
+                              checked={selecionada}
+                              onCheckedChange={() => onToggle(p.id)}
                               onClick={(e) => e.stopPropagation()}
                             />
                           )}
@@ -167,69 +198,23 @@ export function TabelaPagamentosSocio({ parcelas, torcedorId }: TabelaPagamentos
               </Table>
             </div>
 
-            {selecionado && parcelaSelecionada?.status !== "PAGO" && (
-              <div className="space-y-3 pt-2 border-t">
-                <p className="text-sm text-muted-foreground">
-                  Parcela selecionada:{" "}
-                  <strong>{parcelaSelecionada?.numeroParcela}</strong> —
-                  venc.{" "}
-                  {parcelaSelecionada
-                    ? formatDate(parcelaSelecionada.dataVencimento)
-                    : ""}
-                </p>
+            {selecionadas.size > 0 && (
+              <div className="flex items-center justify-between border-t pt-4">
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">
+                    {selecionadas.size}{" "}
+                    {selecionadas.size === 1 ? "parcela" : "parcelas"}
+                  </span>{" "}
+                  selecionada{selecionadas.size > 1 ? "s" : ""} —{" "}
+                  <span className="font-semibold text-foreground">
+                    {formatCurrency(totalSelecionado)}
+                  </span>
+                </div>
 
-                {!boleto ? (
-                  <Button
-                    onClick={gerarBoleto}
-                    disabled={gerando}
-                    className="w-full"
-                  >
-                    {gerando ? (
-                      <>
-                        <Loader2Icon className="mr-2 size-4 animate-spin" />
-                        Gerando boleto...
-                      </>
-                    ) : (
-                      <>
-                        <FileTextIcon className="mr-2 size-4" />
-                        {parcelaSelecionada?.jaTemBoleto
-                          ? "Ver Boleto"
-                          : "Gerar Boleto"}
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <div className="space-y-2">
-                    {boleto.bankSlipUrl && (
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start bg-transparent"
-                        onClick={() =>
-                          window.open(boleto.bankSlipUrl!, "_blank")
-                        }
-                      >
-                        <DownloadIcon className="mr-2 size-4" />
-                        Baixar Boleto Bancário
-                      </Button>
-                    )}
-                    {boleto.invoiceUrl && (
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start bg-transparent"
-                        onClick={() =>
-                          window.open(boleto.invoiceUrl!, "_blank")
-                        }
-                      >
-                        <DownloadIcon className="mr-2 size-4" />
-                        Baixar Nota Fiscal
-                      </Button>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      O pagamento pode levar até 3 dias úteis para ser
-                      confirmado.
-                    </p>
-                  </div>
-                )}
+                <Button onClick={irParaPagamento} className="gap-2">
+                  <CreditCardIcon className="size-4" />
+                  Pagar selecionadas
+                </Button>
               </div>
             )}
           </>
