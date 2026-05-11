@@ -89,7 +89,7 @@ export function FormAssinatura({ planoId, planoNome, valor }: FormAssinaturaProp
             <p className="text-sm text-muted-foreground">Valor mensal:</p>
             <p className="text-2xl font-semibold">{precoBRL}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              12 boletos gerados automaticamente • vencimento dia&nbsp;15 de cada mês
+              vencimento dia&nbsp;15 de cada mês
             </p>
           </div>
 
