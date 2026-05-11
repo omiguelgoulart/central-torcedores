@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { formatBRL } from "@/lib/formatters";
+import { adminFetch } from "@/lib/adminFetch";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -82,10 +83,10 @@ export default function PageDashboard() {
         setLoading(true);
 
         const [pagRes, assRes, fatRes, ingRes] = await Promise.all([
-          fetch(`${API}/pagamento`, {}),
-          fetch(`${API}/assinatura`, {}),
-          fetch(`${API}/fatura`, {}),
-          fetch(`${API}/ingresso?page=1&pageSize=1`, {}),
+          adminFetch(`${API}/pagamento`),
+          adminFetch(`${API}/assinatura`),
+          adminFetch(`${API}/fatura`),
+          adminFetch(`${API}/ingresso?page=1&pageSize=1`),
         ]);
 
         // Pagamentos

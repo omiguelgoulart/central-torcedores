@@ -13,6 +13,7 @@ import {
   PaymentStatus,
   PaymentKind,
 } from "@/components/admin/pagamento/types";
+import { adminFetch } from "@/lib/adminFetch";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -74,7 +75,7 @@ export default function PaymentsPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API}/pagamento`, {});
+        const res = await adminFetch(`${API}/pagamento`);
         if (!res.ok) {
           throw new Error("Erro ao buscar pagamentos");
         }

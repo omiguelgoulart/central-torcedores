@@ -7,6 +7,8 @@ import { ResumoCard } from "@/components/admin/torcedores/ResumoCard"
 import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect"
 import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca"
 
+import { adminFetch } from "@/lib/adminFetch"
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
 
 type FaturaApi = {
@@ -41,11 +43,7 @@ export default function PsgeFatura() {
         setCarregando(true)
         setErro(null)
 
-        const resposta = await fetch(`${API}/fatura`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store"
-})
+        const resposta = await adminFetch(`${API}/fatura`, { cache: "no-store" })
 
         if (!resposta.ok) {
           console.error("Falha ao buscar faturas em /fatura")

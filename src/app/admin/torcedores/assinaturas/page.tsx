@@ -12,6 +12,7 @@ import { ResumoCard } from "@/components/admin/torcedores/ResumoCard";
 import { FiltroStatusSelect } from "@/components/admin/torcedores/FiltroStatusSelect";
 import { FiltroBusca } from "@/components/admin/torcedores/FiltroBusca";
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
+import { adminFetch } from "@/lib/adminFetch";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -54,11 +55,7 @@ export default function PageAssinatura() {
         setCarregando(true);
         setErro(null);
 
-        const resposta = await fetch(`${API}/assinatura`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store"
-});
+        const resposta = await adminFetch(`${API}/assinatura`, { cache: "no-store" });
 
         if (!resposta.ok) {
           console.error("Falha ao buscar assinaturas em /assinatura");

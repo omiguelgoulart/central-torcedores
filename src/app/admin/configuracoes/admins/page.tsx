@@ -9,6 +9,7 @@ import { AdminDialog, AdminFormValues } from "@/components/admin/configuracoes/A
 import { AdminResumoCard } from "@/components/admin/configuracoes/AdminResumoCard"
 import { AdminFiltroBusca } from "@/components/admin/configuracoes/AdminFiltroBusca"
 import { AdminTabela } from "@/components/admin/configuracoes/AdminTabela"
+import { adminFetch } from "@/lib/adminFetch"
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003"
 
@@ -51,7 +52,7 @@ export default function AdminsPage() {
         setLoading(true)
         setErrorMessage(null)
 
-        const res = await fetch(`${API}/admin/user`, { cache: "no-store" })
+        const res = await adminFetch(`${API}/admin/user`, { cache: "no-store" })
 
         if (!res.ok) {
           throw new Error("Erro ao buscar admins")
@@ -86,10 +87,8 @@ export default function AdminsPage() {
       setLoading(true)
       setErrorMessage(null)
 
-      const res = await fetch(`${API}/admin/user`, {
-        credentials: "include",
+      const res = await adminFetch(`${API}/admin/user`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nome: values.nome,
           email: values.email,
@@ -147,10 +146,8 @@ export default function AdminsPage() {
       setLoading(true)
       setErrorMessage(null)
 
-      const res = await fetch(`${API}/admin/user/${id}`, {
-        credentials: "include",
+      const res = await adminFetch(`${API}/admin/user/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nome: values.nome,
           email: values.email,
@@ -185,10 +182,7 @@ export default function AdminsPage() {
       setLoading(true)
       setErrorMessage(null)
 
-      const res = await fetch(`${API}/admin/user/${id}`, {
-        credentials: "include",
-        method: "DELETE",
-      })
+      const res = await adminFetch(`${API}/admin/user/${id}`, { method: "DELETE" })
 
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as
