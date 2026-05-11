@@ -13,6 +13,7 @@ import { useAdminJogo } from "@/hooks/useAdminJogo";
 type SetorBase = {
   id: string;
   nome: string;
+  tipo?: string;
 };
 
 export type JogoSetor = {
