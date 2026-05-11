@@ -101,7 +101,7 @@ export function AdminSidebar({ open }: AdminSidebarProps) {
               alt="Central Torcedores"
               width={35}
               height={35}
-              className="h-[35px] w-auto"
+              style={{ height: "35px", width: "auto" }}
             />
             {open && (
               <span className="font-bold text-sidebar-foreground text-sm">

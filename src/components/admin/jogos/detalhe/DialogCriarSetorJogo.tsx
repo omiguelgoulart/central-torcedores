@@ -38,12 +38,29 @@ export function DialogCriarSetorJogo({
   const [setoresDisponiveis, setSetoresDisponiveis] = useState<SetorDisponivel[]>([]);
   const [setorId, setSetorId] = useState("");
   const [capacidade, setCapacidade] = useState("");
-  const [tipo, setTipo] = useState("ARQUIBANCADA");
+  const [tipo, setTipo] = useState("");
   const [aberto, setAberto] = useState(true);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [carregou, setCarregou] = useState(false);
   const { fetchSetores, createJogoSetor } = useAdminJogoSetor();
+
+  const capacidadeDefault: Record<string, string> = {
+    ARQUIBANCADA: "5000",
+    CADEIRA: "2000",
+    CAMAROTE: "500",
+    VISITANTE: "1000",
+    ACESSIVEL: "200",
+  };
+
+  function handleSetorChange(value: string) {
+    setSetorId(value);
+    const setor = setoresDisponiveis.find((s) => s.id === value);
+    if (setor) {
+      setTipo(setor.tipo);
+      setCapacidade(capacidadeDefault[setor.tipo] ?? "100");
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -95,7 +112,7 @@ export function DialogCriarSetorJogo({
       setOpen(false);
       setSetorId("");
       setCapacidade("");
-      setTipo("ARQUIBANCADA");
+      setTipo("");
       setAberto(true);
     } catch {
       setErro("Não foi possível criar o setor.");
@@ -131,7 +148,7 @@ export function DialogCriarSetorJogo({
               <label className="text-sm font-medium">Setor</label>
               <Select
                 value={setorId}
-                onValueChange={(value) => setSetorId(value)}
+                onValueChange={handleSetorChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um setor" />
@@ -161,7 +178,7 @@ export function DialogCriarSetorJogo({
                 <label className="text-sm font-medium">Tipo</label>
                 <Select value={tipo} onValueChange={setTipo}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Auto" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ARQUIBANCADA">Arquibancada</SelectItem>

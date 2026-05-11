@@ -19,6 +19,7 @@ import { useAdminLote } from "@/hooks/useAdminLote";
 
 type AbaLotesJogoProps = {
   jogoId: string;
+  jogoData?: string;
   lotes: JogoLote[];
   setores?: JogoSetor[];
   onLotesChange: (lotes: JogoLote[]) => void;
@@ -26,6 +27,7 @@ type AbaLotesJogoProps = {
 
 export function AbaLotesJogo({
   jogoId,
+  jogoData,
   lotes,
   setores,
   onLotesChange,
@@ -46,8 +48,8 @@ export function AbaLotesJogo({
     }
   }
 
-  function handleCreated(novo: JogoLote) {
-    onLotesChange([...lotes, novo]);
+  function handleCreated(novos: JogoLote[]) {
+    onLotesChange([...lotes, ...novos]);
   }
 
   function handleUpdated(atualizado: JogoLote) {
@@ -60,6 +62,7 @@ export function AbaLotesJogo({
         <h2 className="text-lg font-semibold">Lotes</h2>
         <DialogCriarLoteJogo
           jogoId={jogoId}
+          jogoData={jogoData}
           setoresJogo={setores ?? []}
           onCreated={handleCreated}
         />

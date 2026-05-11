@@ -25,6 +25,7 @@ type JogoFormProps = {
 type FormState = {
   nome: string;
   data: string;
+  hora: string;
   local: string;
   descricao: string;
 };
@@ -38,6 +39,7 @@ export function FormJogo({
   const [values, setValues] = useState<FormState>({
     nome: "",
     data: "",
+    hora: "20:00",
     local: "Bento Freitas",
     descricao: "",
   });
@@ -52,10 +54,13 @@ export function FormJogo({
       const yyyy = iso.getFullYear();
       const mm = String(iso.getMonth() + 1).padStart(2, "0");
       const dd = String(iso.getDate()).padStart(2, "0");
+      const hh = String(iso.getHours()).padStart(2, "0");
+      const min = String(iso.getMinutes()).padStart(2, "0");
 
       setValues({
         nome: initialData.nome ?? "",
         data: `${yyyy}-${mm}-${dd}`,
+        hora: `${hh}:${min}`,
         local: initialData.local ?? "Bento Freitas",
         descricao: initialData.descricao ?? "",
       });
@@ -74,7 +79,7 @@ export function FormJogo({
     try {
       const payload = {
         nome: values.nome,
-        data: values.data,
+        data: `${values.data}T${values.hora}:00`,
         local: values.local,
         descricao: values.descricao,
       };
@@ -108,7 +113,7 @@ export function FormJogo({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label htmlFor="data">Data</Label>
           <Input
@@ -121,14 +126,25 @@ export function FormJogo({
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="local">Local</Label>
+          <Label htmlFor="hora">Horário</Label>
           <Input
-            id="local"
-            value={values.local}
-            onChange={(e) => handleChange("local", e.target.value)}
-            placeholder="Bento Freitas"
+            id="hora"
+            type="time"
+            value={values.hora}
+            onChange={(e) => handleChange("hora", e.target.value)}
+            required
           />
         </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="local">Local</Label>
+        <Input
+          id="local"
+          value={values.local}
+          onChange={(e) => handleChange("local", e.target.value)}
+          placeholder="Bento Freitas"
+        />
       </div>
 
       <div className="space-y-1">

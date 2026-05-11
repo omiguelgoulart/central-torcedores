@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import {
   Breadcrumb,
@@ -31,19 +32,21 @@ export function AdminBreadcrumb({ items }: AdminBreadcrumbProps) {
           const isLast = index === lastIndex
 
           return (
-            <BreadcrumbItem key={item.label}>
-              {isLast ? (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
-              ) : item.href ? (
-                <BreadcrumbLink asChild>
-                  <Link href={item.href}>{item.label}</Link>
-                </BreadcrumbLink>
-              ) : (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
-              )}
+            <React.Fragment key={item.label}>
+              <BreadcrumbItem>
+                {isLast ? (
+                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                ) : item.href ? (
+                  <BreadcrumbLink asChild>
+                    <Link href={item.href}>{item.label}</Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
 
               {!isLast && <BreadcrumbSeparator />}
-            </BreadcrumbItem>
+            </React.Fragment>
           )
         })}
       </BreadcrumbList>

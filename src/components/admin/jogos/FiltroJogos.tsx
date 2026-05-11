@@ -13,9 +13,11 @@ import {
 type Props = {
   termoBusca: string;
   onChangeBusca: (value: string) => void;
+  periodo: string;
+  onChangePeriodo: (value: string) => void;
 };
 
-export function FiltroJogos ({ termoBusca, onChangeBusca }: Props) {
+export function FiltroJogos({ termoBusca, onChangeBusca, periodo, onChangePeriodo }: Props) {
   return (
     <div className="flex gap-4">
       <div className="flex-1">
@@ -32,7 +34,7 @@ export function FiltroJogos ({ termoBusca, onChangeBusca }: Props) {
 
       <div className="w-40">
         <Label className="text-xs mb-1 block">Período</Label>
-        <Select>
+        <Select value={periodo} onValueChange={onChangePeriodo}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Todos" />
           </SelectTrigger>

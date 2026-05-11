@@ -12,6 +12,7 @@ import {
   SetorFormValues,
 } from "@/components/admin/setores/SetorDialog";
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
+import { adminFetch } from "@/lib/adminFetch";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
@@ -32,13 +33,10 @@ export default function PaginaSetoresEstadio() {
     async function carregarSetores() {
       try {
         setCarregando(true);
-        const resposta = await fetch(`${API}/admin/setor`, {
-    method: "GET",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    cache: "no-store"
-});
+        const resposta = await adminFetch(`${API}/admin/setor`, {
+          method: "GET",
+          cache: "no-store",
+        });
 
         if (!resposta.ok) {
           console.error("Falha ao buscar setores da API /admin/setor");
@@ -98,8 +96,7 @@ export default function PaginaSetoresEstadio() {
       try {
         setCarregando(true);
 
-        const res = await fetch(`${API}/admin/setor/${id}`, {
-          credentials: "include",
+        const res = await adminFetch(`${API}/admin/setor/${id}`, {
           method: "DELETE",
         });
 
@@ -125,14 +122,10 @@ export default function PaginaSetoresEstadio() {
         setCarregando(true);
 
         if (modoDialog === "edit" && setorSelecionado) {
-          const res = await fetch(
+          const res = await adminFetch(
             `${API}/admin/setor/${setorSelecionado.id}`,
             {
-              credentials: "include",
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
               body: JSON.stringify({
                 nome: values.nome,
                 capacidade: values.capacidade,
@@ -154,12 +147,8 @@ export default function PaginaSetoresEstadio() {
             prev.map((s) => (s.id === atualizado.id ? atualizado : s)),
           );
         } else {
-          const res = await fetch(`${API}/admin/setor`, {
-            credentials: "include",
+          const res = await adminFetch(`${API}/admin/setor`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
             body: JSON.stringify({
               nome: values.nome,
               capacidade: values.capacidade,

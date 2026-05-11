@@ -11,6 +11,7 @@ import { useAdminJogo } from "@/hooks/useAdminJogo";
 
 export default function PageJogos() {
   const [termoBusca, setTermoBusca] = useState("");
+  const [periodo, setPeriodo] = useState("todos");
   const [jogos, setJogos] = useState<Jogo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,16 +36,22 @@ export default function PageJogos() {
 
   const jogosFiltrados = useMemo(() => {
     const termo = termoBusca.toLowerCase().trim();
-    if (!termo) return jogos;
+    const agora = new Date().getTime();
+    const limite = periodo !== "todos" ? agora + Number(periodo) * 24 * 60 * 60 * 1000 : null;
 
     return jogos.filter((j) => {
-      return (
+      const bateTexto =
+        !termo ||
         j.nome.toLowerCase().includes(termo) ||
         new Date(j.data).toLocaleDateString("pt-BR").includes(termo) ||
-        j.local.toLowerCase().includes(termo)
-      );
+        j.local.toLowerCase().includes(termo);
+
+      const jogoTs = new Date(j.data).getTime();
+      const batePeriodo = !limite || (jogoTs >= agora && jogoTs <= limite);
+
+      return bateTexto && batePeriodo;
     });
-  }, [jogos, termoBusca]);
+  }, [jogos, termoBusca, periodo]);
 
   return (
     <div className="space-y-6">
@@ -66,7 +73,12 @@ export default function PageJogos() {
 
       <Card>
         <CardContent className="pt-6">
-          <FiltroJogos termoBusca={termoBusca} onChangeBusca={setTermoBusca} />
+          <FiltroJogos
+            termoBusca={termoBusca}
+            onChangeBusca={setTermoBusca}
+            periodo={periodo}
+            onChangePeriodo={setPeriodo}
+          />
         </CardContent>
       </Card>
 

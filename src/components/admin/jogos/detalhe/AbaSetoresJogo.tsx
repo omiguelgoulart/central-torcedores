@@ -81,8 +81,8 @@ export function AbaSetoresJogo({
               <TableBody>
                 {setores.map((s) => (
                   <TableRow key={s.id} className="hover:bg-muted/40 text-sm">
-                    <TableCell className="py-3">{s.setor.nome}</TableCell>
-                    <TableCell className="py-3 text-xs">{s.tipo}</TableCell>
+                    <TableCell className="py-3">{s.setor?.nome ?? s.setorId}</TableCell>
+                    <TableCell className="py-3 text-xs">{s.setor?.tipo ?? s.tipo ?? "—"}</TableCell>
                     <TableCell className="py-3">{s.capacidade}</TableCell>
                     <TableCell className="py-3">
                       <Badge variant={s.aberto ? "default" : "secondary"}>

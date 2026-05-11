@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+import { adminFetch } from "@/lib/adminFetch";
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3003";
 
 type JogoLista = {
@@ -42,7 +44,7 @@ export default function CheckinJogosPage() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`${API}/admin/jogo`, {});
+        const response = await adminFetch(`${API}/jogo`);
         if (!response.ok) {
           setError("Não foi possível carregar os jogos disponíveis.");
           setLoading(false);

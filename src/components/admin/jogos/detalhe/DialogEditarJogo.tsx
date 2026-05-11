@@ -34,7 +34,7 @@ export function DialogEditarSetorJogo({
 }: DialogEditarSetorJogoProps) {
   const [open, setOpen] = useState(false);
   const [capacidade, setCapacidade] = useState(String(setor.capacidade));
-  const [tipo, setTipo] = useState(setor.tipo);
+  const [tipo, setTipo] = useState(setor.tipo ?? setor.setor?.tipo ?? "ARQUIBANCADA");
   const [aberto, setAberto] = useState(setor.aberto);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export function DialogEditarSetorJogo({
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1">
             <label className="text-sm font-medium">Setor</label>
-            <Input value={setor.setor.nome} disabled />
+            <Input value={setor.setor?.nome ?? setor.setorId} disabled />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

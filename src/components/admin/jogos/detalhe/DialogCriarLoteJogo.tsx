@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -37,28 +38,71 @@ export type JogoLote = {
 
 type DialogCriarLoteJogoProps = {
   jogoId: string;
+  jogoData?: string;
   setoresJogo: JogoSetor[];
-  onCreated: (novo: JogoLote) => void;
+  onCreated: (novos: JogoLote[]) => void;
 };
+
+function toDateInput(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 export function DialogCriarLoteJogo({
   jogoId,
+  jogoData,
   setoresJogo,
   onCreated,
 }: DialogCriarLoteJogoProps) {
+  const hoje = toDateInput(new Date());
+  const dataJogo = jogoData ? toDateInput(new Date(jogoData)) : hoje;
+
   const [open, setOpen] = useState(false);
   const [nome, setNome] = useState("");
-  const [tipo, setTipo] =
-    useState<"INTEIRA" | "MEIA" | "CORTESIA" | "PROMO">("INTEIRA");
+  const [tipo, setTipo] = useState<"INTEIRA" | "MEIA" | "CORTESIA" | "PROMO">("INTEIRA");
   const [quantidade, setQuantidade] = useState("");
   const [precoUnitario, setPrecoUnitario] = useState("");
-  const [inicioVendas, setInicioVendas] = useState("");
-  const [fimVendas, setFimVendas] = useState("");
+  const [inicioVendas, setInicioVendas] = useState(hoje);
+  const [fimVendas, setFimVendas] = useState(dataJogo);
   const [limitePorCPF, setLimitePorCPF] = useState("");
-  const [jogoSetorId, setJogoSetorId] = useState("");
+  const [setoresSelecionados, setSetoresSelecionados] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const { createLote, fetchLoteById } = useAdminLote();
+
+  function toggleSetor(id: string) {
+    setSetoresSelecionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+
+      if (next.size === 0) {
+        setQuantidade("");
+      } else {
+        const caps = setoresJogo
+          .filter((sj) => next.has(sj.id))
+          .map((sj) => sj.capacidade)
+          .filter((c) => c > 0);
+        if (caps.length > 0) setQuantidade(String(caps.reduce((a, b) => a + b, 0)));
+      }
+
+      return next;
+    });
+  }
+
+  function reset() {
+    setNome("");
+    setTipo("INTEIRA");
+    setQuantidade("");
+    setPrecoUnitario("");
+    setInicioVendas(hoje);
+    setFimVendas(dataJogo);
+    setLimitePorCPF("");
+    setSetoresSelecionados(new Set());
+    setErro(null);
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -67,8 +111,8 @@ export function DialogCriarLoteJogo({
       setErro("Informe um nome para o lote.");
       return;
     }
-    if (!jogoSetorId) {
-      setErro("Selecione o setor do jogo para este lote.");
+    if (setoresSelecionados.size === 0) {
+      setErro("Selecione ao menos um setor.");
       return;
     }
     if (!quantidade || Number(quantidade) <= 0) {
@@ -84,31 +128,29 @@ export function DialogCriarLoteJogo({
       setLoading(true);
       setErro(null);
 
-      const payload = {
-        nome,
-        tipo,
-        quantidade: Number(quantidade),
-        precoUnitario: Number(precoUnitario),
-        inicioVendas: inicioVendas || undefined,
-        fimVendas: fimVendas || undefined,
-        limitePorCPF: limitePorCPF ? Number(limitePorCPF) : undefined,
-        jogoId,
-        jogoSetorId,
-      };
+      const criados: JogoLote[] = [];
 
-      const result = await createLote(payload);
-      const lote = await fetchLoteById<JogoLote>(result.loteId);
-      onCreated(lote);
+      for (const jogoSetorId of setoresSelecionados) {
+        const payload = {
+          nome,
+          tipo,
+          quantidade: Number(quantidade),
+          precoUnitario: Number(precoUnitario),
+          inicioVendas: inicioVendas || undefined,
+          fimVendas: fimVendas || undefined,
+          limitePorCPF: limitePorCPF ? Number(limitePorCPF) : undefined,
+          jogoId,
+          jogoSetorId,
+        };
 
+        const result = await createLote(payload);
+        const lote = await fetchLoteById<JogoLote>(result.loteId);
+        criados.push(lote);
+      }
+
+      onCreated(criados);
       setOpen(false);
-      setNome("");
-      setTipo("INTEIRA");
-      setQuantidade("");
-      setPrecoUnitario("");
-      setInicioVendas("");
-      setFimVendas("");
-      setLimitePorCPF("");
-      setJogoSetorId("");
+      reset();
     } catch {
       setErro("Não foi possível criar o lote.");
     } finally {
@@ -117,7 +159,7 @@ export function DialogCriarLoteJogo({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-2">
           <Plus className="w-4 h-4" />
@@ -129,28 +171,40 @@ export function DialogCriarLoteJogo({
         <DialogHeader>
           <DialogTitle>Novo lote do jogo</DialogTitle>
           <DialogDescription>
-            Defina setor, tipo, quantidade, valor e período de vendas.
+            Defina os setores, tipo, quantidade, valor e período de vendas.
           </DialogDescription>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Setor do jogo</label>
-            <Select
-              value={jogoSetorId}
-              onValueChange={(v) => setJogoSetorId(v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o setor" />
-              </SelectTrigger>
-              <SelectContent>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Setores do jogo</label>
+            {setoresJogo.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Nenhum setor vinculado a este jogo.
+              </p>
+            ) : (
+              <div className="border rounded-md divide-y">
                 {setoresJogo.map((sj) => (
-                  <SelectItem value={sj.id} key={sj.id}>
-                    {sj.setor.nome} ({sj.tipo})
-                  </SelectItem>
+                  <label
+                    key={sj.id}
+                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40"
+                  >
+                    <Checkbox
+                      checked={setoresSelecionados.has(sj.id)}
+                      onCheckedChange={() => toggleSetor(sj.id)}
+                    />
+                    <span className="text-sm">
+                      {sj.setor?.nome ?? sj.setorId}
+                      {sj.setor?.tipo && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          ({sj.setor.tipo})
+                        </span>
+                      )}
+                    </span>
+                  </label>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -162,14 +216,12 @@ export function DialogCriarLoteJogo({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-medium">Tipo</label>
               <Select
                 value={tipo}
-                onValueChange={(v: "INTEIRA" | "MEIA" | "CORTESIA" | "PROMO") =>
-                  setTipo(v)
-                }
+                onValueChange={(v: "INTEIRA" | "MEIA" | "CORTESIA" | "PROMO") => setTipo(v)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -205,7 +257,7 @@ export function DialogCriarLoteJogo({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-medium">Início das vendas</label>
               <Input
@@ -239,16 +291,13 @@ export function DialogCriarLoteJogo({
           {erro && <p className="text-sm text-destructive">{erro}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              onClick={() => setOpen(false)}
-            >
+            <Button type="button" variant="outline" disabled={loading} onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Salvando..." : "Salvar"}
+            <Button type="submit" disabled={loading || setoresJogo.length === 0}>
+              {loading
+                ? `Criando ${setoresSelecionados.size} lote(s)...`
+                : "Salvar"}
             </Button>
           </div>
         </form>

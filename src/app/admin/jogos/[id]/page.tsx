@@ -75,7 +75,7 @@ export default function PageDetalheJogo() {
         const data = await fetchJogoById<Jogo>(id);
 
         setJogo(data);
-        setSetores(data.setores ?? []);
+        setSetores((data.setores ?? []).filter((s) => !!s.id));
         setLotes(data.lotes ?? []);
         setIngressos([]);
       } catch (error) {
@@ -133,6 +133,7 @@ export default function PageDetalheJogo() {
         <TabsContent value="lots">
           <AbaLotesJogo
             jogoId={jogo.id}
+            jogoData={jogo.data}
             lotes={lotes}
             setores={setores}
             onLotesChange={setLotes}

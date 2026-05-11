@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
+import { adminFetch } from "@/lib/adminFetch";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
@@ -35,20 +36,6 @@ type JogoDetalhe = {
   descricao?: string | null;
 };
 
-type IngressoComJogo = {
-  id: string;
-  jogo: {
-    id: string;
-    nome: string;
-    data: string;
-    local: string;
-    descricao?: string | null;
-  };
-};
-
-type IngressosPorJogoResponse = {
-  ingressos: IngressoComJogo[];
-};
 
 function extractIngressoIdFromQrPayload(payload: string): string {
   try {
@@ -98,7 +85,7 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
       try {
         setLoadingJogo(true);
         setErroJogo(null);
-        const response = await fetch(`${API}/admin/ingresso/jogo/${jogoId}`, {});
+        const response = await adminFetch(`${API}/jogo/${jogoId}`);
 
         if (!response.ok) {
           setErroJogo("Não foi possível carregar os dados do jogo.");
@@ -106,25 +93,15 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
           return;
         }
 
-        const data = (await response.json()) as IngressosPorJogoResponse;
+        const jogoApi = (await response.json()) as JogoDetalhe;
 
-        if (!data.ingressos || data.ingressos.length === 0) {
-          setErroJogo("Nenhum ingresso encontrado para este jogo.");
-          setLoadingJogo(false);
-          return;
-        }
-
-        const jogoApi = data.ingressos[0].jogo;
-
-        const jogoDetalhe: JogoDetalhe = {
+        setJogo({
           id: jogoApi.id,
           nome: jogoApi.nome,
           data: jogoApi.data,
           local: jogoApi.local,
           descricao: jogoApi.descricao ?? null,
-        };
-
-        setJogo(jogoDetalhe);
+        });
       } catch {
         setErroJogo("Erro ao carregar informações do jogo.");
       } finally {
@@ -145,14 +122,10 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
       const ingressoId = extractIngressoIdFromQrPayload(qrPayload);
 
       try {
-        const response = await fetch(`${API}/admin/checkin/`, {
-          credentials: "include",
+        const response = await adminFetch(`${API}/admin/checkin/`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
           body: JSON.stringify({ ingressoId, jogoId }),
+          ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
         });
 
         if (!response.ok) {
