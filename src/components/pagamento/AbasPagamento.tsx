@@ -10,6 +10,7 @@ import { ResultadoPagamentoDialog } from "@/components/pagamento/ResultadoPagame
 import { PainelPix } from "@/components/pagamento/PainelPix";
 import { PainelBoleto } from "@/components/pagamento/PainelBoleto";
 import { CardPanel } from "@/components/pagamento/CardPanel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PAYMENT_STATUS } from "@/lib/constants";
@@ -38,6 +39,7 @@ type AbasPagamentoProps = {
   torcedorId?: string;
   jogoId?: string;
   loteId?: string;
+  faturaIds?: string[];
   defaultName?: string;
   defaultEmail?: string;
   defaultCpf?: string;
@@ -52,6 +54,7 @@ export function AbasPagamento({
   torcedorId,
   jogoId,
   loteId,
+  faturaIds,
   defaultName,
   defaultEmail,
   defaultCpf,
@@ -91,6 +94,7 @@ export function AbasPagamento({
 
   const isIngresso = orderType === "ingresso";
   const isPlano = orderType === "plano";
+  const isMensalidade = orderType === "mensalidade";
 
   function isStatusPago(status: PaymentStatus): boolean {
     return status === PAYMENT_STATUS.PAID || status === PAYMENT_STATUS.APPROVED;
@@ -322,6 +326,7 @@ export function AbasPagamento({
                 customerId={customerId}
                 valor={orderTotal}
                 descricao={orderDescription}
+                faturaIds={isMensalidade ? faturaIds : undefined}
                 onPaymentCreated={(ctx: PagamentoCriado) =>
                   setPagamentoCriado({
                     ...ctx,
@@ -343,6 +348,7 @@ export function AbasPagamento({
                   customerId={customerId}
                   valor={orderTotal}
                   descricao={orderDescription}
+                  faturaIds={isMensalidade ? faturaIds : undefined}
                   onPaymentCreated={(ctx: PagamentoCriado) =>
                     setPagamentoCriado({
                       ...ctx,
@@ -383,13 +389,23 @@ export function AbasPagamento({
       </Tabs>
 
       <div className="mt-6">
-        <Button
-          className="w-full"
-          disabled={!pagamentoCriado || confirmLoading}
-          onClick={handleConfirmarPagamentoFake}
-        >
-          {confirmLoading ? "Verificando pagamento..." : "Confirmar pagamento"}
-        </Button>
+        {isMensalidade ? (
+          pagamentoCriado && (
+            <Alert>
+              <AlertDescription className="text-sm text-muted-foreground">
+                Pagamento gerado. O status das parcelas será atualizado automaticamente após a confirmação pelo banco.
+              </AlertDescription>
+            </Alert>
+          )
+        ) : (
+          <Button
+            className="w-full"
+            disabled={!pagamentoCriado || confirmLoading}
+            onClick={handleConfirmarPagamentoFake}
+          >
+            {confirmLoading ? "Verificando pagamento..." : "Confirmar pagamento"}
+          </Button>
+        )}
       </div>
 
       <ResultadoPagamentoDialog

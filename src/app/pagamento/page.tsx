@@ -30,6 +30,12 @@ function PagamentoPageContent() {
   const jogoId = search.get("jogoId") ?? undefined;
   const loteId = search.get("loteId") ?? undefined;
 
+  const faturaIds = useMemo(() => {
+    const raw = search.get("faturaIds");
+    if (!raw) return undefined;
+    return raw.split(",").filter(Boolean);
+  }, [search]);
+
   const pedido: ResumoPedidoTipo = useMemo(() => {
     const descFromUrl = search.get("description");
     const subtotalFromUrl = search.get("subtotal");
@@ -160,6 +166,7 @@ function PagamentoPageContent() {
             torcedorId={torcedor.id}
             jogoId={jogoId}
             loteId={loteId}
+            faturaIds={faturaIds}
             defaultName={torcedor.nome}
             defaultEmail={torcedor.email}
             defaultCpf={torcedor.cpf ?? undefined}

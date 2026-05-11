@@ -9,11 +9,13 @@ import type { BoletoLinks } from "@/app/types/pagamentoItf";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { mapStatusToUiStatus } from "@/lib/payment-utils";
 import { useAsaas } from "@/hooks/useAsaas";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PainelBoletoProps {
   customerId: string;
   valor: number;
   descricao: string;
+  faturaIds?: string[];
   onPaymentCreated: (ctx: PagamentoCriado) => void;
 }
 
@@ -29,40 +31,51 @@ export function PainelBoleto({
   customerId,
   valor,
   descricao,
+  faturaIds,
   onPaymentCreated,
 }: PainelBoletoProps) {
   const { criarPagamento } = useAsaas();
+  const { token } = useAuth();
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const [loading, setLoading] = useState(false);
   const [boletoLinks, setBoletoLinks] = useState<BoletoLinks | null>(null);
 
   async function gerarBoleto() {
     try {
       setLoading(true);
+
+      if (faturaIds?.length) {
+        const res = await fetch(`${baseUrl}/fatura/pagar-multiplo`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ faturaIds, metodo: "BOLETO" }),
+        });
+        const data = await res.json() as PagamentoApiResponse & { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Erro ao gerar boleto");
+
+        setBoletoLinks({
+          bankSlipUrl: String(data.bankSlipUrl ?? ""),
+          invoiceUrl: String(data.invoiceUrl ?? ""),
+          dueDate: String(data.dueDate ?? ""),
+        });
+        onPaymentCreated({ metodo: "BOLETO", paymentId: data.id, statusInicial: "PENDING", valor });
+        toast.success("Boleto gerado com sucesso!");
+        return;
+      }
+
       const dueDate = new Date().toISOString().slice(0, 10);
-
-      const body = {
-        customerId,
-        valor,
-        descricao,
-        dueDate,
-        tipo: "BOLETO" as const,
-      };
-
-      const data = (await criarPagamento(body)) as PagamentoApiResponse;
+      const data = (await criarPagamento({ customerId, valor, descricao, dueDate, tipo: "BOLETO" as const })) as PagamentoApiResponse;
 
       setBoletoLinks({
         bankSlipUrl: String(data.bankSlipUrl ?? ""),
         invoiceUrl: String(data.invoiceUrl ?? ""),
         dueDate: String(data.dueDate ?? ""),
       });
-
-      onPaymentCreated({
-        metodo: "BOLETO",
-        paymentId: data.id,
-        statusInicial: mapStatusToUiStatus(data.status ?? ""),
-        valor: valor,
-      });
-
+      onPaymentCreated({ metodo: "BOLETO", paymentId: data.id, statusInicial: mapStatusToUiStatus(data.status ?? ""), valor });
       toast.success("Boleto gerado com sucesso!");
     } catch (error) {
       console.error("Erro ao gerar boleto:", error);

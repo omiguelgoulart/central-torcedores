@@ -9,6 +9,7 @@ import Image from "next/image";
 import type { PagamentoCriado } from "@/components/pagamento/AbasPagamento";
 import { mapStatusToUiStatus } from "@/lib/payment-utils";
 import { useAsaas } from "@/hooks/useAsaas";
+import { useAuth } from "@/hooks/useAuth";
 
 type PixQrLocal = {
   encodedImage?: string;
@@ -20,6 +21,7 @@ interface PainelPixProps {
   customerId: string;
   valor: number | string;
   descricao: string;
+  faturaIds?: string[];
   onPaymentCreated: (ctx: PagamentoCriado) => void;
 }
 
@@ -27,9 +29,12 @@ export function PainelPix({
   customerId,
   valor,
   descricao,
+  faturaIds,
   onPaymentCreated,
 }: PainelPixProps) {
   const { criarPagamento, obterQrCodePix } = useAsaas();
+  const { token } = useAuth();
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const [loading, setLoading] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [pixQr, setPixQr] = useState<PixQrLocal | null>(null);
@@ -49,50 +54,42 @@ export function PainelPix({
     try {
       setLoading(true);
 
-      if (!customerId) {
-        throw new Error("O Customer ID não foi fornecido para o pagamento.");
+      if (faturaIds?.length) {
+        const res = await fetch(`${baseUrl}/fatura/pagar-multiplo`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ faturaIds, metodo: "PIX" }),
+        });
+        const data = await res.json() as { paymentId?: string; encodedImage?: string; payload?: string; expirationDate?: string | null; error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Erro ao gerar PIX");
+
+        setPaymentId(data.paymentId ?? null);
+        setPixQr({ encodedImage: data.encodedImage, payload: data.payload, expiresponseAt: data.expirationDate });
+        onPaymentCreated({ metodo: "PIX", paymentId: data.paymentId, statusInicial: "PENDING", valor: 0 });
+        toast.success("QR Code gerado", { description: "Escaneie o código ou copie o payload PIX." });
+        return;
       }
+
+      if (!customerId) throw new Error("O Customer ID não foi fornecido para o pagamento.");
 
       const dueDate = new Date().toISOString().slice(0, 10);
       const valorNumber = normalizarValor(valor);
-
-      const body = {
-        tipo: "PIX" as const,
-        customerId,
-        valor: valorNumber,
-        descricao: descricao?.trim(),
-        dueDate,
-      };
-
-      const pagamento = await criarPagamento(body);
+      const pagamento = await criarPagamento({ tipo: "PIX" as const, customerId, valor: valorNumber, descricao: descricao?.trim(), dueDate });
 
       const pagamentoId = (pagamento as { id?: string }).id;
-      if (!pagamentoId) {
-        throw new Error("Resposta de pagamento invalida: id nao retornado.");
-      }
+      if (!pagamentoId) throw new Error("Resposta de pagamento invalida: id nao retornado.");
 
       setPaymentId(pagamentoId);
-
-      onPaymentCreated({
-        metodo: "PIX",
-        paymentId: pagamentoId,
-        statusInicial: mapStatusToUiStatus(
-          String((pagamento as { status?: string }).status ?? ""),
-        ),
-        valor: 0,
-      });
+      onPaymentCreated({ metodo: "PIX", paymentId: pagamentoId, statusInicial: mapStatusToUiStatus(String((pagamento as { status?: string }).status ?? "")), valor: 0 });
 
       const qrData = await obterQrCodePix(pagamentoId);
+      setPixQr({ encodedImage: qrData.encodedImage, payload: qrData.payload, expiresponseAt: qrData.expirationDate });
 
-      setPixQr({
-        encodedImage: qrData.encodedImage,
-        payload: qrData.payload,
-        expiresponseAt: qrData.expirationDate,
-      });
-
-      toast.success("QR Code gerado", {
-        description: "Escaneie o código ou copie o payload PIX.",
-      });
+      toast.success("QR Code gerado", { description: "Escaneie o código ou copie o payload PIX." });
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
       console.error("Falha ao gerar QR Code PIX:", error);
