@@ -1,13 +1,9 @@
 "use client";
 
-import { useCallback } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useRef } from "react";
+import { BrowserMultiFormatReader } from "@zxing/browser";
+import type { IScannerControls } from "@zxing/browser";
 import { Button } from "@/components/ui/button";
-
-const QrReader = dynamic(
-  () => import("react-qr-reader").then((mod) => mod.QrReader ?? mod.default),
-  { ssr: false }
-);
 
 type CheckinScannerProps = {
   cameraActive: boolean;
@@ -17,19 +13,6 @@ type CheckinScannerProps = {
   onDecoded: (payload: string) => void;
 };
 
-function getTextFromResult(result: unknown): string | undefined {
-  if (!result || typeof result !== "object") {
-    return undefined;
-  }
-
-  const candidate = result as { getText?: () => string };
-  if (typeof candidate.getText === "function") {
-    return candidate.getText();
-  }
-
-  return undefined;
-}
-
 export function CheckinScanner({
   cameraActive,
   isProcessing,
@@ -37,23 +20,51 @@ export function CheckinScanner({
   onCloseCamera,
   onDecoded,
 }: CheckinScannerProps) {
-  const handleResult = useCallback(
-    (result: unknown, error: unknown) => {
-      if (error) {
-        return;
-      }
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const controlsRef = useRef<IScannerControls | null>(null);
 
-      if (isProcessing) {
-        return;
-      }
+  // Refs para evitar stale closure no callback de scan contínuo
+  const isProcessingRef = useRef(isProcessing);
+  const onDecodedRef = useRef(onDecoded);
 
-      const text = getTextFromResult(result);
-      if (text) {
-        onDecoded(text);
-      }
-    },
-    [isProcessing, onDecoded]
-  );
+  useEffect(() => {
+    isProcessingRef.current = isProcessing;
+  }, [isProcessing]);
+
+  useEffect(() => {
+    onDecodedRef.current = onDecoded;
+  }, [onDecoded]);
+
+  useEffect(() => {
+    if (!cameraActive || !videoRef.current) return;
+
+    const reader = new BrowserMultiFormatReader();
+
+    void reader
+      .decodeFromConstraints(
+        { video: { facingMode: "environment" } },
+        videoRef.current,
+        (result) => {
+          if (result && !isProcessingRef.current) {
+            onDecodedRef.current(result.getText());
+          }
+        },
+      )
+      .then((controls) => {
+        controlsRef.current = controls;
+      });
+
+    return () => {
+      controlsRef.current?.stop();
+      controlsRef.current = null;
+    };
+  }, [cameraActive]);
+
+  function handleClose() {
+    controlsRef.current?.stop();
+    controlsRef.current = null;
+    onCloseCamera();
+  }
 
   return (
     <>
@@ -65,21 +76,13 @@ export function CheckinScanner({
 
       {cameraActive && (
         <div className="space-y-2">
-          <div className="w-full rounded-xl border overflow-hidden bg-muted">
-            <QrReader
-              constraints={{ facingMode: "environment" }}
-              scanDelay={500}
-              onResult={(result, error) => {
-                handleResult(result, error);
-              }}
-              videoContainerStyle={{
-                width: "100%",
-                height: "100%",
-              }}
-              videoStyle={{
-                width: "100%",
-                height: "auto",
-              }}
+          <div className="w-full rounded-xl border overflow-hidden bg-muted aspect-square">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              muted
+              playsInline
             />
           </div>
 
@@ -87,7 +90,7 @@ export function CheckinScanner({
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={onCloseCamera}
+            onClick={handleClose}
           >
             Fechar câmera
           </Button>
