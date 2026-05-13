@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb"
 import { AdminRole, AdminRow } from "@/components/admin/configuracoes/types"
@@ -24,6 +23,7 @@ type AdminApi = {
 
 function mapRole(role: string | null | undefined): AdminRole {
   if (role === "PORTARIA") return "PORTARIA"
+  if (role === "OPERACIONAL") return "OPERACIONAL"
   return "SUPER_ADMIN"
 }
 
@@ -44,33 +44,32 @@ export default function AdminsPage() {
   const [loading, setLoading] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const router = useRouter()
+  async function carregarAdmins(): Promise<void> {
+    try {
+      setLoading(true)
+      setErrorMessage(null)
+
+      const res = await adminFetch(`${API}/admin`, { cache: "no-store" })
+
+      if (!res.ok) {
+        throw new Error("Erro ao buscar admins")
+      }
+
+      const data = (await res.json()) as AdminApi[]
+      setAdmins(data.map(mapFromApi))
+    } catch (error) {
+      console.error(error)
+      setErrorMessage(
+        "Não foi possível carregar os administradores. Tente novamente mais tarde.",
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function carregarAdmins(): Promise<void> {
-      try {
-        setLoading(true)
-        setErrorMessage(null)
-
-        const res = await adminFetch(`${API}/admin/user`, { cache: "no-store" })
-
-        if (!res.ok) {
-          throw new Error("Erro ao buscar admins")
-        }
-
-        const data = (await res.json()) as AdminApi[]
-        setAdmins(data.map(mapFromApi))
-      } catch (error) {
-        console.error(error)
-        setErrorMessage(
-          "Não foi possível carregar os administradores. Tente novamente mais tarde.",
-        )
-      } finally {
-        setLoading(false)
-      }
-    }
-
     void carregarAdmins()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const filteredAdmins = useMemo<AdminRow[]>(() => {
@@ -87,7 +86,7 @@ export default function AdminsPage() {
       setLoading(true)
       setErrorMessage(null)
 
-      const res = await adminFetch(`${API}/admin/user`, {
+      const res = await adminFetch(`${API}/admin`, {
         method: "POST",
         body: JSON.stringify({
           nome: values.nome,
@@ -129,7 +128,7 @@ export default function AdminsPage() {
         return
       }
 
-      router.refresh()
+      await carregarAdmins()
     } catch (error) {
       console.error(error)
       setErrorMessage("Erro ao criar administrador.")
@@ -146,7 +145,7 @@ export default function AdminsPage() {
       setLoading(true)
       setErrorMessage(null)
 
-      const res = await adminFetch(`${API}/admin/user/${id}`, {
+      const res = await adminFetch(`${API}/admin/${id}`, {
         method: "PATCH",
         body: JSON.stringify({
           nome: values.nome,
@@ -168,7 +167,7 @@ export default function AdminsPage() {
         throw new Error(mensagemErro)
       }
 
-      router.refresh()
+      await carregarAdmins()
     } catch (error) {
       console.error(error)
       setErrorMessage("Erro ao atualizar administrador.")
@@ -182,7 +181,7 @@ export default function AdminsPage() {
       setLoading(true)
       setErrorMessage(null)
 
-      const res = await adminFetch(`${API}/admin/user/${id}`, { method: "DELETE" })
+      const res = await adminFetch(`${API}/admin/${id}`, { method: "DELETE" })
 
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as
@@ -192,7 +191,7 @@ export default function AdminsPage() {
         throw new Error(mensagemErro)
       }
 
-      router.refresh()
+      await carregarAdmins()
     } catch (error) {
       console.error(error)
       setErrorMessage("Erro ao deletar administrador.")

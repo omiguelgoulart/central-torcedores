@@ -1,5 +1,5 @@
 
-export type AdminRole = "SUPER_ADMIN" | "PORTARIA"
+export type AdminRole = "SUPER_ADMIN" | "OPERACIONAL" | "PORTARIA"
 
 export type AdminRow = {
   id: string
