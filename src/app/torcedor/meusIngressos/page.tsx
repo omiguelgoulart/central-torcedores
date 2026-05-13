@@ -116,20 +116,12 @@ export default function IngressosPage() {
   }, [torcedor]);
 
   const proximos = useMemo(() => {
-    const agora = new Date();
-    return ingressos.filter((ing) => {
-      const dataJogo = ing.jogo?.data ? new Date(ing.jogo.data) : null;
-      const isValido = ing.status === "VALIDO";
-
-      if (!dataJogo) return isValido;
-
-      return isValido && dataJogo >= agora;
-    });
+    return ingressos.filter((ing) => ing.status === "VALIDO");
   }, [ingressos]);
 
   const anteriores = useMemo(() => {
-    return ingressos.filter((ing) => !proximos.some((p) => p.id === ing.id));
-  }, [ingressos, proximos]);
+    return ingressos.filter((ing) => ing.status !== "VALIDO");
+  }, [ingressos]);
 
   const listaVisivel = abaAtiva === "PROXIMOS" ? proximos : anteriores;
   const naoTemIngresso = ingressos.length === 0;
