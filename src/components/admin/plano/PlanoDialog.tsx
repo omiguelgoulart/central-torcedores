@@ -15,7 +15,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
 import { Plano, peridiocidadePlano } from "./TabelaPlanos"
-import { Select, SelectItem } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export type PlanoFormMode = "create" | "edit"
 
@@ -119,10 +125,15 @@ export function PlanoDialog({
                 setForm((prev) => ({ ...prev, periodicidade: value as peridiocidadePlano }))
               }
             >
-             <SelectItem value="MENSAL">Mensal</SelectItem>
-             <SelectItem value="TRIMESTRAL">Trimestral</SelectItem>
-             <SelectItem value="SEMESTRAL">Semestral</SelectItem>
-             <SelectItem value="ANUAL">Anual</SelectItem>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione a periodicidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MENSAL">Mensal</SelectItem>
+                <SelectItem value="TRIMESTRAL">Trimestral</SelectItem>
+                <SelectItem value="SEMESTRAL">Semestral</SelectItem>
+                <SelectItem value="ANUAL">Anual</SelectItem>
+              </SelectContent>
             </Select>
           </div>
 
