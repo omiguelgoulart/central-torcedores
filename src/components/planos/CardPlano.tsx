@@ -59,7 +59,7 @@ export function CardPlano({ plano, beneficiosOverride }: CardPlanoProps) {
   }
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col h-full">
       <CardHeader className="text-center">
         <CardTitle className="text-xl font-bold">{plano.nome}</CardTitle>
 
