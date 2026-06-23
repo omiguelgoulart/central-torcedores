@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
-import { Camera } from "lucide-react";
+import { Camera, ShieldAlert } from "lucide-react";
 
 import {
   Card,
@@ -15,8 +16,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 
 type StatusSocio = "ATIVO" | "INADIMPLENTE" | "CANCELADO" | null;
 
@@ -106,13 +109,16 @@ function PerfilField(props: {
 }
 
 export default function PerfilPage() {
-  const { torcedor: authTorcedor } = useAuth();
+  const { torcedor: authTorcedor, token, logout } = useAuth();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [torcedor, setTorcedor] = useState<TorcedorPerfilResponse | null>(null);
   const [uploading, setUploading] = useState(false);
   const inputFotoRef = useRef<HTMLInputElement>(null);
+  const [dialogExclusaoAberto, setDialogExclusaoAberto] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   useEffect(() => {
     async function fetchPerfil() {
@@ -241,6 +247,46 @@ export default function PerfilPage() {
     } finally {
       setUploading(false);
       if (inputFotoRef.current) inputFotoRef.current.value = "";
+    }
+  }
+
+  async function handleExcluirConta() {
+    setExcluindo(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/torcedores/me`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: { Authorization: `Bearer ${token ?? ""}` },
+        },
+      );
+
+      if (res.status === 409) {
+        toast.error("Esta conta já foi anonimizada anteriormente.");
+        setDialogExclusaoAberto(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          message?: string;
+          error?: string;
+        } | null;
+        toast.error(
+          body?.message ?? body?.error ?? "Erro ao excluir conta. Tente novamente.",
+        );
+        return;
+      }
+
+      toast.success("Seus dados foram anonimizados com sucesso.");
+      setDialogExclusaoAberto(false);
+      await logout();
+      router.push("/");
+    } catch {
+      toast.error("Falha de rede ao tentar excluir a conta.");
+    } finally {
+      setExcluindo(false);
     }
   }
 
@@ -380,6 +426,64 @@ export default function PerfilPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* PRIVACIDADE E DADOS (LGPD) */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Privacidade e dados (LGPD)</h2>
+
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-base text-destructive">
+                Zona de perigo
+              </CardTitle>
+            </div>
+            <CardDescription>
+              Ações permanentes relacionadas aos seus dados pessoais.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Excluir minha conta</p>
+              <p className="text-xs text-muted-foreground">
+                Seus dados pessoais serão anonimizados conforme a LGPD. Esta
+                ação não pode ser desfeita.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => setDialogExclusaoAberto(true)}
+            >
+              Excluir minha conta
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <ConfirmDeleteDialog
+        open={dialogExclusaoAberto}
+        onOpenChange={setDialogExclusaoAberto}
+        titulo="Excluir minha conta"
+        descricao={
+          <>
+            <p>
+              <strong className="text-foreground">Esta ação é irreversível.</strong>{" "}
+              Seus dados pessoais (nome, e-mail, CPF, telefone e endereço)
+              serão anonimizados conforme a{" "}
+              <strong className="text-foreground">LGPD (Lei 13.709/2018)</strong>.
+            </p>
+            <p>
+              Registros financeiros e fiscais são mantidos pelo prazo legal
+              obrigatório e não serão removidos.
+            </p>
+            <p>Após a confirmação, sua sessão será encerrada automaticamente.</p>
+          </>
+        }
+        onConfirm={handleExcluirConta}
+        loading={excluindo}
+      />
     </div>
   );
 }

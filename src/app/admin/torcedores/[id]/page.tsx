@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import { toast } from "sonner";
+import { ShieldAlert } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminBreadcrumb } from "@/components/admin/ingresso/AdminBreadcrumb";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { adminFetch } from "@/lib/adminFetch";
 import {
   StatusTorcedor,
   TorcedorUI,
@@ -53,6 +58,14 @@ export default function PageTorcedorDetalhe({ params }: PageProps) {
   const [ingressos, setIngressos] = useState<IngressoUI[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [adminRole, setAdminRole] = useState<string | null>(null);
+  const [dialogExclusaoAberto, setDialogExclusaoAberto] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [anonimizado, setAnonimizado] = useState(false);
+
+  useEffect(() => {
+    setAdminRole(Cookies.get("adminRole") ?? null);
+  }, []);
 
   useEffect(() => {
     async function carregarTorcedor() {
@@ -161,6 +174,56 @@ export default function PageTorcedorDetalhe({ params }: PageProps) {
     void carregarTorcedor();
   }, [params]);
 
+  async function handleExcluirTorcedor() {
+    if (!torcedor) return;
+    setExcluindo(true);
+    try {
+      const res = await adminFetch(
+        `${API}/admin/torcedores/${torcedor.id}`,
+        { method: "DELETE" },
+      );
+
+      if (res.status === 409) {
+        toast.error("Este torcedor já foi anonimizado anteriormente.");
+        setDialogExclusaoAberto(false);
+        setAnonimizado(true);
+        return;
+      }
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          message?: string;
+          error?: string;
+        } | null;
+        toast.error(
+          body?.message ?? body?.error ?? "Erro ao excluir torcedor. Tente novamente.",
+        );
+        return;
+      }
+
+      toast.success(`Dados de ${torcedor.nome} anonimizados com sucesso.`);
+      setDialogExclusaoAberto(false);
+      setAnonimizado(true);
+      setTorcedor((prev) =>
+        prev
+          ? {
+              ...prev,
+              nome: "Dados anonimizados",
+              email: "—",
+              cpf: "—",
+              telefone: "—",
+              endereco: "—",
+              status: "CANCELADO" as StatusTorcedor,
+            }
+          : prev,
+      );
+    } catch {
+      toast.error("Falha de rede ao tentar excluir o torcedor.");
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
   if (carregando) {
     return (
       <div className="space-y-4">
@@ -203,6 +266,15 @@ export default function PageTorcedorDetalhe({ params }: PageProps) {
         ]}
       />
 
+      {anonimizado && (
+        <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <ShieldAlert className="h-4 w-4 shrink-0" />
+          <span>
+            Os dados pessoais deste torcedor foram anonimizados (LGPD).
+          </span>
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">{torcedor.nome}</h1>
@@ -215,8 +287,45 @@ export default function PageTorcedorDetalhe({ params }: PageProps) {
             </span>
           </div>
         </div>
-        <Button variant="outline">Editar</Button>
+        <div className="flex items-center gap-2">
+          {adminRole === "SUPER_ADMIN" && !anonimizado && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setDialogExclusaoAberto(true)}
+            >
+              Excluir dados (LGPD)
+            </Button>
+          )}
+          <Button variant="outline">Editar</Button>
+        </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={dialogExclusaoAberto}
+        onOpenChange={setDialogExclusaoAberto}
+        titulo="Excluir dados do torcedor (LGPD)"
+        descricao={
+          <>
+            <p>
+              Você está prestes a anonimizar os dados pessoais de{" "}
+              <strong className="text-foreground">{torcedor.nome}</strong>.
+            </p>
+            <p>
+              <strong className="text-foreground">Esta ação é irreversível.</strong>{" "}
+              Nome, e-mail, CPF, telefone e endereço serão anonimizados
+              conforme a{" "}
+              <strong className="text-foreground">LGPD (Lei 13.709/2018)</strong>.
+            </p>
+            <p>
+              Registros financeiros e fiscais são mantidos pelo prazo legal
+              obrigatório.
+            </p>
+          </>
+        }
+        onConfirm={handleExcluirTorcedor}
+        loading={excluindo}
+      />
 
       {/* Abas */}
       <Tabs value={abaAtiva} onValueChange={setAbaAtiva}>
