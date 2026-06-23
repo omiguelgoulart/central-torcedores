@@ -24,9 +24,11 @@ export default function PlanosPage() {
       <div className="container mx-auto px-4 py-12 md:py-16 lg:py-20">
         <HeaderPlano />
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mt-12">
+        <div className="flex flex-wrap justify-center gap-6 mt-12">
           {planosList.map((plano: IPlano) => (
-            <CardPlano key={plano.id} plano={plano} />
+            <div key={plano.id} className="w-full sm:flex-1 sm:min-w-64 sm:max-w-96">
+              <CardPlano plano={plano} />
+            </div>
           ))}
         </div>
       </div>
