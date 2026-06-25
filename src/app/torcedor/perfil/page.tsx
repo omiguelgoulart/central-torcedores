@@ -134,7 +134,7 @@ export default function PerfilPage() {
         }
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/usuario/id/${torcedorId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/usuario/${torcedorId}`,
           {},
         );
 
