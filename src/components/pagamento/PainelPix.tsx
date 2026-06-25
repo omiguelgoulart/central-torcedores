@@ -33,7 +33,7 @@ export function PainelPix({
   onPaymentCreated,
 }: PainelPixProps) {
   const { criarPagamento, obterQrCodePix } = useAsaas();
-  const { token } = useAuth();
+  const { token, torcedor } = useAuth();
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   const [loading, setLoading] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
@@ -51,6 +51,13 @@ export function PainelPix({
   }
 
   async function handleGerarPix() {
+    if (!torcedor?.cpf) {
+      toast.error("CPF obrigatório para pagamento via PIX", {
+        description: "Adicione seu CPF na página de perfil e tente novamente.",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -78,7 +85,7 @@ export function PainelPix({
 
       const dueDate = new Date().toISOString().slice(0, 10);
       const valorNumber = normalizarValor(valor);
-      const pagamento = await criarPagamento({ tipo: "PIX" as const, customerId, valor: valorNumber, descricao: descricao?.trim(), dueDate });
+      const pagamento = await criarPagamento({ tipo: "PIX" as const, customerId, valor: valorNumber, descricao: descricao?.trim(), dueDate, cpfCnpj: torcedor.cpf });
 
       const pagamentoId = (pagamento as { id?: string }).id;
       if (!pagamentoId) throw new Error("Resposta de pagamento invalida: id nao retornado.");
