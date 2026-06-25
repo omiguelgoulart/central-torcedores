@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { AbaIngressosJogo } from "@/components/admin/jogos/detalhe/AbaIngresso";
 import { AbaSetoresJogo } from "@/components/admin/jogos/detalhe/AbaSetoresJogo";
 import type { JogoLote } from "@/components/admin/jogos/detalhe/DialogCriarLoteJogo";
@@ -60,8 +60,11 @@ type RouteParams = {
 
 export default function PageDetalheJogo() {
   const { id } = useParams<RouteParams>();
+  const searchParams = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState("sectors");
+  const validTabs = ["sectors", "lots", "tickets"];
+  const tabParam = searchParams.get("tab") ?? "sectors";
+  const [activeTab, setActiveTab] = useState(validTabs.includes(tabParam) ? tabParam : "sectors");
   const [jogo, setJogo] = useState<Jogo | null>(null);
   const [setores, setSetores] = useState<JogoSetor[]>([]);
   const [lotes, setLotes] = useState<JogoLote[]>([]);

@@ -29,7 +29,7 @@ const navigationItems = [
     items: [
       { title: "Listar Jogos", href: "/admin/jogos" },
       { title: "Setores por Jogo", href: "/admin/jogos/setores" },
-      { title: "Lotes", href: "/admin/jogos/lots" },
+      { title: "Lotes", href: "/admin/jogos/lotes" },
     ],
   },
   {
