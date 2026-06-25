@@ -8,10 +8,21 @@ type RequestOptions = Omit<RequestInit, "headers"> & {
     headers?: Record<string, string>;
 };
 
+type AsaasUpstreamError = {
+    code?: string;
+    description?: string;
+};
+
 type ErrorPayload = {
     error?: string;
     message?: string;
-    details?: unknown;
+    details?: {
+        message?: string;
+        upstreamStatus?: number;
+        upstreamData?: {
+            errors?: AsaasUpstreamError[];
+        };
+    };
 };
 
 class AsaasHttpError extends Error {
@@ -50,7 +61,10 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 
 function getErrorMessage(data: unknown, fallback: string) {
     const body = data as ErrorPayload;
-    return body?.error || body?.message || fallback;
+    const topLevel = body?.error || body?.message;
+    const upstreamDesc = body?.details?.upstreamData?.errors?.[0]?.description;
+    if (topLevel && upstreamDesc) return `${topLevel}: ${upstreamDesc}`;
+    return topLevel || fallback;
 }
 
 export function useAsaas() {
