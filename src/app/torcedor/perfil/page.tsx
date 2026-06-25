@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { Camera, ShieldAlert } from "lucide-react";
 
@@ -63,22 +62,6 @@ type TorcedorPerfilResponse = {
   gatewayClienteId?: string | null;
 };
 
-function getTorcedorIdFromCookies(): string | null {
-  const direto = Cookies.get("id") || Cookies.get("usuarioId");
-  if (direto) return direto;
-
-  const auth = Cookies.get("auth");
-  if (!auth) return null;
-
-  try {
-    const parsed: { id?: string; user?: { id?: string } } = JSON.parse(auth);
-    if (parsed.user?.id) return parsed.user.id;
-    if (parsed.id) return parsed.id;
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 function formatDate(dateIso?: string | null): string {
   if (!dateIso) return "";
@@ -109,7 +92,7 @@ function PerfilField(props: {
 }
 
 export default function PerfilPage() {
-  const { torcedor: authTorcedor, token, logout } = useAuth();
+  const { token, logout } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -122,21 +105,25 @@ export default function PerfilPage() {
 
   useEffect(() => {
     async function fetchPerfil() {
-      try {
-        const idFromAuth = authTorcedor?.id;
-        const idFromCookie = getTorcedorIdFromCookies();
-        const torcedorId = idFromAuth || idFromCookie;
+      if (!token) {
+        setErro("Sessão expirada. Faça login novamente.");
+        setLoading(false);
+        return;
+      }
 
-        if (!torcedorId) {
-          setErro("Usuário não encontrado.");
-          setLoading(false);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/usuario/me`,
+          {
+            credentials: "include",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        if (res.status === 401) {
+          setErro("Sessão expirada. Faça login novamente.");
           return;
         }
-
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/usuario/${torcedorId}`,
-          {},
-        );
 
         if (!res.ok) {
           throw new Error("Erro ao buscar usuário");
@@ -153,7 +140,7 @@ export default function PerfilPage() {
     }
 
     fetchPerfil();
-  }, [authTorcedor?.id]);
+  }, [token]);
 
   if (loading) {
     return (
@@ -187,23 +174,8 @@ export default function PerfilPage() {
       return;
     }
 
-    const authCookie = Cookies.get("auth");
-    if (!authCookie) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      return;
-    }
-
-    let token: string | undefined;
-    try {
-      const parsed = JSON.parse(authCookie) as { token?: string };
-      token = parsed.token;
-    } catch {
-      toast.error("Erro ao ler sessão.");
-      return;
-    }
-
     if (!token) {
-      toast.error("Token não encontrado. Faça login novamente.");
+      toast.error("Sessão expirada. Faça login novamente.");
       return;
     }
 
