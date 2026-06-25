@@ -1,10 +1,13 @@
 "use client";
 
 import { use, useCallback, useEffect, useState } from "react";
-import { Smartphone } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut, Smartphone } from "lucide-react";
+import Cookies from "js-cookie";
 import { adminFetch } from "@/lib/adminFetch";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 import {
   CheckinScanner,
@@ -63,6 +66,14 @@ function extractIngressoIdFromQrPayload(payload: string): string {
 
 export default function CheckinIngressoPorJogoPage({ params }: {  params: Promise<{ jogoId: string }>; }) {
   const { jogoId } = use(params);
+  const router = useRouter();
+
+  function handleLogout() {
+    Cookies.remove("adminToken");
+    Cookies.remove("adminRole");
+    Cookies.remove("adminName");
+    router.push("/admin/login");
+  }
 
   const [jogo, setJogo] = useState<JogoDetalhe | null>(null);
   const [loadingJogo, setLoadingJogo] = useState(true);
@@ -178,10 +189,16 @@ export default function CheckinIngressoPorJogoPage({ params }: {  params: Promis
       <div className="w-full max-w-md">
         <Card className="w-full rounded-2xl shadow-lg">
           <CardHeader className="space-y-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Smartphone className="w-5 h-5" />
-              <span>Check-in de ingresso</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Smartphone className="w-5 h-5" />
+                <span>Check-in de ingresso</span>
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
+                <LogOut className="w-4 h-4 mr-1" />
+                Sair
+              </Button>
+            </div>
             <CardDescription>
               Use a câmera do celular para ler o QR Code do ingresso e registrar a
               entrada.

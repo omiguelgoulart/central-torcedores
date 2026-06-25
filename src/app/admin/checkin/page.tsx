@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, MapPin, Ticket } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, LogOut, MapPin, Ticket } from "lucide-react";
+import Cookies from "js-cookie";
 
 import {
   Card,
@@ -34,9 +36,17 @@ function ordenarPorDataAsc(jogos: JogoLista[]): JogoLista[] {
 }
 
 export default function CheckinJogosPage() {
+  const router = useRouter();
   const [jogos, setJogos] = useState<JogoLista[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  function handleLogout() {
+    Cookies.remove("adminToken");
+    Cookies.remove("adminRole");
+    Cookies.remove("adminName");
+    router.push("/admin/login");
+  }
 
   useEffect(() => {
     const carregar = async () => {
@@ -76,10 +86,16 @@ export default function CheckinJogosPage() {
       <div className="w-full max-w-2xl space-y-4">
         <Card className="w-full rounded-2xl shadow-lg">
           <CardHeader className="space-y-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Ticket className="w-5 h-5" />
-              <span>Check-in de ingressos</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Ticket className="w-5 h-5" />
+                <span>Check-in de ingressos</span>
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
+                <LogOut className="w-4 h-4 mr-1" />
+                Sair
+              </Button>
+            </div>
             <CardDescription>
               Selecione o jogo para iniciar o check-in dos ingressos na portaria.
             </CardDescription>
