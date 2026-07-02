@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ListaJogos } from "@/components/partidas/ListaJogos";
 import { PartidasLoadingSkeleton } from "@/components/partidas/PartidasLoadingSkeleton";
 import useJogo from "@/hooks/useJogo";
@@ -38,10 +37,7 @@ export default function PartidasPage() {
         ) : (
           <div className="mt-6">
             <h1 className="text-2xl font-bold mb-4">Próximas Partidas</h1>
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <ListaJogos jogos={jogosLista} />
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+            <ListaJogos jogos={jogosLista} />
           </div>
         )}
       </section>

@@ -186,6 +186,12 @@ export function AbasPagamento({
       return;
     }
 
+    if (isMensalidade && isStatusPago(status)) {
+      toast.success("Pagamento confirmado com sucesso!");
+      window.location.href = "/torcedor/minhaAssociacao";
+      return;
+    }
+
     if (isStatusPago(status)) {
       toast.success("Pagamento confirmado com sucesso!");
       router.back();
@@ -400,6 +406,15 @@ export function AbasPagamento({
         ) : (
           <Button
             className="w-full"
+            disabled={!pagamentoCriado || confirmLoading}
+            onClick={handleConfirmarPagamentoFake}
+          >
+            {confirmLoading ? "Verificando pagamento..." : "Confirmar pagamento"}
+          </Button>
+        )}
+        {isMensalidade && (
+          <Button
+            className="mt-3 w-full"
             disabled={!pagamentoCriado || confirmLoading}
             onClick={handleConfirmarPagamentoFake}
           >

@@ -16,12 +16,9 @@ export function ListaJogos({ jogos }: ListaJogosProps) {
   }
 
   return (
-    <div className="flex gap-4 pb-2 md:justify-between">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {jogos.map((jogo) => (
-        <div
-          key={jogo.id}
-          className="flex-shrink-0 min-w-[85%] sm:min-w-[60%] md:min-w-[32%]"
-        >
+        <div key={jogo.id} className="min-w-0">
           <JogoCard jogo={jogo} />
         </div>
       ))}

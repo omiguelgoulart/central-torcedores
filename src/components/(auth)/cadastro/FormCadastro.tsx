@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,6 +41,9 @@ const schema = z
     enderecoBairro: z.string().min(2, "Bairro obrigatório"),
     enderecoCidade: z.string().min(2, "Cidade obrigatória"),
     enderecoUF: z.enum(UF),
+    aceitaTermos: z
+      .boolean()
+      .refine((value) => value, "Aceite os termos para continuar"),
   })
   .superRefine((data, ctx) => {
     const erros = validaSenha(data.senha);
@@ -121,6 +125,7 @@ export function FormCadastro() {
       enderecoNumero: "",
       enderecoBairro: "",
       enderecoCidade: "",
+      aceitaTermos: false,
     },
   });
 
@@ -186,7 +191,7 @@ export function FormCadastro() {
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { confirmarSenha: _, ...rest } = data;
+      const { confirmarSenha: _, aceitaTermos: __, ...rest } = data;
 
       const payload = {
         ...rest,
@@ -428,6 +433,33 @@ export function FormCadastro() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-start gap-3">
+          <Controller
+            name="aceitaTermos"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="aceitaTermos"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                disabled={loading}
+                aria-invalid={!!errors.aceitaTermos}
+                className="mt-0.5"
+              />
+            )}
+          />
+          <Label
+            htmlFor="aceitaTermos"
+            className="text-sm leading-5 text-muted-foreground"
+          >
+            Li e aceito os termos de uso e a política de privacidade,
+            autorizando o tratamento dos meus dados conforme a LGPD.
+          </Label>
+        </div>
+        <ErrorMessage error={errors.aceitaTermos} />
       </section>
 
       <Button type="submit" disabled={loading || !isValid} className="w-full">

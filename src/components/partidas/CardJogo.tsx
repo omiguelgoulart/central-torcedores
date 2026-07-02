@@ -37,9 +37,11 @@ export function JogoCard({ jogo }: JogoCardProps) {
   });
 
   return (
-    <Card className="h-full text-left transition-shadow hover:shadow-lg">
+    <Card className="h-full min-w-0 text-left transition-shadow hover:shadow-lg">
       <CardHeader>
-        <CardTitle>{jogo.nome}</CardTitle>
+        <CardTitle className="line-clamp-2 text-lg leading-snug">
+          {jogo.nome}
+        </CardTitle>
 
         {jogo.status && (
           <CardDescription className="text-xs">
@@ -50,19 +52,19 @@ export function JogoCard({ jogo }: JogoCardProps) {
 
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4" />
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4 shrink-0" />
             <span>{dataFormatada}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm">
-            <Clock className="h-4 w-4" />
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            <Clock className="h-4 w-4 shrink-0" />
             <span>{horaFormatada}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin className="h-4 w-4" />
-            <span>{jogo.local}</span>
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span className="line-clamp-1">{jogo.local}</span>
           </div>
         </div>
 
