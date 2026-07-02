@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/hooks/useAuth";
 
 interface AdminLoginForm {
@@ -75,9 +76,8 @@ export default function AdminLoginPage() {
 
           <div className="space-y-1">
             <Label htmlFor="senha">Senha</Label>
-            <Input
+            <PasswordInput
               id="senha"
-              type="password"
               placeholder="********"
               {...register("senha", { required: "Senha é obrigatória" })}
               disabled={loading}

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { AdminRole, AdminRow } from "./types"
@@ -152,9 +153,8 @@ export function AdminDialog({
           {mode === "create" && (
             <div className="space-y-2">
               <Label htmlFor="senha">Senha inicial</Label>
-              <Input
+              <PasswordInput
                 id="senha"
-                type="password"
                 value={form.senha ?? ""}
                 onChange={(e) => handleChange("senha", e.target.value)}
                 required
@@ -169,9 +169,8 @@ export function AdminDialog({
           {mode === "edit" && (
             <div className="space-y-2">
               <Label htmlFor="senha">Alterar senha (opcional)</Label>
-              <Input
+              <PasswordInput
                 id="senha"
-                type="password"
                 value={form.senha ?? ""}
                 onChange={(e) => handleChange("senha", e.target.value)}
                 placeholder="Deixe em branco para não alterar"

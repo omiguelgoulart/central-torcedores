@@ -9,6 +9,7 @@ import { Label } from "@radix-ui/react-label";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/hooks/useAuth";
 
 interface LoginForm {
@@ -56,19 +57,18 @@ export function LoginForm() {
           placeholder="seu@email.com"
           {...register("email", { required: "E-mail é obrigatório" })}
           disabled={isLoading}
-        ></Input>
+        />
         {errors.email && (
           <p className="text-sm text-red-600">{errors.email.message}</p>
         )}
 
         <Label>Senha</Label>
-        <Input
+        <PasswordInput
           id="senha"
-          type="password"
           placeholder="********"
           {...register("senha", { required: "Senha é obrigatória" })}
           disabled={isLoading}
-        ></Input>
+        />
         {errors.senha && (
           <p className="text-sm text-red-600">{errors.senha.message}</p>
         )}

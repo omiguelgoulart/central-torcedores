@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectTrigger,
@@ -291,9 +292,8 @@ export function FormCadastro() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-3">
             <Label htmlFor="senha">Senha</Label>
-            <Input
+            <PasswordInput
               id="senha"
-              type="password"
               {...register("senha")}
               placeholder="Crie uma senha forte"
               disabled={loading}
@@ -318,9 +318,8 @@ export function FormCadastro() {
 
           <div className="space-y-3">
             <Label htmlFor="confirmarSenha">Confirmar senha</Label>
-            <Input
+            <PasswordInput
               id="confirmarSenha"
-              type="password"
               {...register("confirmarSenha")}
               placeholder="Digite novamente sua senha"
               disabled={loading}

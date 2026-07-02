@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { validaSenha, regrasSenhaStatus } from "@/lib/validaSenha";
 import { useAuth } from "@/hooks/useAuth";
@@ -139,9 +139,8 @@ export function FormRedefinirSenha() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Input
+        <PasswordInput
           id="novaSenha"
-          type="password"
           placeholder="Digite sua nova senha"
           className="w-full"
           {...register("novaSenha")}
@@ -168,9 +167,8 @@ export function FormRedefinirSenha() {
       </div>
 
       <div>
-        <Input
+        <PasswordInput
           id="confirmarSenha"
-          type="password"
           placeholder="Confirme sua nova senha"
           className="w-full"
           {...register("confirmarSenha")}
