@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PAYMENT_STATUS } from "@/lib/constants";
+import { getToken } from "@/lib/storageToken";
 
 export type MetodoPagamento = "PIX" | "BOLETO" | "CARTAO";
 
@@ -169,6 +170,43 @@ export function AbasPagamento({
     }
   }
 
+  async function confirmarPagamentoMensalidade(
+    status: PaymentStatus,
+    paymentId: string,
+  ): Promise<void> {
+    if (!isMensalidade || !isStatusPago(status)) return;
+
+    if (!faturaIds?.length) {
+      throw new Error("Nenhuma fatura informada para confirmar.");
+    }
+
+    const token = getToken();
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/fatura/confirmar-pagamento`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          faturaIds,
+          paymentId,
+          metodo: pagamentoCriado?.metodo ?? "PIX",
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error ?? data?.message ?? "Erro ao confirmar pagamento.",
+      );
+    }
+  }
+
   function finalizarPagamento(status: PaymentStatus, ingressoId?: string) {
     setStatusPagamento(status);
 
@@ -285,6 +323,10 @@ export function AbasPagamento({
 
       if (isPlano) {
         await criarAssinaturaSeNecessario(status, paymentId);
+      }
+
+      if (isMensalidade) {
+        await confirmarPagamentoMensalidade(status, paymentId);
       }
 
       finalizarPagamento(status);
