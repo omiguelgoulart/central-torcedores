@@ -25,7 +25,7 @@ type AssinaturaApi = {
   planoNome?: string | null;
   plano?: {
     nome?: string | null;
-    valor?: number | null;
+    valor?: number | string | null;
   } | null;
   torcedorNome?: string | null;
   torcedor?: {
@@ -88,7 +88,7 @@ export default function PageAssinatura() {
           const torcedor =
             a.torcedor?.nome ?? a.torcedorNome ?? "Torcedor não identificado";
 
-          const preco = a.plano?.valor ?? 0;
+          const preco = Number(a.plano?.valor ?? 0) || 0;
 
           return {
             id: a.id,
