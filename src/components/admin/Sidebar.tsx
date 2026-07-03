@@ -33,12 +33,6 @@ const navigationItems = [
     ],
   },
   {
-    title: "Estádio",
-    href: "/admin/estadio",
-    icon: Ticket,
-    items: [{ title: "Setores", href: "/admin/estadio/setores" }],
-  },
-  {
     title: "Torcedores",
     href: "/admin/torcedores",
     icon: Users,
